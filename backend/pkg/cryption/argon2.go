@@ -61,3 +61,9 @@ func VerifyPassword(password, storedHash string) bool {
 
 	return base64.RawStdEncoding.EncodeToString(newHash) == hash
 }
+
+func RandomPlainPassword() string {
+	bit := make([]byte, 16)
+	rand.Read(bit)
+	return base64.URLEncoding.EncodeToString(bit)
+}

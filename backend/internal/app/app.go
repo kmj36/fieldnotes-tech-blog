@@ -8,6 +8,7 @@ import (
 	"github.com/kmj36/fieldnotes-tech-blog/internal/handler"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/handler/response"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/middleware"
+	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/repository"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/service"
 	"github.com/kmj36/fieldnotes-tech-blog/pkg/cryption"
@@ -53,6 +54,10 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 
 // App 객체 메소드 - Gin 실행 함수
 func (app *App) Run() error {
+
+	// 최초 관리자 계정 생성
+	app.seedAdminAccount()
+
 	app.setupMiddleware()
 	app.setupErrors()
 	app.setupRoutes()
@@ -83,19 +88,49 @@ func (app *App) setupMiddleware() {
 // App 객체 메소드 - Gin 라우팅 설정
 func (app *App) setupRoutes() {
 
-	// 테스트 라우트
-	app.router.GET("/ping", app.pingHandler.Ping)
-	app.router.POST("/auth/register", app.accountHandler.Create)
-	
+	// 기본 라우트
+	api := app.router.Group("/api/v1")
+	{
+        api.GET("/ping", app.pingHandler.Ping)
+	}
+
 	// 인증 라우트
 	auth := app.router.Group("/api/v1")
 	{
 		auth.Use(middleware.JWTAuthMiddleware(app.jwtManager))
+		auth.POST("/auth/register", app.accountHandler.Create)
 	}
-	
-	// 기본 라우트
-	/*api := app.router.Group("/api/v1")
-	{
-        api.GET("/users/:id", userHandler.GetUser)
-	}*/
+}
+
+/*
+	최초 관리자 계정을 생성합니다.
+	생성이 완료되면 콘솔에 해시된 비밀번호가 출력됩니다.
+*/
+func (app *App) seedAdminAccount() {
+
+	var existing model.Account
+
+	if app.db.Where("account_id = ?", "admin").First(&existing).Error == nil {
+		return
+	}
+
+	var newRandomPassword string = cryption.RandomPlainPassword()
+	var hash string
+	hash, _ = cryption.HashPassword(newRandomPassword)
+
+	newAdmin := &model.Account{
+		AccountID: "admin",
+		PasswordHash: hash,
+		Nickname: "admin",
+		AvatarURL: "https://www.svgrepo.com/show/345423/admin.svg",
+		Role: "ADMIN",
+		Status: "ACTIVE",
+	}
+
+	if err := app.db.Create(newAdmin).Error; err == nil {
+		app.logger.Info("[SEED] Admin account Initialized.",
+			zap.String("Account: ", newAdmin.AccountID),
+			zap.String("Password: ", newRandomPassword),
+		)
+	}
 }

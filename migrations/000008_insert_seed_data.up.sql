@@ -92,11 +92,6 @@ INSERT INTO accounts (
 ) 
 VALUES 
   (
-    'admin', '$2b$12$hashedpassword1', 
-    '관리자', 'https://api.dicebear.com/7.x/identicon/svg?seed=admin', 
-    'ADMIN', 'ACTIVE'
-  ), 
-  (
     'alice', '$2b$12$hashedpassword2', 
     '앨리스', 'https://api.dicebear.com/7.x/identicon/svg?seed=alice', 
     'USER', 'ACTIVE'
