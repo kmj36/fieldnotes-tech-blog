@@ -35,9 +35,10 @@ type App struct {
 // app 패키지 생성자
 func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 	gin.SetMode(cfg.ApiMode)
+	jwtManager := cryption.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)
 
 	accountRepo := repository.NewAccountRepository(db)
-	accountService := service.NewAccountService(accountRepo)
+	accountService := service.NewAccountService(accountRepo, jwtManager)
 
 	return &App{
 		router: gin.New(),
@@ -47,7 +48,7 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 		pingHandler: handler.NewPingHandler(),
 		accountHandler: handler.NewAccountHandler(accountService),
 
-		jwtManager: cryption.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry),
+		jwtManager: jwtManager,
 		db: db,
 	}
 }
@@ -92,6 +93,7 @@ func (app *App) setupRoutes() {
 	api := app.router.Group("/api/v1")
 	{
         api.GET("/ping", app.pingHandler.Ping)
+		api.POST("/login", app.accountHandler.Login)
 	}
 
 	// 인증 라우트

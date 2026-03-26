@@ -14,10 +14,8 @@ type CreateAccountData struct {
 }
 
 type UpdateAccountResponse struct {
-	Result struct {
-		Data		CreateAccountData	`json:"data"`
-		Diff		CommonUpdateDiff	`json:"diff"`
-	} `json:"result"`
+	Data		CreateAccountData	`json:"data"`
+	Diff		CommonUpdateDiff	`json:"diff"`
 }
 
 type ReadAccountResponse struct {
@@ -29,4 +27,8 @@ type ReadAccountResponse struct {
 	Status			string		`json:"status"`
 	CreatedAt		time.Time	`json:"created_at"`
 	UpdatedAt		time.Time	`json:"updated_at"`
+}
+
+type LoginAccountResponse struct {
+	Token		string		`json:"token"`
 }

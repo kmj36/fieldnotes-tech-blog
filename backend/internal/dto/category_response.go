@@ -16,19 +16,17 @@ type CreateCategoryResponse struct {
 }
 
 type ReadCategoriesResponse struct {
-	Result struct {
-		Meta	struct{
-			Sort struct {
-				SortBy		string	`json:"by"`
-				SortDir		string	`json:"dir"`
-			}	`json:"sort"`
-			Total 		int32		`json:"total"`
-			Filters struct {
-				Search 	string		`json:"search"`
-			}
-		}		`json:"meta"`
-		Data	[]CategoriesObject		`json:"data"`
-	} `json:"result"`
+	Meta	struct{
+		Sort struct {
+			SortBy		string	`json:"by"`
+			SortDir		string	`json:"dir"`
+		}	`json:"sort"`
+		Total 		int32		`json:"total"`
+		Filters struct {
+			Search 	string		`json:"search"`
+		}
+	}		`json:"meta"`
+	Data	[]CategoriesObject		`json:"data"`
 }
 
 type ReadCategoryResponse struct {
@@ -43,10 +41,8 @@ type ReadCategoryResponse struct {
 }
 
 type UpdateCategoryResponse struct {
-	Result struct {
-		Data		CreateCategoryResponse	`json:"data"`
-		Diff		CommonUpdateDiff		`json:"diff"`
-	} `json:"result"`
+	Data		CreateCategoryResponse	`json:"data"`
+	Diff		CommonUpdateDiff		`json:"diff"`
 }
 
 type CategoriesObject struct {

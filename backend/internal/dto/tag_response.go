@@ -13,26 +13,22 @@ type CreateTagResponse struct {
 }
 
 type ReadTagsResponse struct {
-	Result struct {
-		Meta		struct{
-			Sort	struct {
-				SortBy		string		`json:"by"`
-				SortDir		string		`json:"dir"`
-			}	`json:"sort"`
-			Total		int32		`json:"total"`	
-			Filters struct {
-				Search		string		`json:"search"`
-			}
-		}	`json:"meta"`
-		Data		[]ReadTagResponse	`json:"data"`
-	}	`json:"result"`
+	Meta		struct{
+		Sort	struct {
+			SortBy		string		`json:"by"`
+			SortDir		string		`json:"dir"`
+		}	`json:"sort"`
+		Total		int32		`json:"total"`	
+		Filters struct {
+			Search		string		`json:"search"`
+		}
+	}	`json:"meta"`
+	Data		[]ReadTagResponse	`json:"data"`
 }
 
 type UpdateTagResponse struct {
-	Result struct {
-		Data	CreateTagResponse	`json:"data"`
-		Diff	CommonUpdateDiff	`json:"diff"`
-	} `json:"result"`
+	Data	CreateTagResponse	`json:"data"`
+	Diff	CommonUpdateDiff	`json:"diff"`
 }
 
 type ReadTagResponse struct {

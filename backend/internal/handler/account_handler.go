@@ -44,6 +44,44 @@ func (h *AccountHandler) Create(ctx *gin.Context) {
 	})
 }
 
+func (h *AccountHandler) Login(ctx *gin.Context) {
+	var req dto.LoginAccountRequest
+
+	if bindErr := ctx.ShouldBindJSON(&req); bindErr != nil {
+		h.respondBindError(ctx, bindErr)
+        return
+	}
+
+	fmt.Print("[DEBUG] req: ")
+	fmt.Println(req)
+
+	var auth string
+	var err error
+
+	auth, err = h.service.Login(ctx, &req)
+
+	fmt.Print("[DEBUG] auth, err: ")
+	fmt.Print(auth)
+	fmt.Println(err)
+
+	if err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseWrapper[dto.LoginAccountResponse]{
+		Status: http.StatusOK,
+		Code: dto.ErrOK.Code,
+		Detail: "Login successfully.",
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: dto.LoginAccountResponse{
+			Token: auth,
+		},
+	})
+}
+
 func (h *AccountHandler) respondBindError(ctx *gin.Context, err error) {
 	var ve validator.ValidationErrors
     switch {
@@ -86,6 +124,15 @@ func (h *AccountHandler) respondProcessError(ctx *gin.Context, err error) {
 			Code: dto.ErrConflict.Code,
 			Detail: err.Error(),
 			Message: dto.ErrConflict.Message,
+			Timestamp: time.Now().UTC(),
+			Path: ctx.Request.URL.Path,
+		})
+	case errors.Is(err, dto.ErrLoginFailed):
+		ctx.JSON(http.StatusUnauthorized, dto.ResponseWrapper[any]{
+			Status: http.StatusUnauthorized,
+			Code: dto.ErrUnauthorized.Code,
+			Detail: err.Error(),
+			Message: dto.ErrUnauthorized.Message,
 			Timestamp: time.Now().UTC(),
 			Path: ctx.Request.URL.Path,
 		})

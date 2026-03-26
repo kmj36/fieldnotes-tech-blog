@@ -2,9 +2,11 @@ package cryption
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type JWTManager struct {
@@ -12,17 +14,27 @@ type JWTManager struct {
 	expiry time.Duration
 }
 
+type CustomClaims struct {
+	Role string `json:"role"`
+	jwt.RegisteredClaims
+}
+
 func NewJWTManager(secret []byte, expiry time.Duration) *JWTManager {
     return &JWTManager{secret: secret, expiry: expiry}
 }
 
-func (j *JWTManager) GenerateJWT(userID int, userAccount string, userNickName string) (string, error) {
-	claims := jwt.MapClaims{
-		"sub": userID,
-		"user_account": userAccount,
-		"user_nickname": userNickName,
-		"exp": j.expiry,
-		"iat": time.Now().Unix(),
+func (j *JWTManager) GenerateJWT(userID int, role string) (string, error) {
+	now := time.Now()
+
+	claims := CustomClaims{
+		Role: role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   strconv.Itoa(userID),
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(j.expiry)),
+			ID:        uuid.NewString(),
+			Issuer:    "fieldnotes_tech_blog",
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -30,14 +42,12 @@ func (j *JWTManager) GenerateJWT(userID int, userAccount string, userNickName st
 }
 
 func (j *JWTManager) ValidateJWT(tokenString string) (*jwt.Token, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+            return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+        }
+        return j.secret, nil
+    })
 
-		if token.Method != jwt.SigningMethodHS256 {
-			return nil, fmt.Errorf("unexpected signing method")
-		}
-
-		return j.secret, nil
-	})
-
-	return token, err
+    return token, err
 }

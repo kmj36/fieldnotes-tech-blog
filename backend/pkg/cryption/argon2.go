@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -46,7 +47,13 @@ func HashPassword(password string) (string, error) {
 func VerifyPassword(password, storedHash string) bool {
 
 	var salt, hash string
-	fmt.Sscanf(storedHash, "%[^.].%s", &salt, &hash)
+	
+	parts := strings.SplitN(storedHash, ".", 2)
+	if len(parts) != 2 {
+		return false
+	}
+	salt = parts[0]
+	hash = parts[1]
 
 	saltBytes, _ := base64.RawStdEncoding.DecodeString(salt)
 

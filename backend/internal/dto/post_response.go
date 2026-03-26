@@ -20,10 +20,8 @@ type CreatePostResponse struct {
 }
 
 type ReadPostsResponse struct {
-	Result struct {
-		Meta		PostMetadataObject	`json:"meta"`
-		Data 		[]CommonPostObject	`json:"data"`
-	} `json:"result"`
+	Meta		PostMetadataObject	`json:"meta"`
+	Data 		[]CommonPostObject	`json:"data"`
 }
 
 type ReadEachPostResponse struct {
@@ -39,10 +37,8 @@ type ReadEachPostResponse struct {
 }
 
 type UpdatedPostResponse struct {
-	Result struct {
-		Data		CreatePostResponse	`json:"data"`
-		Diff		CommonUpdateDiff	`json:"diff"`
-	} `json:"result"`
+	Data		CreatePostResponse	`json:"data"`
+	Diff		CommonUpdateDiff	`json:"diff"`
 }
 
 type PostMetadataObject struct {
