@@ -52,17 +52,17 @@ func (h *AccountHandler) Login(ctx *gin.Context) {
         return
 	}
 
-	fmt.Print("[DEBUG] req: ")
-	fmt.Println(req)
+	//fmt.Print("[DEBUG] req: ")
+	//fmt.Println(req)
 
 	var auth string
 	var err error
 
 	auth, err = h.service.Login(ctx, &req)
 
-	fmt.Print("[DEBUG] auth, err: ")
-	fmt.Print(auth)
-	fmt.Println(err)
+	//fmt.Print("[DEBUG] auth, err: ")
+	//fmt.Print(auth)
+	//fmt.Println(err)
 
 	if err != nil {
 		h.respondProcessError(ctx, err)

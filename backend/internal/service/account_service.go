@@ -1,8 +1,6 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
@@ -53,16 +51,16 @@ func (s *AccountService) Login(ctx *gin.Context, req *dto.LoginAccountRequest) (
 		return "", dto.ErrLoginFailed
 	}
 
-	fmt.Print("[DEBUG] existing: ")
-	fmt.Println(existing)
+	//fmt.Print("[DEBUG] existing: ")
+	//fmt.Println(existing)
 
 	if cryption.VerifyPassword(req.Password, existing.PasswordHash) == false {
 		return "", dto.ErrLoginFailed
 	}
 
-	fmt.Print("[DEBUG] req.Password, existing.PasswordHash: ")
-	fmt.Print(req.Password)
-	fmt.Println(existing.PasswordHash)
+	//fmt.Print("[DEBUG] req.Password, existing.PasswordHash: ")
+	//fmt.Print(req.Password)
+	//fmt.Println(existing.PasswordHash)
 
 	return s.jwt.GenerateJWT(int(existing.ID), existing.Role)
 }
