@@ -93,7 +93,7 @@ func (app *App) setupRoutes() {
 	api := app.router.Group("/api/v1")
 	{
         api.GET("/ping", app.pingHandler.Ping)
-		api.POST("/login", app.accountHandler.Login)
+		api.POST("/auth/login", app.accountHandler.Login)
 	}
 
 	// 인증 라우트

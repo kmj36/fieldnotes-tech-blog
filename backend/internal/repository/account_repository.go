@@ -30,3 +30,16 @@ func (repo *AccountRepository) FindByAccountID(accountID string) (*model.Account
     }
     return &account, nil
 }
+
+func (repo *AccountRepository) FindByNickname(accountNickname string) (*model.Account, error) {
+    var account model.Account
+	
+    result := repo.db.Where("nickname = ?", accountNickname).First(&account)
+    if result.Error != nil {
+        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            return nil, nil // 없으면 nil 반환
+        }
+        return nil, result.Error
+    }
+    return &account, nil
+}

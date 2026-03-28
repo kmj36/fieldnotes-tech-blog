@@ -118,7 +118,8 @@ func (h *AccountHandler) respondBindError(ctx *gin.Context, err error) {
 
 func (h *AccountHandler) respondProcessError(ctx *gin.Context, err error) {
 	switch {
-	case errors.Is(err, dto.ErrAccountAlreadyExists):
+	case errors.Is(err, dto.ErrAccountAlreadyExists),
+		 errors.Is(err, dto.ErrNicknameAlreadyExists):
 		ctx.JSON(http.StatusConflict, dto.ResponseWrapper[any]{
 			Status: http.StatusConflict,
 			Code: dto.ErrConflict.Code,

@@ -19,13 +19,25 @@ func NewAccountService(repo *repository.AccountRepository, jwtManager *cryption.
 }
 
 func (s *AccountService) Create(ctx *gin.Context, req *dto.CreateAccountRequest) error {
-
-	if existing, _ := s.repo.FindByAccountID(req.AccountID) ; existing != nil {
-		return dto.ErrAccountAlreadyExists
-	} 
-
-	var hash string
+	var existing *model.Account
 	var err error
+	var hash string
+
+	existing, err = s.repo.FindByAccountID(req.AccountID)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return dto.ErrAccountAlreadyExists
+	}
+
+	existing, err = s.repo.FindByNickname(req.Nickname)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return dto.ErrNicknameAlreadyExists
+	}
 
 	if hash, err = cryption.HashPassword(req.Password) ; err != nil {
 		return err

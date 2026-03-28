@@ -29,6 +29,7 @@ type CommonUpdateDiff struct {
 }
 
 var ErrAccountAlreadyExists = errors.New("account already exists.")
+var ErrNicknameAlreadyExists = errors.New("nickname already exists.")
 var ErrLoginFailed = errors.New("Invalid credentials.")
 
 // 에러 공통 리터럴
