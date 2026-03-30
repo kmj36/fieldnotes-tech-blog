@@ -4,7 +4,7 @@ import "time"
 
 // 계정 모델 (API <-> DB)
 type Account struct {
-	ID				int16		`json:"id" db:"id"`
+	ID				int			`json:"id" db:"id"`
 	AccountID		string		`json:"account_id" db:"account_id"`
 	PasswordHash	string		`json:"password_hash" db:"password_hash"`
 	Nickname		string		`json:"nickname" db:"nickname"`

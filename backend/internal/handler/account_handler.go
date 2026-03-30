@@ -82,6 +82,46 @@ func (h *AccountHandler) Login(ctx *gin.Context) {
 	})
 }
 
+func (h *AccountHandler) List(ctx *gin.Context) {
+	var req dto.ListAccountRequest
+	var accounts []*dto.AccountSummary
+	var err error
+
+	if bindErr := ctx.ShouldBindQuery(&req); bindErr != nil {
+		h.respondBindError(ctx, bindErr)
+        return
+	}
+
+	if accounts, err = h.service.List(ctx, &req); err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseWrapper[dto.ListAccountResponse]{
+		Status: http.StatusOK,
+		Code: dto.ErrOK.Message,
+		Detail: "Successfully retrieved accounts.",
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: dto.ListAccountResponse{
+			Meta: dto.ListAccountMeta{
+				Sort: dto.SortMeta{
+					SortBy: req.SortBy,
+					SortDir: req.SortDir,
+				},
+				Limit: req.Limit,
+				Filters: dto.AccountSummary{
+					Id: req.ID,
+					AccountID: req.AccountID,
+					Role: req.Role,
+				},
+			},
+			Data: accounts,
+		},
+	})
+}
+
 func (h *AccountHandler) respondBindError(ctx *gin.Context, err error) {
 	var ve validator.ValidationErrors
     switch {

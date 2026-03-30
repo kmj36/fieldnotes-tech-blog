@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
@@ -23,7 +25,7 @@ func (s *AccountService) Create(ctx *gin.Context, req *dto.CreateAccountRequest)
 	var err error
 	var hash string
 
-	existing, err = s.repo.FindByAccountID(req.AccountID)
+	existing, err = s.repo.FindByAccountID(ctx, req.AccountID)
 	if err != nil {
 		return err
 	}
@@ -31,7 +33,7 @@ func (s *AccountService) Create(ctx *gin.Context, req *dto.CreateAccountRequest)
 		return dto.ErrAccountAlreadyExists
 	}
 
-	existing, err = s.repo.FindByNickname(req.Nickname)
+	existing, err = s.repo.FindByNickname(ctx, req.Nickname)
 	if err != nil {
 		return err
 	}
@@ -52,14 +54,14 @@ func (s *AccountService) Create(ctx *gin.Context, req *dto.CreateAccountRequest)
 		Status: "ACTIVE",
 	}
 
-	return s.repo.Create(newAccount)
+	return s.repo.Create(ctx, newAccount)
 }
 
 func (s *AccountService) Login(ctx *gin.Context, req *dto.LoginAccountRequest) (string, error) {
 
 	var existing *model.Account
 
-	if existing, _ = s.repo.FindByAccountID(req.AccountID) ; existing == nil {
+	if existing, _ = s.repo.FindByAccountID(ctx, req.AccountID) ; existing == nil {
 		return "", dto.ErrLoginFailed
 	}
 
@@ -75,4 +77,42 @@ func (s *AccountService) Login(ctx *gin.Context, req *dto.LoginAccountRequest) (
 	//fmt.Println(existing.PasswordHash)
 
 	return s.jwt.GenerateJWT(int(existing.ID), existing.Role)
+}
+
+func (s *AccountService) List(ctx *gin.Context, req *dto.ListAccountRequest) ([]*dto.AccountSummary, error) {
+	var accounts []*dto.AccountSummary
+	var datas	 []*model.Account
+	var err		 error
+
+	fmt.Print("[DEBUG] req : ")
+	fmt.Println(req)
+
+	if req.SortBy == "" {
+		req.SortBy = "id"
+	}
+
+	if req.SortDir == "" {
+		req.SortDir = "desc"
+	}
+
+	if req.Limit == 0 {
+		req.Limit = 10
+	}
+
+	datas, err = s.repo.List(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	accounts = make([]*dto.AccountSummary, len(datas))
+
+	for idx, data := range datas {
+		accounts[idx] = &dto.AccountSummary{
+			Id: data.ID,
+			AccountID: data.AccountID,
+			Role: data.Role,
+		}
+	}
+
+	return accounts, nil
 }

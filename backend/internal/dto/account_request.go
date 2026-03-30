@@ -23,3 +23,12 @@ type UpdateAccountRequest struct {
 type DeleteAccountRequest struct {
 	AccountID		string		`json:"id" binding:"required,min=3,max=32"`
 }
+
+type ListAccountRequest struct {
+	SortBy			string		`json:"sort_by"`
+	SortDir			string		`json:"sort_dir"`
+	Limit			int			`json:"limit"`
+	ID				int			`json:"id"`
+	AccountID		string		`json:"account_id"`
+	Role			string		`json:"role"`
+}
