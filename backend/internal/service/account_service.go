@@ -1,8 +1,6 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
@@ -84,8 +82,8 @@ func (s *AccountService) List(ctx *gin.Context, req *dto.ListAccountRequest) ([]
 	var datas	 []*model.Account
 	var err		 error
 
-	fmt.Print("[DEBUG] req : ")
-	fmt.Println(req)
+	//fmt.Print("[DEBUG] req : ")
+	//fmt.Println(req)
 
 	if req.SortBy == "" {
 		req.SortBy = "id"
@@ -115,4 +113,8 @@ func (s *AccountService) List(ctx *gin.Context, req *dto.ListAccountRequest) ([]
 	}
 
 	return accounts, nil
+}
+
+func (s *AccountService) GetAccount(ctx *gin.Context, accountName string) (*model.Account, error) {
+	return s.repo.FindByAccountID(ctx, accountName)
 }

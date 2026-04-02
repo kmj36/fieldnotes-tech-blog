@@ -102,6 +102,7 @@ func (app *App) setupRoutes() {
 		auth.Use(middleware.JWTAuthMiddleware(app.jwtManager))
 		auth.POST("/auth/register", app.accountHandler.Create)
 		auth.GET("/auth/list", app.accountHandler.List)
+		auth.GET("/auth/:account", app.accountHandler.GetAccount)
 	}
 }
 

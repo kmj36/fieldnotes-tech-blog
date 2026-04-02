@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
+	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/service"
 )
 
@@ -119,6 +120,45 @@ func (h *AccountHandler) List(ctx *gin.Context) {
 			},
 			Data: accounts,
 		},
+	})
+}
+
+func (h *AccountHandler) GetAccount(ctx *gin.Context) {
+	var targetAccount = ctx.Param("account")
+
+	if targetAccount == "" {
+		h.respondBindError(ctx, errors.New("The 'account' parameter is empty."))
+        return
+	}
+
+	var data *model.Account
+	var err error
+	var retrieval *dto.ReadAccountResponse
+
+	if data, err = h.service.GetAccount(ctx, targetAccount); err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	retrieval = &dto.ReadAccountResponse{
+		ID: data.ID,
+		AccountID: data.AccountID,
+		Nickname: data.Nickname,
+		AvatarURL: data.AvatarURL,
+		Role: data.Role,
+		Status: data.Status,
+		CreatedAt: data.CreatedAt,
+		UpdatedAt: data.UpdatedAt,
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseWrapper[*dto.ReadAccountResponse]{
+		Status: http.StatusOK,
+		Code: dto.ErrOK.Code,
+		Detail: dto.ErrOK.Code,
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: retrieval,
 	})
 }
 

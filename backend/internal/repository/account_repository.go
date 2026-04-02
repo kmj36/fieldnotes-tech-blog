@@ -75,3 +75,4 @@ func (repo *AccountRepository) List(ctx *gin.Context, req *dto.ListAccountReques
 
     return accounts, err
 }
+
