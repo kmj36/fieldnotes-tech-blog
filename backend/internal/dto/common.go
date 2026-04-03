@@ -28,9 +28,9 @@ type CommonUpdateDiff struct {
     ChangedFields []string		`json:"changed_fields"`
 }
 
-var ErrAccountAlreadyExists = errors.New("account already exists.")
-var ErrNicknameAlreadyExists = errors.New("nickname already exists.")
-var ErrLoginFailed = errors.New("Invalid credentials.")
+var CErrAccountAlreadyExists = errors.New("account already exists.")
+var CErrNicknameAlreadyExists = errors.New("nickname already exists.")
+var CErrLoginFailed = errors.New("Invalid credentials.")
 
 // 에러 공통 리터럴
 var ( 

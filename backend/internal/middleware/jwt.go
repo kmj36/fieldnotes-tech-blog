@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
 	"github.com/kmj36/fieldnotes-tech-blog/pkg/cryption"
 )
@@ -44,6 +45,24 @@ func JWTAuthMiddleware(jwtmanager *cryption.JWTManager) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
+
+		// claims 추출 후 ctx에 저장 추가
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			ctx.JSON(http.StatusUnauthorized, dto.ResponseWrapper[any]{
+				Status: http.StatusUnauthorized,
+				Code: "E401_001",
+				Message: "인증에 실패하였습니다.",
+				Detail: "Invalid admin credentials.",
+				Timestamp: time.Now().UTC(),
+				Path: ctx.Request.URL.Path,
+			})
+			ctx.Abort()
+			return
+		}
+
+		ctx.Set("account_id", claims["sub"])  // "admin"
+		ctx.Set("role", claims["role"])  // "ADMIN"
 
 		ctx.Next()
 	}

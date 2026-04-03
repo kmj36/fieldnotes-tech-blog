@@ -123,7 +123,7 @@ func (h *AccountHandler) List(ctx *gin.Context) {
 	})
 }
 
-func (h *AccountHandler) GetAccount(ctx *gin.Context) {
+func (h *AccountHandler) Get(ctx *gin.Context) {
 	var targetAccount = ctx.Param("account")
 
 	if targetAccount == "" {
@@ -162,6 +162,41 @@ func (h *AccountHandler) GetAccount(ctx *gin.Context) {
 	})
 }
 
+func (h *AccountHandler) Update(ctx *gin.Context) {
+	var req dto.UpdateAccountRequest
+	var data *dto.UpdateAccountResponse
+	var err error
+
+	// JWT에서 account_id 추출
+    accountID, exists := ctx.Get("account_id")
+    if !exists {
+        h.respondBindError(ctx, dto.CErrLoginFailed)
+        return
+    }
+
+	if bindErr := ctx.ShouldBindJSON(&req); bindErr != nil {
+		h.respondBindError(ctx, bindErr)
+        return
+	}
+
+	fmt.Print(req)
+
+	if data, err = h.service.Update(ctx, accountID.(string), req) ; err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseWrapper[*dto.UpdateAccountResponse]{
+		Status: http.StatusOK,
+		Code: dto.ErrOK.Message,
+		Detail: "Successfully changed account data.",
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: data,
+	})
+}
+
 func (h *AccountHandler) respondBindError(ctx *gin.Context, err error) {
 	var ve validator.ValidationErrors
     switch {
@@ -184,6 +219,15 @@ func (h *AccountHandler) respondBindError(ctx *gin.Context, err error) {
             Timestamp: time.Now().UTC(),
             Path:      ctx.Request.URL.Path,
         })
+	case errors.Is(err, dto.CErrLoginFailed):
+		ctx.JSON(http.StatusUnauthorized, dto.ResponseWrapper[any]{
+			Status: http.StatusUnauthorized,
+			Code: "E401_001",
+			Message: "인증에 실패하였습니다.",
+			Detail: "Invalid admin credentials.",
+			Timestamp: time.Now().UTC(),
+			Path: ctx.Request.URL.Path,
+		})
     default:
         ctx.JSON(http.StatusBadRequest, dto.ResponseWrapper[any]{
             Status:    http.StatusBadRequest,
@@ -198,8 +242,8 @@ func (h *AccountHandler) respondBindError(ctx *gin.Context, err error) {
 
 func (h *AccountHandler) respondProcessError(ctx *gin.Context, err error) {
 	switch {
-	case errors.Is(err, dto.ErrAccountAlreadyExists),
-		 errors.Is(err, dto.ErrNicknameAlreadyExists):
+	case errors.Is(err, dto.CErrAccountAlreadyExists),
+		 errors.Is(err, dto.CErrNicknameAlreadyExists):
 		ctx.JSON(http.StatusConflict, dto.ResponseWrapper[any]{
 			Status: http.StatusConflict,
 			Code: dto.ErrConflict.Code,
@@ -208,7 +252,7 @@ func (h *AccountHandler) respondProcessError(ctx *gin.Context, err error) {
 			Timestamp: time.Now().UTC(),
 			Path: ctx.Request.URL.Path,
 		})
-	case errors.Is(err, dto.ErrLoginFailed):
+	case errors.Is(err, dto.CErrLoginFailed):
 		ctx.JSON(http.StatusUnauthorized, dto.ResponseWrapper[any]{
 			Status: http.StatusUnauthorized,
 			Code: dto.ErrUnauthorized.Code,

@@ -2,7 +2,6 @@ package cryption
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -23,13 +22,13 @@ func NewJWTManager(secret []byte, expiry time.Duration) *JWTManager {
     return &JWTManager{secret: secret, expiry: expiry}
 }
 
-func (j *JWTManager) GenerateJWT(userID int, role string) (string, error) {
+func (j *JWTManager) GenerateJWT(userAccountID string, role string) (string, error) {
 	now := time.Now()
 
 	claims := CustomClaims{
 		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   strconv.Itoa(userID),
+			Subject:   userAccountID,
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(j.expiry)),
 			ID:        uuid.NewString(),

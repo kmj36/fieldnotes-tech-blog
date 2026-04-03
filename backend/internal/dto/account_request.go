@@ -15,9 +15,9 @@ type CreateAccountRequest struct {
 }
 
 type UpdateAccountRequest struct {
-	Password		string		`json:"password" binding:"required,min=8,max=80"`
-	Nickname		string		`json:"nickname" binding:"min=2,max=20"`
-	AvatarURL		string		`json:"avatar_url" binding:"max=2048"`
+	Password		string		`json:"password" binding:"omitempty,min=8,max=80"`
+	Nickname		string		`json:"nickname" binding:"omitempty,min=2,max=20"`
+	AvatarURL		string		`json:"avatar_url" binding:"omitempty,max=2048"`
 }
 
 type DeleteAccountRequest struct {

@@ -6,15 +6,15 @@ import (
 
 // 응답 DTO (Client <- API)
 
-type CreateAccountData struct {
+type UpdateAccountData struct {
     ID             int		`json:"id"`
-    PasswordStatus string		`json:"password_status"`
+    IsPasswordChanged bool	`json:"isPasswordChanged"`
     Nickname       string		`json:"nickname"`
     AvatarURL      string		`json:"avatar_url"`
 }
 
 type UpdateAccountResponse struct {
-	Data		CreateAccountData	`json:"data"`
+	Data		UpdateAccountData	`json:"data"`
 	Diff		CommonUpdateDiff	`json:"diff"`
 }
 

@@ -28,7 +28,7 @@ func (s *AccountService) Create(ctx *gin.Context, req *dto.CreateAccountRequest)
 		return err
 	}
 	if existing != nil {
-		return dto.ErrAccountAlreadyExists
+		return dto.CErrAccountAlreadyExists
 	}
 
 	existing, err = s.repo.FindByNickname(ctx, req.Nickname)
@@ -36,7 +36,7 @@ func (s *AccountService) Create(ctx *gin.Context, req *dto.CreateAccountRequest)
 		return err
 	}
 	if existing != nil {
-		return dto.ErrNicknameAlreadyExists
+		return dto.CErrNicknameAlreadyExists
 	}
 
 	if hash, err = cryption.HashPassword(req.Password) ; err != nil {
@@ -60,21 +60,21 @@ func (s *AccountService) Login(ctx *gin.Context, req *dto.LoginAccountRequest) (
 	var existing *model.Account
 
 	if existing, _ = s.repo.FindByAccountID(ctx, req.AccountID) ; existing == nil {
-		return "", dto.ErrLoginFailed
+		return "", dto.CErrLoginFailed
 	}
 
 	//fmt.Print("[DEBUG] existing: ")
 	//fmt.Println(existing)
 
 	if cryption.VerifyPassword(req.Password, existing.PasswordHash) == false {
-		return "", dto.ErrLoginFailed
+		return "", dto.CErrLoginFailed
 	}
 
 	//fmt.Print("[DEBUG] req.Password, existing.PasswordHash: ")
 	//fmt.Print(req.Password)
 	//fmt.Println(existing.PasswordHash)
 
-	return s.jwt.GenerateJWT(int(existing.ID), existing.Role)
+	return s.jwt.GenerateJWT(existing.AccountID, existing.Role)
 }
 
 func (s *AccountService) List(ctx *gin.Context, req *dto.ListAccountRequest) ([]*dto.AccountSummary, error) {
@@ -117,4 +117,46 @@ func (s *AccountService) List(ctx *gin.Context, req *dto.ListAccountRequest) ([]
 
 func (s *AccountService) GetAccount(ctx *gin.Context, accountName string) (*model.Account, error) {
 	return s.repo.FindByAccountID(ctx, accountName)
+}
+
+func (s *AccountService) Update(ctx *gin.Context, accountID string, req dto.UpdateAccountRequest) (*dto.UpdateAccountResponse, error) {
+	var changed *dto.UpdateAccountResponse
+	var data *model.Account
+	var err error
+
+	updates := map[string]interface{}{}
+
+    if req.Password != "" {
+        hashed, _ := cryption.HashPassword(req.Password)
+        updates["password_hash"] = hashed
+    }
+    if req.Nickname != "" {
+        updates["nickname"] = req.Nickname
+    }
+    if req.AvatarURL != "" {
+        updates["avatar_url"] = req.AvatarURL
+    }
+
+	var changedFields []string
+    for key := range updates {
+        changedFields = append(changedFields, key)
+    }
+	
+	if data, err = s.repo.Update(ctx, accountID, updates) ; err != nil {
+		return nil, err
+	}
+
+	changed = &dto.UpdateAccountResponse{
+		Data: dto.UpdateAccountData{
+			ID: data.ID,
+			IsPasswordChanged: data.PasswordHash == updates["password_hash"],
+			Nickname: data.Nickname,
+			AvatarURL: data.AvatarURL,
+		},
+		Diff: dto.CommonUpdateDiff{
+			ChangedFields: changedFields,
+		},
+	}
+
+    return changed, err
 }
