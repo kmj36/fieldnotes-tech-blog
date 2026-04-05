@@ -22,26 +22,25 @@ func (repo *AccountRepository) Create(ctx *gin.Context, newAccount *model.Accoun
 	return query.Create(newAccount).Error
 }
 
-func (repo *AccountRepository) Update(ctx *gin.Context, accountID string, updates map[string]interface{}) (*model.Account, error) {
-    var account model.Account
+func (repo *AccountRepository) Update(ctx *gin.Context, account string, updates map[string]interface{}) (*model.Account, error) {
+    var accountData model.Account
 
     err := repo.db.WithContext(ctx).
-        Model(&account).
-        Where("account_id = ?", accountID).
-        Updates(updates).Error
+        Where("account_id = ?", account).
+        First(&accountData).Error
     if err != nil {
         return nil, err
     }
 
     // 업데이트 후 재조회
     err = repo.db.WithContext(ctx).
-        Where("account_id = ?", accountID).
-        First(&account).Error
+        Model(&accountData).
+        Updates(updates).Error
     if err != nil {
         return nil, err
     }
 
-    return &account, nil
+    return &accountData, nil
 }
 
 func (repo *AccountRepository) FindByAccountID(ctx *gin.Context, accountID string) (*model.Account, error) {

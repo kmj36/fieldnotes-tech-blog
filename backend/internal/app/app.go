@@ -103,7 +103,7 @@ func (app *App) setupRoutes() {
 		auth.POST("/auth/register", app.accountHandler.Create)
 		auth.GET("/auth/list", app.accountHandler.List)
 		auth.GET("/auth/:account", app.accountHandler.Get)
-		auth.PATCH("/auth/update", app.accountHandler.Update)
+		auth.PATCH("/auth/update/:account", app.accountHandler.Update)
 	}
 }
 

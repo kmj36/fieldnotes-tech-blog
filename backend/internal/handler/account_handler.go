@@ -166,13 +166,12 @@ func (h *AccountHandler) Update(ctx *gin.Context) {
 	var req dto.UpdateAccountRequest
 	var data *dto.UpdateAccountResponse
 	var err error
+	var account = ctx.Param("account")
 
-	// JWT에서 account_id 추출
-    accountID, exists := ctx.Get("account_id")
-    if !exists {
-        h.respondBindError(ctx, dto.CErrLoginFailed)
+	if account == "" {
+		h.respondBindError(ctx, errors.New("The 'account' parameter is empty."))
         return
-    }
+	}
 
 	if bindErr := ctx.ShouldBindJSON(&req); bindErr != nil {
 		h.respondBindError(ctx, bindErr)
@@ -184,7 +183,7 @@ func (h *AccountHandler) Update(ctx *gin.Context) {
         return
 	}
 
-	if data, err = h.service.Update(ctx, accountID.(string), req) ; err != nil {
+	if data, err = h.service.Update(ctx, account, req) ; err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}

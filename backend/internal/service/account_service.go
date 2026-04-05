@@ -119,7 +119,7 @@ func (s *AccountService) GetAccount(ctx *gin.Context, accountName string) (*mode
 	return s.repo.FindByAccountID(ctx, accountName)
 }
 
-func (s *AccountService) Update(ctx *gin.Context, accountID string, req dto.UpdateAccountRequest) (*dto.UpdateAccountResponse, error) {
+func (s *AccountService) Update(ctx *gin.Context, account string, req dto.UpdateAccountRequest) (*dto.UpdateAccountResponse, error) {
 	var changed *dto.UpdateAccountResponse
 	var data *model.Account
 	var err error
@@ -142,13 +142,14 @@ func (s *AccountService) Update(ctx *gin.Context, accountID string, req dto.Upda
         changedFields = append(changedFields, key)
     }
 	
-	if data, err = s.repo.Update(ctx, accountID, updates) ; err != nil {
+	if data, err = s.repo.Update(ctx, account, updates) ; err != nil {
 		return nil, err
 	}
 
 	changed = &dto.UpdateAccountResponse{
 		Data: dto.UpdateAccountData{
 			ID: data.ID,
+			AccountID: data.AccountID,
 			Password_updated: data.PasswordHash == updates["password_hash"],
 			Nickname: data.Nickname,
 			AvatarURL: data.AvatarURL,
