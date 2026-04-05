@@ -149,7 +149,7 @@ func (s *AccountService) Update(ctx *gin.Context, accountID string, req dto.Upda
 	changed = &dto.UpdateAccountResponse{
 		Data: dto.UpdateAccountData{
 			ID: data.ID,
-			IsPasswordChanged: data.PasswordHash == updates["password_hash"],
+			Password_updated: data.PasswordHash == updates["password_hash"],
 			Nickname: data.Nickname,
 			AvatarURL: data.AvatarURL,
 		},

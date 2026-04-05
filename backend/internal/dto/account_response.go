@@ -8,7 +8,7 @@ import (
 
 type UpdateAccountData struct {
     ID             int		`json:"id"`
-    IsPasswordChanged bool	`json:"isPasswordChanged"`
+    Password_updated bool	`json:"password_updated"`
     Nickname       string		`json:"nickname"`
     AvatarURL      string		`json:"avatar_url"`
 }
