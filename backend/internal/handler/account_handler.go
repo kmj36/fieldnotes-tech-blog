@@ -179,7 +179,7 @@ func (h *AccountHandler) Update(ctx *gin.Context) {
         return
 	}
 
-	fmt.Print(req)
+	//fmt.Print(req)
 
 	if data, err = h.service.Update(ctx, accountID.(string), req) ; err != nil {
 		h.respondProcessError(ctx, err)
