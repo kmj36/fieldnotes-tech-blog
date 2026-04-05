@@ -179,7 +179,10 @@ func (h *AccountHandler) Update(ctx *gin.Context) {
         return
 	}
 
-	//fmt.Print(req)
+	if req == (dto.UpdateAccountRequest{}) {
+		h.respondBindError(ctx, dto.CErrUpdateEmptyParam)
+        return
+	}
 
 	if data, err = h.service.Update(ctx, accountID.(string), req) ; err != nil {
 		h.respondProcessError(ctx, err)
@@ -222,9 +225,18 @@ func (h *AccountHandler) respondBindError(ctx *gin.Context, err error) {
 	case errors.Is(err, dto.CErrLoginFailed):
 		ctx.JSON(http.StatusUnauthorized, dto.ResponseWrapper[any]{
 			Status: http.StatusUnauthorized,
-			Code: "E401_001",
-			Message: "인증에 실패하였습니다.",
-			Detail: "Invalid admin credentials.",
+			Code: dto.ErrUnauthorized.Code,
+			Message: dto.ErrUnauthorized.Message,
+			Detail: dto.CErrLoginFailed.Error(),
+			Timestamp: time.Now().UTC(),
+			Path: ctx.Request.URL.Path,
+		})
+	case errors.Is(err, dto.CErrUpdateEmptyParam):
+		ctx.JSON(http.StatusBadRequest, dto.ResponseWrapper[any]{
+			Status: http.StatusBadRequest,
+			Code: dto.ErrBadRequestMissing.Code,
+			Message: dto.ErrBadRequestMissing.Message,
+			Detail: dto.CErrUpdateEmptyParam.Error(),
 			Timestamp: time.Now().UTC(),
 			Path: ctx.Request.URL.Path,
 		})
