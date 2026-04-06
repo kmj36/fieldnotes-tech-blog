@@ -104,6 +104,7 @@ func (app *App) setupRoutes() {
 		auth.GET("/auth/list", app.accountHandler.List)
 		auth.GET("/auth/:account", app.accountHandler.Get)
 		auth.PATCH("/auth/update/:account", app.accountHandler.Update)
+		auth.DELETE("/auth/delete/:account", app.accountHandler.Delete)
 	}
 }
 

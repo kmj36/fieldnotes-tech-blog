@@ -161,3 +161,14 @@ func (s *AccountService) Update(ctx *gin.Context, account string, req dto.Update
 
     return changed, err
 }
+
+func (s *AccountService) Delete(ctx *gin.Context, account string) (*model.Account, error) {
+	var data *model.Account
+	var err error
+
+	if data, err = s.repo.Delete(ctx, account) ; err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}

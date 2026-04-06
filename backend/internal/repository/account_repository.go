@@ -43,6 +43,25 @@ func (repo *AccountRepository) Update(ctx *gin.Context, account string, updates 
     return &accountData, nil
 }
 
+func (repo *AccountRepository) Delete(ctx *gin.Context, account string) (*model.Account, error) {
+    var accountData model.Account
+
+    err := repo.db.WithContext(ctx).
+        Where("account_id = ?", account).
+        First(&accountData).Error
+    if err != nil {
+        return nil, err
+    }
+
+    err = repo.db.WithContext(ctx).
+        Delete(&accountData).Error
+    if err != nil {
+        return nil, err
+    }
+
+    return &accountData, nil
+}
+
 func (repo *AccountRepository) FindByAccountID(ctx *gin.Context, accountID string) (*model.Account, error) {
     var account model.Account
 

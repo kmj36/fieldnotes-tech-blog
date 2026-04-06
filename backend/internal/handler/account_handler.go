@@ -199,6 +199,31 @@ func (h *AccountHandler) Update(ctx *gin.Context) {
 	})
 }
 
+func (h *AccountHandler) Delete(ctx *gin.Context) {
+	var data *model.Account
+	var err error
+	var account = ctx.Param("account")
+
+	if account == "" {
+		h.respondBindError(ctx, errors.New("The 'account' parameter is empty."))
+        return
+	}
+
+	if data, err = h.service.Delete(ctx, account) ; err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseWrapper[any]{
+		Status: http.StatusOK,
+		Code: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully Deleted account %s.", data.AccountID),
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+	})
+}
+
 func (h *AccountHandler) respondBindError(ctx *gin.Context, err error) {
 	var ve validator.ValidationErrors
     switch {
