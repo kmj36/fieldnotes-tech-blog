@@ -3,15 +3,13 @@
 -- =====================
 INSERT INTO categories (parent_id, path, name, slug) 
 VALUES 
-  (NULL, 'tech', '기술', 'tech'), 
-  (NULL, 'life', '일상', 'life'), 
-  (
-    NULL, 'review', '리뷰', 'review'
-  );
+  (NULL, '/tech', '기술', 'tech'), 
+  (NULL, '/life', '일상', 'life'), 
+  (NULL, '/review', '리뷰', 'review');
 INSERT INTO categories (parent_id, path, name, slug) 
 SELECT 
   id, 
-  'tech/frontend', 
+  '/tech/frontend', 
   '프론트엔드', 
   'frontend' 
 FROM 
@@ -21,7 +19,7 @@ WHERE
 INSERT INTO categories (parent_id, path, name, slug) 
 SELECT 
   id, 
-  'tech/backend', 
+  '/tech/backend', 
   '백엔드', 
   'backend' 
 FROM 
@@ -31,7 +29,7 @@ WHERE
 INSERT INTO categories (parent_id, path, name, slug) 
 SELECT 
   id, 
-  'tech/devops', 
+  '/tech/devops', 
   'DevOps', 
   'devops' 
 FROM 
@@ -41,7 +39,7 @@ WHERE
 INSERT INTO categories (parent_id, path, name, slug) 
 SELECT 
   id, 
-  'life/travel', 
+  '/life/travel', 
   '여행', 
   'travel' 
 FROM 
@@ -51,7 +49,7 @@ WHERE
 INSERT INTO categories (parent_id, path, name, slug) 
 SELECT 
   id, 
-  'review/book', 
+  '/review/book', 
   '도서', 
   'book' 
 FROM 
@@ -61,7 +59,7 @@ WHERE
 INSERT INTO categories (parent_id, path, name, slug) 
 SELECT 
   id, 
-  'review/product', 
+  '/review/product', 
   '제품', 
   'product' 
 FROM 

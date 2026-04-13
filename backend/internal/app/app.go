@@ -26,6 +26,7 @@ type App struct {
 
 	pingHandler *handler.PingHandler
 	accountHandler *handler.AccountHandler
+	categoryHandler *handler.CategoryHandler
 
 	jwtManager 	*cryption.JWTManager
 
@@ -39,6 +40,8 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 
 	accountRepo := repository.NewAccountRepository(db)
 	accountService := service.NewAccountService(accountRepo, jwtManager)
+	categoryRepo := repository.NewCategoryRepository(db)
+	categoryService :=service.NewCategoryService(categoryRepo, jwtManager)
 
 	return &App{
 		router: gin.New(),
@@ -47,6 +50,7 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 		
 		pingHandler: handler.NewPingHandler(),
 		accountHandler: handler.NewAccountHandler(accountService),
+		categoryHandler: handler.NewCategoryHandler(categoryService),
 
 		jwtManager: jwtManager,
 		db: db,
@@ -105,6 +109,7 @@ func (app *App) setupRoutes() {
 		auth.GET("/auth/:account", app.accountHandler.Get)
 		auth.PATCH("/auth/update/:account", app.accountHandler.Update)
 		auth.DELETE("/auth/delete/:account", app.accountHandler.Delete)
+		auth.POST("/category", app.categoryHandler.Create)
 	}
 }
 

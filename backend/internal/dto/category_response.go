@@ -6,11 +6,10 @@ import "time"
 
 type CreateCategoryResponse struct {
 	ID				int32		`json:"id"`
-	ParentID		int32		`json:"parent_id"`
+	ParentID		*int32		`json:"parent_id"`
 	Name			string		`json:"name"`
 	Slug			string		`json:"slug"`
 	Path			string		`json:"path"`
-	Breadcrumb		string		`json:"breadcrumb"`
 	CreatedAt		time.Time	`json:"created_at"`
 	UpdatedAt		time.Time	`json:"updated_at"`
 }

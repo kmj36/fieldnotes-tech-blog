@@ -28,9 +28,9 @@ WHERE slug IN (
 -- =====================
 DELETE FROM categories
 WHERE path IN (
-  'tech/frontend', 'tech/backend', 'tech/devops',
-  'life/travel',
-  'review/book', 'review/product'
+  '/tech/frontend', '/tech/backend', '/tech/devops',
+  '/life/travel',
+  '/review/book', '/review/product'
 );
 
 DELETE FROM categories
