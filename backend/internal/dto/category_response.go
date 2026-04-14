@@ -14,40 +14,31 @@ type CreateCategoryResponse struct {
 	UpdatedAt		time.Time	`json:"updated_at"`
 }
 
-type ReadCategoriesResponse struct {
-	Meta	struct{
-		Sort struct {
-			SortBy		string	`json:"by"`
-			SortDir		string	`json:"dir"`
-		}	`json:"sort"`
-		Total 		int32		`json:"total"`
-		Filters struct {
-			Search 	string		`json:"search"`
-		}
-	}		`json:"meta"`
-	Data	[]CategoriesObject		`json:"data"`
-}
-
-type ReadCategoryResponse struct {
-	ID				int32		`json:"id"`
-	ParentID		int32		`json:"parent_id"`
+type CategorySummary struct {
+	Id				int32		`json:"id"`
+	ParentId		*int32		`json:"parent_id"`
 	Name			string		`json:"name"`
 	Slug			string		`json:"slug"`
-	Path			string		`json:"path"`
-	Breadcrumb		string		`json:"breadcrumb"`
-	CreatedAt		time.Time	`json:"created_at"`
-	UpdatedAt		time.Time	`json:"updated_at"`
+}
+type ListCategoriesMeta struct {
+	Sort 		SortMeta	`json:"sort"`
+	Limit 		int			`json:"limit"`
+	Filters 	CategorySummary	`json:"filters"`
 }
 
-type UpdateCategoryResponse struct {
-	Data		CreateCategoryResponse	`json:"data"`
-	Diff		CommonUpdateDiff		`json:"diff"`
+type ListCategoriesResponse struct {
+	Meta 	ListCategoriesMeta      `json:"meta"`
+	Data	[]*CategoriesObject		`json:"data"`
 }
 
 type CategoriesObject struct {
 	ID				int32		`json:"id"`
+	ParentID		*int32		`json:"parent_id"`
 	Name			string		`json:"name"`
 	Slug			string		`json:"slug"`
-	Breadcrumb		string		`json:"breadcrumb"`
-	Depth			int32		`json:"depth"`
+	Path			string		`json:"path"`
+}
+type UpdateCategoryResponse struct {
+	Data		CreateCategoryResponse	`json:"data"`
+	Diff		CommonUpdateDiff		`json:"diff"`
 }

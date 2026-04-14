@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
 	"gorm.io/gorm"
 )
@@ -52,4 +53,34 @@ func (repo *CategoryRepository) FindByID(ctx *gin.Context, id int32) (*model.Cat
         return nil, result.Error
     }
     return &category, nil
+}
+
+func (repo *CategoryRepository) List(ctx *gin.Context, req *dto.GetCategoryRequest) ([]*model.Category, error) {
+    var categories []*model.Category
+
+    query := repo.db.WithContext(ctx)
+
+    if req.ID != 0 {
+        query = query.Where("id = ?", req.ID)
+    }
+
+    if req.ParentID != nil {
+        query = query.Where("parent_id = ?", *req.ParentID)
+    }
+
+    if req.Name != "" {
+        query = query.Where("name LIKE ?", "%"+req.Name+"%")
+    }
+
+    if req.Slug != "" {
+        query = query.Where("slug = ?", req.Slug)
+    }
+
+    if req.SortBy != "" && req.SortDir != "" {
+        query = query.Order(req.SortBy + " " + req.SortDir)
+    }
+
+    query = query.Limit(req.Limit)
+
+    return categories, query.Find(&categories).Error
 }

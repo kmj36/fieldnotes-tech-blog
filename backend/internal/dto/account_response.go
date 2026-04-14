@@ -34,11 +34,6 @@ type LoginAccountResponse struct {
 	Token			string		`json:"token"`
 }
 
-type SortMeta struct {
-    SortBy  string `json:"by"`
-    SortDir string `json:"dir"`
-}
-
 type AccountSummary struct {
     Id        int    `json:"id"`
     AccountID string `json:"account_id"`

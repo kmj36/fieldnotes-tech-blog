@@ -8,10 +8,15 @@ type CreateCategoryRequest struct {
 	Slug			string		`json:"slug" binding:"required,max=150"`
 }
 
-type ReadCategoryRequest struct {
-	Search			string		`json:"search"`
-	SortBy			string		`json:"sort_by"`
-	SortDir			string		`json:"sort_dir"`
+type GetCategoryRequest struct {
+	Search			string		`form:"search"`
+	Limit			int			`form:"limit"`
+	SortBy			string		`form:"sort_by"`
+	SortDir			string		`form:"sort_dir"`
+	ID				int32		`form:"id"`
+	ParentID		*int32		`form:"parent_id"`
+	Name			string		`form:"name"`
+	Slug			string		`form:"slug"`
 }
 
 type UpdateCategoryRequest struct {

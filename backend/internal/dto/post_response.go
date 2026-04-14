@@ -15,7 +15,7 @@ type CreatePostResponse struct {
 	UpdatedAt		time.Time	`json:"updated_at"`
 	IsPublish		bool		`json:"is_publish"`
 	IsPrivate		bool		`json:"is_private"`
-	CategoryID		ReadCategoryResponse	`json:"category"`
+	CategoryID		CategoriesObject	`json:"category"`
 	TagID			[]ReadTagResponse		`json:"tags"`
 }
 
@@ -32,7 +32,7 @@ type ReadEachPostResponse struct {
 	Thumbnail		string		`json:"thumbnail"`
 	CreatedAt		time.Time	`json:"created_at"`
 	UpdatedAt		time.Time	`json:"updated_at"`
-	CategoryID		ReadCategoryResponse	`json:"category"`
+	CategoryID		CategoriesObject	`json:"category"`
 	TagID			[]ReadTagResponse		`json:"tags"`
 }
 
@@ -68,6 +68,6 @@ type CommonPostObject struct {
 	Excerpt			string		`json:"excerpt"`
 	Thumbnail		string		`json:"thumbnail"`
 	CreatedAt		time.Time	`json:"created_at"`
-	CategoryID		ReadCategoryResponse	`json:"category"`
+	CategoryID		CategoriesObject	`json:"category"`
 	TagID			[]ReadTagResponse		`json:"tags"`
 }

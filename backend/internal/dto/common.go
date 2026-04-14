@@ -23,6 +23,11 @@ type ResponseWrapper[T any] struct {
     Result    T         `json:"result,omitempty"` // 결과 obj 선택 필드
 }
 
+type SortMeta struct {
+    SortBy  string `json:"by"`
+    SortDir string `json:"dir"`
+}
+
 // Update 작업 변경 필드
 type CommonUpdateDiff struct {
     ChangedFields []string		`json:"changed_fields"`

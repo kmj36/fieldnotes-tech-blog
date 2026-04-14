@@ -54,3 +54,44 @@ func (h *CategoryHandler) Create(ctx *gin.Context) {
 		},
 	})
 }
+
+func (h *CategoryHandler) List(ctx *gin.Context) {
+	var req dto.GetCategoryRequest
+	var categories []*dto.CategoriesObject
+	var err error
+
+	if bindErr := ctx.ShouldBindQuery(&req); bindErr != nil {
+		h.respondBindError(ctx, bindErr)
+        return
+	}
+
+	if categories, err = h.service.List(ctx, &req); err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseWrapper[dto.ListCategoriesResponse]{
+		Status: http.StatusOK,
+		Code: dto.ErrOK.Message,
+		Detail: "Successfully retrieved categories.",
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: dto.ListCategoriesResponse{
+			Meta: dto.ListCategoriesMeta{
+				Sort: dto.SortMeta{
+					SortBy: req.SortBy,
+					SortDir: req.SortDir,
+				},
+				Limit: req.Limit,
+				Filters: dto.CategorySummary{
+					Id: req.ID,
+					ParentId: req.ParentID,
+					Name: req.Name,
+					Slug: req.Slug,
+				},
+			},
+			Data: categories,
+		},
+	})
+}

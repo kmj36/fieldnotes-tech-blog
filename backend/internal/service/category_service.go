@@ -53,3 +53,41 @@ func (s *CategoryService) Create(ctx *gin.Context, req *dto.CreateCategoryReques
 
 	return s.repo.Create(ctx, newCategory)
 }
+
+func (s *CategoryService) List(ctx *gin.Context, req *dto.GetCategoryRequest) ([]*dto.CategoriesObject, error) {
+	var categories []*dto.CategoriesObject
+	var datas	[]*model.Category
+	var err		error
+	
+
+	if req.SortBy == "" {
+		req.SortBy = "id"
+	}
+
+	if req.SortDir == "" {
+		req.SortDir = "desc"
+	}
+
+	if req.Limit == 0 {
+		req.Limit = 10
+	}
+
+	datas, err = s.repo.List(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	categories = make([]*dto.CategoriesObject, len(datas))
+
+	for idx, data := range datas {
+		categories[idx] = &dto.CategoriesObject{
+			ID: data.ID,
+			ParentID: data.ParentID,
+			Name: data.Name,
+			Slug: data.Slug,
+			Path: data.Path,
+		}
+	}
+
+	return categories, nil
+}
