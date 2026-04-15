@@ -84,3 +84,33 @@ func (repo *CategoryRepository) List(ctx *gin.Context, req *dto.GetCategoryReque
 
     return categories, query.Find(&categories).Error
 }
+
+func (repo *CategoryRepository) Update(ctx *gin.Context, id int32, updates map[string]interface{}) (*model.Category, error) {
+    var categoryData model.Category
+
+    err := repo.db.WithContext(ctx).
+        Where("id = ?", id).
+        First(&categoryData).Error
+    if err != nil {
+        return nil, err
+    }
+
+    // 업데이트 후 재조회
+    err = repo.db.WithContext(ctx).
+        Model(&categoryData).
+        Updates(updates).Error
+    if err != nil {
+        return nil, err
+    }
+
+    return &categoryData, nil
+}
+
+func (repo *CategoryRepository) UpdateDescendantPaths(ctx *gin.Context, oldPath string, newPath string) error {
+    var categoryData model.Category
+
+    return repo.db.WithContext(ctx).
+        Model(&categoryData).
+        Where("path LIKE ?", oldPath+"/%").
+        Update("path", gorm.Expr("REPLACE(path, ?, ?)", oldPath, newPath)).Error
+}

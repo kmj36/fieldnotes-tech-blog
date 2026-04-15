@@ -91,3 +91,85 @@ func (s *CategoryService) List(ctx *gin.Context, req *dto.GetCategoryRequest) ([
 
 	return categories, nil
 }
+
+func (s *CategoryService) Update(ctx *gin.Context, id int32, req dto.UpdateCategoryRequest) (*dto.UpdateCategoryResponse, error) {
+	var changed *dto.UpdateCategoryResponse
+	var data *model.Category
+	var err error
+
+	updates := map[string]interface{}{}
+
+	// 업데이트 전 현재 카테고리 조회
+	current, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	oldPath := current.Path
+
+    if req.Name != "" {
+        updates["name"] = req.Name
+    }
+
+	slug := current.Slug
+	if req.Slug != "" {
+		slug = req.Slug
+		updates["slug"] = slug
+	}
+
+	// parent_id가 전달된 경우에만 path 재조합
+	if req.ParentID != nil {
+		if *req.ParentID == 0 {
+			// 최상위로 변경
+			updates["path"] = "/" + slug
+			updates["parent_id"] = nil
+		} else {
+			// 특정 부모로 변경
+			parent, err := s.repo.FindByID(ctx, *req.ParentID)
+			if err != nil {
+				return nil, err
+			}
+			updates["path"] = parent.Path + "/" + slug
+			updates["parent_id"] = req.ParentID
+		}
+	} else if req.Slug != "" {
+		// parent_id 변경 없이 slug만 변경된 경우 path 재조합
+		if current.ParentID == nil {
+			updates["path"] = "/" + slug
+		} else {
+			parent, err := s.repo.FindByID(ctx, *current.ParentID)
+			if err != nil {
+				return nil, err
+			}
+			updates["path"] = parent.Path + "/" + slug
+		}
+	}
+
+	var changedFields []string
+    for key := range updates {
+        changedFields = append(changedFields, key)
+    }
+	
+	if data, err = s.repo.Update(ctx, id, updates) ; err != nil {
+		return nil, err
+	}
+
+	// 하위 카테고리 연쇄 업데이트
+	s.repo.UpdateDescendantPaths(ctx, oldPath, updates["path"].(string))
+
+	changed = &dto.UpdateCategoryResponse{
+		Data: dto.CreateCategoryResponse{
+			ID: data.ID,
+			ParentID: data.ParentID,
+			Name: data.Name,
+			Slug: data.Slug,
+			Path: data.Path,
+			CreatedAt: data.CreatedAt,
+			UpdatedAt: data.UpdatedAt,
+		},
+		Diff: dto.CommonUpdateDiff{
+			ChangedFields: changedFields,
+		},
+	}
+
+    return changed, err
+}

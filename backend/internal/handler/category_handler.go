@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -93,5 +95,48 @@ func (h *CategoryHandler) List(ctx *gin.Context) {
 			},
 			Data: categories,
 		},
+	})
+}
+
+func (h *CategoryHandler) Update(ctx *gin.Context) {
+	var req dto.UpdateCategoryRequest
+	var data *dto.UpdateCategoryResponse
+	var err error
+	idStr := ctx.Param("id")
+
+	if idStr == "" {
+		h.respondBindError(ctx, errors.New("The 'id' parameter is empty."))
+        return
+	}
+
+	id, err := strconv.ParseInt(idStr, 10, 32)
+    if err != nil {
+        h.respondBindError(ctx, err)
+        return
+    }
+
+	if bindErr := ctx.ShouldBindJSON(&req); bindErr != nil {
+		h.respondBindError(ctx, bindErr)
+        return
+	}
+	
+	if req == (dto.UpdateCategoryRequest{}) {
+		h.respondBindError(ctx, dto.CErrUpdateEmptyParam)
+        return
+	}
+
+	if data, err = h.service.Update(ctx, int32(id), req) ; err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseWrapper[*dto.UpdateCategoryResponse]{
+		Status: http.StatusOK,
+		Code: dto.ErrOK.Message,
+		Detail: "Successfully changed category data.",
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: data,
 	})
 }

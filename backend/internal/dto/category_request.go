@@ -20,7 +20,7 @@ type GetCategoryRequest struct {
 }
 
 type UpdateCategoryRequest struct {
-	ParentID		int32		`json:"parent_id"`
+	ParentID		*int32		`json:"parent_id"`
 	Name			string		`json:"name" binding:"max=100"`
 	Slug			string		`json:"slug" binding:"max=150"`
 }
