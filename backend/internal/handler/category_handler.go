@@ -132,7 +132,7 @@ func (h *CategoryHandler) Update(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, dto.ResponseWrapper[*dto.UpdateCategoryResponse]{
 		Status: http.StatusOK,
-		Code: dto.ErrOK.Message,
+		Code: dto.ErrOK.Code,
 		Detail: "Successfully changed category data.",
 		Message: dto.ErrOK.Message,
 		Timestamp: time.Now().UTC(),
