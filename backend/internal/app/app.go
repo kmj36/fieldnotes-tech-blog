@@ -112,6 +112,7 @@ func (app *App) setupRoutes() {
 		auth.DELETE("/auth/delete/:account", app.accountHandler.Delete)
 		auth.POST("/category", app.categoryHandler.Create)
 		auth.PATCH("/category/:id", app.categoryHandler.Update)
+		auth.DELETE("/category/:id", app.categoryHandler.Delete)
 	}
 }
 

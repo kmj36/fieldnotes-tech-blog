@@ -114,3 +114,32 @@ func (repo *CategoryRepository) UpdateDescendantPaths(ctx *gin.Context, oldPath 
         Where("path LIKE ?", oldPath+"/%").
         Update("path", gorm.Expr("REPLACE(path, ?, ?)", oldPath, newPath)).Error
 }
+
+func (repo *CategoryRepository) Delete(ctx *gin.Context, id int32) (*model.Category, error) {
+    var categoryData model.Category
+
+    err := repo.db.WithContext(ctx).
+        Where("id = ?", id).
+        First(&categoryData).Error
+    if err != nil {
+        return nil, err
+    }
+
+    err = repo.db.WithContext(ctx).
+        Delete(&categoryData).Error
+    if err != nil {
+        return nil, err
+    }
+
+    return &categoryData, nil
+}
+
+func (repo *CategoryRepository) ResetDescendantPaths(ctx *gin.Context, parentPath string) error {
+    return repo.db.WithContext(ctx).
+        Model(&model.Category{}).
+        Where("path LIKE ?", parentPath+"/%").
+        Updates(map[string]interface{}{
+            "parent_id": nil,
+            "path": gorm.Expr("'/' || split_part(path, '/', array_length(string_to_array(path, '/'), 1))"),
+        }).Error
+}

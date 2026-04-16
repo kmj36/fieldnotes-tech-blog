@@ -20,7 +20,7 @@ CREATE TABLE posts (
     FOREIGN KEY (account_id) REFERENCES accounts(account_id),
 
   CONSTRAINT fk_posts_category
-    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
 
   CONSTRAINT uq_posts_account_slug
     UNIQUE (account_id, slug)

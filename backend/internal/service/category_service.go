@@ -173,3 +173,22 @@ func (s *CategoryService) Update(ctx *gin.Context, id int32, req dto.UpdateCateg
 
     return changed, err
 }
+
+func (s *CategoryService) Delete(ctx *gin.Context, id int32) (*model.Category, error) {
+	var data *model.Category
+	var current *model.Category
+	var err error
+
+	current, err = s.repo.FindByID(ctx, id)
+    if err != nil {
+        return nil, err
+    }
+
+	if data, err = s.repo.Delete(ctx, id) ; err != nil {
+		return nil, err
+	}
+
+	s.repo.ResetDescendantPaths(ctx, current.Path)
+
+	return data, nil
+}
