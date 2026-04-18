@@ -36,6 +36,7 @@ type CommonUpdateDiff struct {
 var CErrAccountAlreadyExists = errors.New("account already exists.")
 var CErrCategoryAlreadyExists = errors.New("category already exists.")
 var CErrNicknameAlreadyExists = errors.New("nickname already exists.")
+var CErrTagAlreadyExists = errors.New("tag already exists.")
 var CErrLoginFailed = errors.New("Invalid credentials.")
 var CErrUpdateEmptyParam = errors.New("no fields to update")
 

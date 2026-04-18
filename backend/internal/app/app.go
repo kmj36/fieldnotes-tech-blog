@@ -24,9 +24,10 @@ type App struct {
 
 	cfg 		*config.Config
 
-	pingHandler *handler.PingHandler
-	accountHandler *handler.AccountHandler
+	pingHandler 	*handler.PingHandler
+	accountHandler 	*handler.AccountHandler
 	categoryHandler *handler.CategoryHandler
+	tagHandler		*handler.TagHandler
 
 	jwtManager 	*cryption.JWTManager
 
@@ -41,7 +42,9 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 	accountRepo := repository.NewAccountRepository(db)
 	accountService := service.NewAccountService(accountRepo, jwtManager)
 	categoryRepo := repository.NewCategoryRepository(db)
-	categoryService :=service.NewCategoryService(categoryRepo, jwtManager)
+	categoryService := service.NewCategoryService(categoryRepo, jwtManager)
+	tagRepo := repository.NewTagRepository(db)
+	tagService := service.NewTagService(tagRepo, jwtManager)
 
 	return &App{
 		router: gin.New(),
@@ -51,6 +54,7 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 		pingHandler: handler.NewPingHandler(),
 		accountHandler: handler.NewAccountHandler(accountService),
 		categoryHandler: handler.NewCategoryHandler(categoryService),
+		tagHandler: handler.NewTagHandler(tagService),
 
 		jwtManager: jwtManager,
 		db: db,
@@ -113,6 +117,7 @@ func (app *App) setupRoutes() {
 		auth.POST("/category", app.categoryHandler.Create)
 		auth.PATCH("/category/:id", app.categoryHandler.Update)
 		auth.DELETE("/category/:id", app.categoryHandler.Delete)
+		auth.POST("/tag", app.tagHandler.Create)
 	}
 }
 
