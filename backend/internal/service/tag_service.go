@@ -37,3 +37,43 @@ func (s *TagService) Create(ctx *gin.Context, req *dto.CreateTagRequest) (*model
 
 	return s.repo.Create(ctx, newTag)
 }
+
+func (s *TagService) Update(ctx *gin.Context, id int32, req dto.UpdateTagRequest) (*dto.UpdateTagResponse, error) {
+	var changed *dto.UpdateTagResponse
+	var data *model.Tag
+	var err error
+
+	updates := map[string]interface{}{}
+
+    if req.Name != "" {
+        updates["name"] = req.Name
+    }
+
+	if req.Slug != "" {
+		updates["slug"] = req.Slug
+	}
+
+	var changedFields []string
+    for key := range updates {
+        changedFields = append(changedFields, key)
+    }
+	
+	if data, err = s.repo.Update(ctx, id, updates) ; err != nil {
+		return nil, err
+	}
+
+	changed = &dto.UpdateTagResponse{
+		Data: dto.CreateTagResponse{
+			ID: data.ID,
+			Name: data.Name,
+			Slug: data.Slug,
+			CreatedAt: data.CreatedAt,
+			UpdatedAt: data.UpdatedAt,
+		},
+		Diff: dto.CommonUpdateDiff{
+			ChangedFields: changedFields,
+		},
+	}
+
+    return changed, err
+}

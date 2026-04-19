@@ -38,3 +38,24 @@ func (repo *TagRepository) Create(ctx *gin.Context, newTag *model.Tag) (*model.T
     }
     return newTag, nil
 }
+
+func (repo *TagRepository) Update(ctx *gin.Context, id int32, updates map[string]interface{}) (*model.Tag, error) {
+   var tagData model.Tag
+
+    err := repo.db.WithContext(ctx).
+        Where("id = ?", id).
+        First(&tagData).Error
+    if err != nil {
+        return nil, err
+    }
+
+    // 업데이트 후 재조회
+    err = repo.db.WithContext(ctx).
+        Model(&tagData).
+        Updates(updates).Error
+    if err != nil {
+        return nil, err
+    }
+
+    return &tagData, nil
+}
