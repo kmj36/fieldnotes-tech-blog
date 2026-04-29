@@ -18,6 +18,42 @@ func NewTagService(repo *repository.TagRepository, jwtManager *cryption.JWTManag
 	return &TagService{repo: repo, jwt:jwtManager}
 }
 
+func (s *TagService) List(ctx *gin.Context, req *dto.GetTagRequest) ([]*dto.TagObject, error) {
+	var tags []*dto.TagObject
+	var datas	[]*model.Tag
+	var err		error
+	
+
+	if req.SortBy == "" {
+		req.SortBy = "id"
+	}
+
+	if req.SortDir == "" {
+		req.SortDir = "desc"
+	}
+
+	if req.Limit == 0 {
+		req.Limit = 10
+	}
+
+	datas, err = s.repo.List(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	tags = make([]*dto.TagObject, len(datas))
+
+	for idx, data := range datas {
+		tags[idx] = &dto.TagObject{
+			ID: data.ID,
+			Name: data.Name,
+			Slug: data.Slug,
+		}
+	}
+
+	return tags, nil
+}
+
 func (s *TagService) Create(ctx *gin.Context, req *dto.CreateTagRequest) (*model.Tag, error) {
 	var existing *model.Tag
 	var err error

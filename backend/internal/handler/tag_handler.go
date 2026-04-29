@@ -22,6 +22,46 @@ func NewTagHandler(service *service.TagService) *TagHandler {
 	return &TagHandler{service: service}
 }
 
+func (h *TagHandler) List(ctx *gin.Context) {
+	var req dto.GetTagRequest
+	var tags []*dto.TagObject
+	var err error
+
+	if bindErr := ctx.ShouldBindQuery(&req); bindErr != nil {
+		h.respondBindError(ctx, bindErr)
+        return
+	}
+
+	if tags, err = h.service.List(ctx, &req); err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseWrapper[dto.ListTagsResponse]{
+		Status: http.StatusOK,
+		Code: dto.ErrOK.Message,
+		Detail: "Successfully retrieved tags.",
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: dto.ListTagsResponse{
+			Meta: dto.ListTagsMeta{
+				Sort: dto.SortMeta{
+					SortBy: req.SortBy,
+					SortDir: req.SortDir,
+				},
+				Limit: req.Limit,
+				Filters: dto.TagSummary{
+					ID: int32(req.ID),
+					Name: req.Name,
+					Slug: req.Slug,
+				},
+			},
+			Data: tags,
+		},
+	})
+}
+
 func (h *TagHandler) Create(ctx *gin.Context) {
 	var req dto.CreateTagRequest
 	var tag *model.Tag

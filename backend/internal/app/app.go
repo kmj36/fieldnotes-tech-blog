@@ -103,6 +103,7 @@ func (app *App) setupRoutes() {
         api.GET("/ping", app.pingHandler.Ping)
 		api.POST("/auth/login", app.accountHandler.Login)
 		api.GET("/category", app.categoryHandler.List)
+		api.GET("/tag", app.tagHandler.List)
 	}
 
 	// 인증 라우트
