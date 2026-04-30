@@ -120,6 +120,7 @@ func (app *App) setupRoutes() {
 		auth.DELETE("/category/:id", app.categoryHandler.Delete)
 		auth.POST("/tag", app.tagHandler.Create)
 		auth.PATCH("/tag/:id", app.tagHandler.Update)
+		auth.DELETE("/tag/:id", app.tagHandler.Delete)
 	}
 }
 

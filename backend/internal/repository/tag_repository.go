@@ -31,6 +31,22 @@ func (repo *TagRepository) FindByName(ctx *gin.Context, name string) (*model.Tag
     return &tag, nil
 }
 
+
+func (repo *TagRepository) FindByID(ctx *gin.Context, id int32) (*model.Tag, error) {
+	var tag model.Tag
+	
+	query := repo.db.WithContext(ctx)
+	
+    result := query.Where("id = ?", id).First(&tag)
+    if result.Error != nil {
+        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            return nil, nil // 없으면 nil 반환
+        }
+        return nil, result.Error
+    }
+    return &tag, nil
+}
+
 func (repo *TagRepository) List(ctx *gin.Context, req *dto.GetTagRequest) ([]*model.Tag, error) {
     var tags []*model.Tag
 
@@ -80,6 +96,25 @@ func (repo *TagRepository) Update(ctx *gin.Context, id int32, updates map[string
     err = repo.db.WithContext(ctx).
         Model(&tagData).
         Updates(updates).Error
+    if err != nil {
+        return nil, err
+    }
+
+    return &tagData, nil
+}
+
+func (repo *TagRepository) Delete(ctx *gin.Context, id int32) (*model.Tag, error) {
+    var tagData model.Tag
+
+    err := repo.db.WithContext(ctx).
+        Where("id = ?", id).
+        First(&tagData).Error
+    if err != nil {
+        return nil, err
+    }
+
+    err = repo.db.WithContext(ctx).
+        Delete(&tagData).Error
     if err != nil {
         return nil, err
     }

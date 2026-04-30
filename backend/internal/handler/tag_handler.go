@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -135,5 +136,36 @@ func (h *TagHandler) Update(ctx *gin.Context) {
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
 		Result: data,
+	})
+}
+
+func (h *TagHandler) Delete(ctx *gin.Context) {
+	var data *model.Tag
+	var err error
+	idStr := ctx.Param("id")
+
+	if idStr == "" {
+		h.respondBindError(ctx, errors.New("The 'id' parameter is empty."))
+        return
+	}
+
+	id, err := strconv.ParseInt(idStr, 10, 32)
+    if err != nil {
+        h.respondBindError(ctx, err)
+        return
+    }
+
+	if data, err = h.service.Delete(ctx, int32(id)) ; err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseWrapper[any]{
+		Status: http.StatusOK,
+		Code: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully Deleted Tag %s.", data.Name),
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
 	})
 }

@@ -113,3 +113,14 @@ func (s *TagService) Update(ctx *gin.Context, id int32, req dto.UpdateTagRequest
 
     return changed, err
 }
+
+func (s *TagService) Delete(ctx *gin.Context, id int32) (*model.Tag, error) {
+	var data *model.Tag
+	var err error
+
+	if data, err = s.repo.Delete(ctx, id) ; err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
