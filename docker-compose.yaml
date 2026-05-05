@@ -43,6 +43,14 @@ services:
     command: ["-path", "/migrations", "-database",  "${DB_SCHEME}://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable", "up"]
     volumes:
       - ./migrations:/migrations
+  swagger-ui:
+    image: docker.swagger.io/swaggerapi/swagger-ui
+    ports:
+      - "18080:8080"
+    environment:
+      SWAGGER_JSON: /app/openapi.yaml
+    volumes:
+      - ./backend/api/openapi.yaml:/app/openapi.yaml
 
 networks:
   blog_net:
