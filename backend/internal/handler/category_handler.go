@@ -34,26 +34,14 @@ func (h *CategoryHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[dto.CreateCategoryReponse]{
+	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[*dto.CreateCategoryReponse]{
 		Status: dto.ErrCreated.Status,
 		Code: dto.ErrCreated.Code,
 		Message: dto.ErrCreated.Message,
 		Detail: fmt.Sprintf("Successfully added columns to '%s' category.", category.Name),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: dto.CreateCategoryReponse{
-			CategoryDetail: dto.CategoryDetail{
-				CategoryPublic: dto.CategoryPublic{
-					ID: category.ID,
-					ParentID: category.ParentID,
-					Name: category.Name,
-					Slug: category.Slug,
-					Path: category.Path,
-				},
-				CreatedAt: category.CreatedAt,
-				UpdatedAt: category.UpdatedAt,
-			},
-		},
+		Result: category,
 	})
 }
 
@@ -67,35 +55,20 @@ func (h *CategoryHandler) List(ctx *gin.Context) {
         return
 	}
 
-	categories, err := h.service.GetList(ctx, &req)
+	categories, err := h.service.List(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[dto.ReadCategoriesResponse]{
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.ReadCategoriesResponse]{
 		Status: dto.ErrOK.Status,
 		Code: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully retrieved %d categories.", len(categories)),
+		Detail: fmt.Sprintf("Successfully retrieved %d categories.", len(categories.Datas)),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: dto.ReadCategoriesResponse{
-			Meta: dto.ReadCategoriesMetadata{
-				Sort: dto.SortMeta{
-					SortBy: req.SortBy,
-					SortDir: req.SortDir,
-				},
-				Limit: req.Limit,
-				Filters: dto.ReadCategoriesFilters{
-					ID: req.ID,
-					ParentID: req.ParentID,
-					Name: req.Name,
-					Slug: req.Slug,
-				},
-			},
-			Datas: categories,
-		},
+		Result: categories,
 	})
 }
 
@@ -117,7 +90,7 @@ func (h *CategoryHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	res, err := h.service.UpdateFields(ctx, &req)
+	res, err := h.service.Update(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return

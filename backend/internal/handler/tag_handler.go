@@ -41,17 +41,7 @@ func (h *TagHandler) Create(ctx *gin.Context) {
 		Message: dto.ErrCreated.Message,
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: &dto.CreateTagResponse{
-			TagDetail: dto.TagDetail{
-				TagPublic: dto.TagPublic{
-					ID: tag.ID,
-					Name: tag.Name,
-					Slug: tag.Slug,
-				},
-				CreatedAt: tag.CreatedAt,
-				UpdatedAt: tag.UpdatedAt,
-			},
-		},
+		Result: tag,
 	})
 }
 
@@ -65,34 +55,20 @@ func (h *TagHandler) List(ctx *gin.Context) {
         return
 	}
 
-	tags, err := h.service.GetList(ctx, &req)
+	tags, err := h.service.List(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[dto.ReadTagsResponse]{
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.ReadTagsResponse]{
 		Status: dto.ErrOK.Status,
 		Code: dto.ErrOK.Code,
-		Detail: fmt.Sprintf("Successfully retrieved %d tags.", len(tags)),
+		Detail: fmt.Sprintf("Successfully retrieved %d tags.", len(tags.Datas)),
 		Message: dto.ErrOK.Message,
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: dto.ReadTagsResponse{
-			Meta: dto.ReadTagsMetadata{
-				Sort: dto.SortMeta{
-					SortBy: req.SortBy,
-					SortDir: req.SortDir,
-				},
-				Limit: req.Limit,
-				Filters: dto.ReadTagsFilters{
-					ID: req.ID,
-					Name: req.Name,
-					Slug: req.Slug,
-				},
-			},
-			Datas: tags,
-		},
+		Result: tags,
 	})
 }
 
@@ -114,7 +90,7 @@ func (h *TagHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	res, err := h.service.UpdateFields(ctx, &req)
+	res, err := h.service.Update(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return

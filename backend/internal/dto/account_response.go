@@ -22,6 +22,7 @@ type AccountDetail struct {
 }
 
 type LoginAccountResponse struct {
+    AccountID       string
 	Token			string		`json:"token"`
 }
 
@@ -59,4 +60,8 @@ type UpdateAccountData struct {
 type UpdateAccountResponse struct {
 	Data		UpdateAccountData	`json:"data"`
 	Diff		CommonUpdateDiff	`json:"diff"`
+}
+
+type DeleteAccountResponse struct {
+    AccountID		string
 }

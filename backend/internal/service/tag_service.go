@@ -19,7 +19,7 @@ func NewTagService(repo *repository.TagRepository, jwtManager *cryption.JWTManag
 	return &TagService{repo: repo, jwt:jwtManager}
 }
 
-func (s *TagService) Create(ctx *gin.Context, req *dto.CreateTagRequest) (*model.Tag, error) {
+func (s *TagService) Create(ctx *gin.Context, req *dto.CreateTagRequest) (*dto.CreateTagResponse, error) {
 	var existing *model.Tag
 	var err error
 
@@ -36,13 +36,30 @@ func (s *TagService) Create(ctx *gin.Context, req *dto.CreateTagRequest) (*model
 		Slug: req.Slug,
 	}
 
-	return s.repo.Create(ctx, newTag)
+	tag, err := s.repo.Create(ctx, newTag)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &dto.CreateTagResponse{
+		TagDetail: dto.TagDetail{
+			TagPublic: dto.TagPublic{
+				ID: tag.ID,
+				Name: tag.Name,
+				Slug: tag.Slug,
+			},
+			CreatedAt: tag.CreatedAt,
+			UpdatedAt: tag.UpdatedAt,
+		},
+	}
+
+	return res, nil
 }
 
-func (s *TagService) GetList(ctx *gin.Context, req *dto.ReadTagsRequest) ([]*dto.TagPublic, error) {
+func (s *TagService) List(ctx *gin.Context, req *dto.ReadTagsRequest) (*dto.ReadTagsResponse, error) {
 	var result	[]*dto.TagPublic
 
-	array, err := s.repo.GetList(ctx, req)
+	array, err := s.repo.List(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +74,26 @@ func (s *TagService) GetList(ctx *gin.Context, req *dto.ReadTagsRequest) ([]*dto
 		}
 	}
 
-	return result, nil
+	res := &dto.ReadTagsResponse{
+		Meta: dto.ReadTagsMetadata{
+			Sort: dto.SortMeta{
+				SortBy: req.SortBy,
+				SortDir: req.SortDir,
+			},
+			Limit: req.Limit,
+			Filters: dto.ReadTagsFilters{
+				ID: req.ID,
+				Name: req.Name,
+				Slug: req.Slug,
+			},
+		},
+		Datas: result,
+	}
+
+	return res, nil
 }
 
-func (s *TagService) UpdateFields(ctx *gin.Context, req *dto.UpdateTagRequest) (*dto.UpdateTagResponse, error) {
+func (s *TagService) Update(ctx *gin.Context, req *dto.UpdateTagRequest) (*dto.UpdateTagResponse, error) {
 	existing, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
 		return nil, err
@@ -92,7 +125,7 @@ func (s *TagService) UpdateFields(ctx *gin.Context, req *dto.UpdateTagRequest) (
 		return nil, err
 	}
 
-    return &dto.UpdateTagResponse{
+	res := &dto.UpdateTagResponse{
 		Data: dto.TagDetail{
 			TagPublic: dto.TagPublic{
 				ID: data.ID,
@@ -105,10 +138,12 @@ func (s *TagService) UpdateFields(ctx *gin.Context, req *dto.UpdateTagRequest) (
 		Diff: dto.CommonUpdateDiff{
 			ChangedFields: changedFields,
 		},
-	}, nil
+	}
+
+    return res, nil
 }
 
-func (s *TagService) Delete(ctx *gin.Context, req *dto.DeleteTagRequest) (*model.Tag, error) {
+func (s *TagService) Delete(ctx *gin.Context, req *dto.DeleteTagRequest) (*dto.DeleteTagResponse, error) {
 	current, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
 		return nil, err
@@ -122,5 +157,9 @@ func (s *TagService) Delete(ctx *gin.Context, req *dto.DeleteTagRequest) (*model
 		return nil, err
 	}
 
-	return result, nil
+	res := &dto.DeleteTagResponse{
+		Name: result.Name,
+	}
+
+	return res, nil
 }

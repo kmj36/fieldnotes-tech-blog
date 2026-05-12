@@ -56,7 +56,7 @@ func (repo *CategoryRepository) CountByParentID(ctx *gin.Context, id int16) (int
     return count, err
 }
 
-func (repo *CategoryRepository) GetList(ctx *gin.Context, req *dto.ReadCategoriesRequest) ([]*model.Category, error) {
+func (repo *CategoryRepository) List(ctx *gin.Context, req *dto.ReadCategoriesRequest) ([]*model.Category, error) {
     var categories []*model.Category
 
     query := repo.db.WithContext(ctx)

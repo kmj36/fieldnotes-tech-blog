@@ -48,7 +48,7 @@ func (repo *TagRepository) FindByID(ctx *gin.Context, id int16) (*model.Tag, err
     return &tag, nil
 }
 
-func (repo *TagRepository) GetList(ctx *gin.Context, req *dto.ReadTagsRequest) ([]*model.Tag, error) {
+func (repo *TagRepository) List(ctx *gin.Context, req *dto.ReadTagsRequest) ([]*model.Tag, error) {
     var tags []*model.Tag
 
     query := repo.db.WithContext(ctx)

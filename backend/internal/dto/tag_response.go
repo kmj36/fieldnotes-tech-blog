@@ -39,3 +39,7 @@ type UpdateTagResponse struct {
 	Data	TagDetail	`json:"data"`
 	Diff	CommonUpdateDiff	`json:"diff"`
 }
+
+type DeleteTagResponse struct {
+	Name	string
+}

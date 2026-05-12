@@ -19,7 +19,7 @@ func NewAccountService(repo *repository.AccountRepository, jwtManager *cryption.
 	return &AccountService{repo: repo, jwt:jwtManager}
 }
 
-func (s *AccountService) Create(ctx *gin.Context, req *dto.CreateAccountRequest) (*model.Account, error) {
+func (s *AccountService) Create(ctx *gin.Context, req *dto.CreateAccountRequest) (*dto.CreateAccountReponse, error) {
 	var existing *model.Account
 
 	existing, err := s.repo.FindByAccountID(ctx, req.AccountID)
@@ -44,34 +44,59 @@ func (s *AccountService) Create(ctx *gin.Context, req *dto.CreateAccountRequest)
 		Status: req.Status,
 	}
 
-	return s.repo.Create(ctx, newAccount)
+	createdAccount, err := s.repo.Create(ctx, newAccount)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &dto.CreateAccountReponse{
+		AccountDetail: dto.AccountDetail{
+			AccountPublic: dto.AccountPublic{
+				ID: createdAccount.ID,
+				AccountID: createdAccount.AccountID,
+				Nickname: createdAccount.Nickname,
+				AvatarURL: createdAccount.AvatarURL,
+				Role: createdAccount.Role,
+				Status: createdAccount.Status,
+			},
+			CreatedAt: createdAccount.CreatedAt,
+			UpdatedAt: createdAccount.UpdatedAt,
+		},
+	}
+
+	return res, nil
 }
 
-func (s *AccountService) Login(ctx *gin.Context, req *dto.LoginAccountRequest) (accountID string, token string, err error) {
+func (s *AccountService) Login(ctx *gin.Context, req *dto.LoginAccountRequest) (*dto.LoginAccountResponse, error) {
 	account, err := s.repo.FindByAccountID(ctx, req.AccountID)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 	if account == nil {
-		return "", "", dto.CErrLoginFailed
+		return nil, dto.CErrLoginFailed
 	}
 
 	if cryption.VerifyPassword(req.Password, account.PasswordHash) == false {
-		return "", "", dto.CErrLoginFailed
+		return nil, dto.CErrLoginFailed
 	}
 
 	token, jwtErr := s.jwt.GenerateJWT(account.AccountID, account.Role)
 	if jwtErr != nil {
-		return "", "", jwtErr
+		return nil, jwtErr
 	}
 
-	return account.AccountID, token, nil
+	res := &dto.LoginAccountResponse{
+		AccountID: account.AccountID,
+		Token: token,
+	}
+
+	return res, nil
 }
 
-func (s *AccountService) GetList(ctx *gin.Context, req *dto.ListAccountsRequest) ([]*dto.AccountPublic, error) {
+func (s *AccountService) List(ctx *gin.Context, req *dto.ListAccountsRequest) (*dto.ListAccountsResponse, error) {
 	var result	[]*dto.AccountPublic
 
-	array, err := s.repo.GetList(ctx, req)
+	array, err := s.repo.List(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -89,10 +114,29 @@ func (s *AccountService) GetList(ctx *gin.Context, req *dto.ListAccountsRequest)
 		}
 	}
 
-	return result, nil
+	res := &dto.ListAccountsResponse{
+		Meta: dto.ListAccountMeta{
+			Sort: dto.SortMeta{
+				SortBy: req.SortBy,
+				SortDir: req.SortDir,
+			},
+			Limit: req.Limit,
+			Filters: dto.ListAccountFilter{
+				ID: req.ID,
+				AccountID: req.AccountID,
+				Nickname: req.Nickname,
+				AvatarURL: req.AvatarURL,
+				Role: req.Role,
+				Status: req.Status,
+			},
+		},
+		Data: result,
+	}
+
+	return res, nil
 }
 
-func (s *AccountService) GetAccount(ctx *gin.Context, req *dto.ReadAccountRequest) (*dto.AccountDetail, error) {
+func (s *AccountService) Read(ctx *gin.Context, req *dto.ReadAccountRequest) (*dto.ReadAccountResponse, error) {
 	account, err := s.repo.FindByAccountID(ctx, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -101,21 +145,25 @@ func (s *AccountService) GetAccount(ctx *gin.Context, req *dto.ReadAccountReques
 		return nil, gorm.ErrRecordNotFound
 	}
 
-	return &dto.AccountDetail{
-		AccountPublic: dto.AccountPublic{
-			ID: account.ID,
-			AccountID: account.AccountID,
-			Nickname: account.Nickname,
-			AvatarURL: account.AvatarURL,
-			Role: account.Role,
-			Status: account.Status,
+	res := &dto.ReadAccountResponse{
+		AccountDetail: dto.AccountDetail{
+			AccountPublic: dto.AccountPublic{
+				ID: account.ID,
+				AccountID: account.AccountID,
+				Nickname: account.Nickname,
+				AvatarURL: account.AvatarURL,
+				Role: account.Role,
+				Status: account.Status,
+			},
+			CreatedAt: account.CreatedAt,
+			UpdatedAt: account.UpdatedAt,
 		},
-		CreatedAt: account.CreatedAt,
-		UpdatedAt: account.UpdatedAt,
-	}, nil
+	}
+
+	return res, nil
 }
 
-func (s *AccountService) UpdateFields(ctx *gin.Context, req *dto.UpdateAccountRequest) (*dto.UpdateAccountResponse, error) {
+func (s *AccountService) Update(ctx *gin.Context, req *dto.UpdateAccountRequest) (*dto.UpdateAccountResponse, error) {
 	existing, err := s.repo.FindByAccountID(ctx, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -175,7 +223,7 @@ func (s *AccountService) UpdateFields(ctx *gin.Context, req *dto.UpdateAccountRe
 		return nil, err
 	}
 
-    return &dto.UpdateAccountResponse{
+	res := &dto.UpdateAccountResponse{
 		Data: dto.UpdateAccountData{
 			IsPasswordChanged: isPasswordChanged,
 			AccountDetail: dto.AccountDetail{
@@ -194,10 +242,12 @@ func (s *AccountService) UpdateFields(ctx *gin.Context, req *dto.UpdateAccountRe
 		Diff: dto.CommonUpdateDiff{
 			ChangedFields: changedFields,
 		},
-	}, nil
+	}
+
+    return res, nil
 }
 
-func (s *AccountService) Delete(ctx *gin.Context, req *dto.DeleteAccountRequest) (*model.Account, error) {
+func (s *AccountService) Delete(ctx *gin.Context, req *dto.DeleteAccountRequest) (*dto.DeleteAccountResponse, error) {
 	current, err := s.repo.FindByAccountID(ctx, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -211,5 +261,9 @@ func (s *AccountService) Delete(ctx *gin.Context, req *dto.DeleteAccountRequest)
 		return nil, err
 	}
 
-	return result, nil
+	res := &dto.DeleteAccountResponse{
+		AccountID: result.AccountID,
+	}
+
+	return res, nil
 }

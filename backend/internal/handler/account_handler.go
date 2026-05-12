@@ -34,27 +34,14 @@ func (h *AccountHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[dto.CreateAccountReponse]{
+	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[*dto.CreateAccountReponse]{
 		Status: dto.ErrCreated.Status,
 		Code: dto.ErrCreated.Code,
 		Message: dto.ErrCreated.Message,
 		Detail: fmt.Sprintf("Successfully added columns to '%s' account.", account.AccountID),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: dto.CreateAccountReponse{
-			AccountDetail: dto.AccountDetail{
-				AccountPublic: dto.AccountPublic{
-					ID: account.ID,
-					AccountID: account.AccountID,
-					Nickname: account.Nickname,
-					AvatarURL: account.AvatarURL,
-					Role: account.Role,
-					Status: account.Status,
-				},
-				CreatedAt: account.CreatedAt,
-				UpdatedAt: account.UpdatedAt,
-			},
-		},
+		Result: account,
 	})
 }
 
@@ -66,22 +53,20 @@ func (h *AccountHandler) Login(ctx *gin.Context) {
         return
 	}
 
-	accountID, token, err := h.service.Login(ctx, &req)
+	login, err := h.service.Login(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[dto.LoginAccountResponse]{
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.LoginAccountResponse]{
 		Status: dto.ErrOK.Status,
 		Code: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully login '%s' account.", accountID),
+		Detail: fmt.Sprintf("Successfully login '%s' account.", login.AccountID),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: dto.LoginAccountResponse{
-			Token: token,
-		},
+		Result: login,
 	})
 }
 
@@ -95,37 +80,20 @@ func (h *AccountHandler) List(ctx *gin.Context) {
         return
 	}
 
-	accounts, err := h.service.GetList(ctx, &req)
+	list, err := h.service.List(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[dto.ListAccountsResponse]{
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.ListAccountsResponse]{
 		Status: dto.ErrOK.Status,
 		Code: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully retrieved %d accounts.", len(accounts)),
+		Detail: fmt.Sprintf("Successfully retrieved %d accounts.", len(list.Data)),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: dto.ListAccountsResponse{
-			Meta: dto.ListAccountMeta{
-				Sort: dto.SortMeta{
-					SortBy: req.SortBy,
-					SortDir: req.SortDir,
-				},
-				Limit: req.Limit,
-				Filters: dto.ListAccountFilter{
-					ID: req.ID,
-					AccountID: req.AccountID,
-					Nickname: req.Nickname,
-					AvatarURL: req.AvatarURL,
-					Role: req.Role,
-					Status: req.Status,
-				},
-			},
-			Data: accounts,
-		},
+		Result: list,
 	})
 }
 
@@ -137,7 +105,7 @@ func (h *AccountHandler) Read(ctx *gin.Context) {
 		return
 	}
 
-	account, err := h.service.GetAccount(ctx, &req)
+	account, err := h.service.Read(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
@@ -150,7 +118,7 @@ func (h *AccountHandler) Read(ctx *gin.Context) {
 		Detail: fmt.Sprintf("Successfully retrieved '%s' account.", account.AccountID),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: &dto.ReadAccountResponse{AccountDetail: *account},
+		Result: account,
 	})
 }
 
@@ -172,7 +140,7 @@ func (h *AccountHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	res, err := h.service.UpdateFields(ctx, &req)
+	res, err := h.service.Update(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return

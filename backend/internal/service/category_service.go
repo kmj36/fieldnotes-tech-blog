@@ -19,7 +19,7 @@ func NewCategoryService(repo *repository.CategoryRepository, jwtManager *cryptio
 	return &CategoryService{repo: repo, jwt:jwtManager}
 }
 
-func (s *CategoryService) Create(ctx *gin.Context, req *dto.CreateCategoryRequest) (*model.Category, error) {
+func (s *CategoryService) Create(ctx *gin.Context, req *dto.CreateCategoryRequest) (*dto.CreateCategoryReponse, error) {
 	var existing *model.Category
 	var err error
 	var path string
@@ -55,13 +55,32 @@ func (s *CategoryService) Create(ctx *gin.Context, req *dto.CreateCategoryReques
 		Slug: req.Slug,
 	}
 
-	return s.repo.Create(ctx, newCategory)
+	category, err := s.repo.Create(ctx, newCategory)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &dto.CreateCategoryReponse{
+		CategoryDetail: dto.CategoryDetail{
+			CategoryPublic: dto.CategoryPublic{
+				ID: category.ID,
+				ParentID: category.ParentID,
+				Name: category.Name,
+				Slug: category.Slug,
+				Path: category.Path,
+			},
+			CreatedAt: category.CreatedAt,
+			UpdatedAt: category.UpdatedAt,
+		},
+	}
+
+	return res, nil
 }
 
-func (s *CategoryService) GetList(ctx *gin.Context, req *dto.ReadCategoriesRequest) ([]*dto.CategoryPublic, error) {
+func (s *CategoryService) List(ctx *gin.Context, req *dto.ReadCategoriesRequest) (*dto.ReadCategoriesResponse, error) {
 	var result  []*dto.CategoryPublic
 
-	array, err := s.repo.GetList(ctx, req)
+	array, err := s.repo.List(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -78,10 +97,27 @@ func (s *CategoryService) GetList(ctx *gin.Context, req *dto.ReadCategoriesReque
 		}
 	}
 
-	return result, nil
+	res := &dto.ReadCategoriesResponse{
+		Meta: dto.ReadCategoriesMetadata{
+			Sort: dto.SortMeta{
+				SortBy: req.SortBy,
+				SortDir: req.SortDir,
+			},
+			Limit: req.Limit,
+			Filters: dto.ReadCategoriesFilters{
+				ID: req.ID,
+				ParentID: req.ParentID,
+				Name: req.Name,
+				Slug: req.Slug,
+			},
+		},
+		Datas: result,
+	}
+
+	return res, nil
 }
 
-func (s *CategoryService) UpdateFields(ctx *gin.Context, req *dto.UpdateCategoryRequest) (*dto.UpdateCategoryResponse, error) {
+func (s *CategoryService) Update(ctx *gin.Context, req *dto.UpdateCategoryRequest) (*dto.UpdateCategoryResponse, error) {
 	// 업데이트 전 현재 카테고리 조회
 	existing, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
@@ -158,7 +194,7 @@ func (s *CategoryService) UpdateFields(ctx *gin.Context, req *dto.UpdateCategory
 		s.repo.UpdateDescendantPaths(ctx, existing.Path, newPath)
 	}
 
-	return &dto.UpdateCategoryResponse{
+	res := &dto.UpdateCategoryResponse{
 		Data: dto.CategoryDetail{
 			CategoryPublic: dto.CategoryPublic{
 				ID: data.ID,
@@ -173,10 +209,12 @@ func (s *CategoryService) UpdateFields(ctx *gin.Context, req *dto.UpdateCategory
 		Diff: dto.CommonUpdateDiff{
 			ChangedFields: changedFields,
 		},
-	}, nil
+	}
+
+	return res, nil
 }
 
-func (s *CategoryService) Delete(ctx *gin.Context, req *dto.DeleteCategoryRequest) (*model.Category, error) {
+func (s *CategoryService) Delete(ctx *gin.Context, req *dto.DeleteCategoryRequest) (*dto.DeleteCategoryResponse, error) {
 	current, err := s.repo.FindByID(ctx, req.ID)
     if err != nil {
         return nil, err
@@ -198,5 +236,9 @@ func (s *CategoryService) Delete(ctx *gin.Context, req *dto.DeleteCategoryReques
 		return nil, err
 	}
 
-	return result, nil
+	res := &dto.DeleteCategoryResponse{
+		Name: result.Name,
+	}
+
+	return res, nil
 }

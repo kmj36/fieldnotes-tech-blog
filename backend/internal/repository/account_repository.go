@@ -27,6 +27,46 @@ func (repo *AccountRepository) Create(ctx *gin.Context, newAccount *model.Accoun
 	return newAccount, nil
 }
 
+func (repo *AccountRepository) List(ctx *gin.Context, req *dto.ListAccountsRequest) ([]*model.Account, error) {
+    var accounts []*model.Account
+
+    query := repo.db.WithContext(ctx)
+
+    if req.ID != nil {
+        query = query.Where("id = ?", *req.ID)
+    }
+    
+    if req.AccountID != nil {
+        query = query.Where("account_id = ?", *req.AccountID)
+    }
+
+    if req.Nickname != nil {
+        query = query.Where("nickname = ?", *req.Nickname)
+    }
+
+    if req.AvatarURL != nil {
+        query = query.Where("avatar_url LIKE ?", fmt.Sprintf("%%%s%%", *req.AvatarURL))
+    }
+
+    if req.Role != nil {
+        query = query.Where("role = ?", *req.Role)
+    }
+    
+    if req.Status != nil {
+        query = query.Where("status = ?", *req.Status)
+    }
+
+    query = query.Order(fmt.Sprintf("%s %s", req.SortBy, req.SortDir))
+    query = query.Limit(int(req.Limit))
+
+    if err := query.Find(&accounts).Error ; err != nil {
+        return nil, err
+    }
+
+    return accounts, nil
+}
+
+
 func (repo *AccountRepository) Update(ctx *gin.Context, req *dto.UpdateAccountRequest, updates map[string]any) (*model.Account, error) {
     var accountData model.Account
 
@@ -96,43 +136,3 @@ func (repo *AccountRepository) FindByNickname(ctx *gin.Context, accountNickname 
     }
     return &account, nil
 }
-
-func (repo *AccountRepository) GetList(ctx *gin.Context, req *dto.ListAccountsRequest) ([]*model.Account, error) {
-    var accounts []*model.Account
-
-    query := repo.db.WithContext(ctx)
-
-    if req.ID != nil {
-        query = query.Where("id = ?", *req.ID)
-    }
-    
-    if req.AccountID != nil {
-        query = query.Where("account_id = ?", *req.AccountID)
-    }
-
-    if req.Nickname != nil {
-        query = query.Where("nickname = ?", *req.Nickname)
-    }
-
-    if req.AvatarURL != nil {
-        query = query.Where("avatar_url LIKE ?", fmt.Sprintf("%%%s%%", *req.AvatarURL))
-    }
-
-    if req.Role != nil {
-        query = query.Where("role = ?", *req.Role)
-    }
-    
-    if req.Status != nil {
-        query = query.Where("status = ?", *req.Status)
-    }
-
-    query = query.Order(fmt.Sprintf("%s %s", req.SortBy, req.SortDir))
-    query = query.Limit(int(req.Limit))
-
-    if err := query.Find(&accounts).Error ; err != nil {
-        return nil, err
-    }
-
-    return accounts, nil
-}
-

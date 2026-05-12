@@ -41,3 +41,7 @@ type UpdateCategoryResponse struct {
 	Data		CategoryDetail		`json:"data"`
 	Diff		CommonUpdateDiff	`json:"diff"`
 }
+
+type DeleteCategoryResponse struct {
+	Name		string
+}
