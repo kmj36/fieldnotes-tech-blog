@@ -206,7 +206,7 @@ components:
           example: "2026-01-20T16:31:00+09:00"
         path:
           type: string
-          example: "/api/v1/posts"
+          example: "/api/v1/post"
 
     ErrorResponse:
       allOf:
@@ -536,7 +536,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
   # ── 게시물 ────────────────────────────────
-  /api/v1/posts:
+  /api/v1/post:
     get:
       tags: [Public]
       summary: 게시물 목록 조회
@@ -657,7 +657,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/posts/{slug}:
+  /api/v1/post/{slug}:
     get:
       tags: [Public]
       summary: 개별 게시물 조회
@@ -687,7 +687,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/posts/admin:
+  /api/v1/post/admin:
     get:
       tags: [Admin]
       summary: 관리자용 게시물 목록 조회
@@ -767,7 +767,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/posts/{id}:
+  /api/v1/post/{id}:
     patch:
       tags: [Admin]
       summary: 게시물 수정

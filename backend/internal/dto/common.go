@@ -30,7 +30,7 @@ type SortMeta struct {
 
 // Update 작업 변경 필드
 type CommonUpdateDiff struct {
-    ChangedFields []string		`json:"changed_fields"`
+    ChangedFields []string		`json:"changedFields"`
 }
 
 var CErrAlreadyExists = errors.New("resource already exists.")
