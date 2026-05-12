@@ -24,7 +24,7 @@ type App struct {
 
 	cfg 		*config.Config
 
-	pingHandler 	*handler.PingHandler
+	healthHandler 	*handler.HealthCheckHandler
 	accountHandler 	*handler.AccountHandler
 	categoryHandler *handler.CategoryHandler
 	tagHandler		*handler.TagHandler
@@ -51,7 +51,7 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 		logger: log,
 		cfg: cfg,
 		
-		pingHandler: handler.NewPingHandler(),
+		healthHandler: handler.NewHealthCheckHandler(),
 		accountHandler: handler.NewAccountHandler(accountService),
 		categoryHandler: handler.NewCategoryHandler(categoryService),
 		tagHandler: handler.NewTagHandler(tagService),
@@ -100,7 +100,7 @@ func (app *App) setupRoutes() {
 	// 기본 라우트
 	api := app.router.Group("/api/v1")
 	{
-        api.GET("/ping", app.pingHandler.Ping)
+        api.GET("/health", app.healthHandler.HealthCheck)
 		api.POST("/auth/login", app.accountHandler.Login)
 		api.GET("/category", app.categoryHandler.List)
 		api.GET("/tag", app.tagHandler.List)
@@ -112,9 +112,9 @@ func (app *App) setupRoutes() {
 		auth.Use(middleware.JWTAuthMiddleware(app.jwtManager))
 		auth.POST("/auth/register", app.accountHandler.Create)
 		auth.GET("/auth/list", app.accountHandler.List)
-		auth.GET("/auth/:account", app.accountHandler.Get)
-		auth.PATCH("/auth/update/:account", app.accountHandler.Update)
-		auth.DELETE("/auth/delete/:account", app.accountHandler.Delete)
+		auth.GET("/auth/:accountId", app.accountHandler.Read)
+		auth.PATCH("/auth/update/:accountId", app.accountHandler.Update)
+		auth.DELETE("/auth/delete/:accountId", app.accountHandler.Delete)
 		auth.POST("/category", app.categoryHandler.Create)
 		auth.PATCH("/category/:id", app.categoryHandler.Update)
 		auth.DELETE("/category/:id", app.categoryHandler.Delete)
@@ -140,11 +140,13 @@ func (app *App) seedAdminAccount() {
 	var hash string
 	hash, _ = cryption.HashPassword(newRandomPassword)
 
+	avatarUrl := "https://www.svgrepo.com/show/345423/admin.svg"
+
 	newAdmin := &model.Account{
 		AccountID: "admin",
 		PasswordHash: hash,
 		Nickname: "admin",
-		AvatarURL: "https://www.svgrepo.com/show/345423/admin.svg",
+		AvatarURL: &avatarUrl,
 		Role: "ADMIN",
 		Status: "ACTIVE",
 	}

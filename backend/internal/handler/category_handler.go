@@ -1,15 +1,11 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
-	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/service"
 )
 
@@ -25,149 +21,138 @@ func NewCategoryHandler(service *service.CategoryService) *CategoryHandler {
 
 func (h *CategoryHandler) Create(ctx *gin.Context) {
 	var req dto.CreateCategoryRequest
-	var category *model.Category
-	var err error
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.respondBindError(ctx, err)
         return
 	}
 
-	// 계정 추가 처리
-	if category, err = h.service.Create(ctx, &req) ; err != nil {
+	// 카테고리 추가 처리
+	category, err := h.service.Create(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, dto.ResponseWrapper[*dto.CreateCategoryResponse]{
-		Status: http.StatusCreated,
+	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[dto.CreateCategoryReponse]{
+		Status: dto.ErrCreated.Status,
 		Code: dto.ErrCreated.Code,
-		Detail: "Category created successfully.",
 		Message: dto.ErrCreated.Message,
+		Detail: fmt.Sprintf("Successfully added columns to '%s' category.", category.Name),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: &dto.CreateCategoryResponse{
-			ID: category.ID,
-			ParentID: category.ParentID,
-			Name: category.Name,
-			Slug: category.Slug,
-			Path: category.Path,
-			CreatedAt: category.CreatedAt,
-			UpdatedAt: category.UpdatedAt,
+		Result: dto.CreateCategoryReponse{
+			CategoryDetail: dto.CategoryDetail{
+				CategoryPublic: dto.CategoryPublic{
+					ID: category.ID,
+					ParentID: category.ParentID,
+					Name: category.Name,
+					Slug: category.Slug,
+					Path: category.Path,
+				},
+				CreatedAt: category.CreatedAt,
+				UpdatedAt: category.UpdatedAt,
+			},
 		},
 	})
 }
 
 func (h *CategoryHandler) List(ctx *gin.Context) {
-	var req dto.GetCategoryRequest
-	var categories []*dto.CategoriesObject
-	var err error
+	var req dto.ReadCategoriesRequest
 
-	if bindErr := ctx.ShouldBindQuery(&req); bindErr != nil {
-		h.respondBindError(ctx, bindErr)
+	req.SetDefaults()
+
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		h.respondBindError(ctx, err)
         return
 	}
 
-	if categories, err = h.service.List(ctx, &req); err != nil {
+	categories, err := h.service.GetList(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[dto.ListCategoriesResponse]{
-		Status: http.StatusOK,
-		Code: dto.ErrOK.Message,
-		Detail: "Successfully retrieved categories.",
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[dto.ReadCategoriesResponse]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully retrieved %d categories.", len(categories)),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: dto.ListCategoriesResponse{
-			Meta: dto.ListCategoriesMeta{
+		Result: dto.ReadCategoriesResponse{
+			Meta: dto.ReadCategoriesMetadata{
 				Sort: dto.SortMeta{
 					SortBy: req.SortBy,
 					SortDir: req.SortDir,
 				},
 				Limit: req.Limit,
-				Filters: dto.CategorySummary{
-					Id: req.ID,
-					ParentId: req.ParentID,
+				Filters: dto.ReadCategoriesFilters{
+					ID: req.ID,
+					ParentID: req.ParentID,
 					Name: req.Name,
 					Slug: req.Slug,
 				},
 			},
-			Data: categories,
+			Datas: categories,
 		},
 	})
 }
 
 func (h *CategoryHandler) Update(ctx *gin.Context) {
 	var req dto.UpdateCategoryRequest
-	var data *dto.UpdateCategoryResponse
-	var err error
-	idStr := ctx.Param("id")
 
-	if idStr == "" {
-		h.respondBindError(ctx, errors.New("The 'id' parameter is empty."))
-        return
+	if paramErr := ctx.ShouldBindUri(&req); paramErr != nil {
+		h.respondBindError(ctx, paramErr)
+		return
 	}
-
-	id, err := strconv.ParseInt(idStr, 10, 32)
-    if err != nil {
-        h.respondBindError(ctx, err)
-        return
-    }
 
 	if bindErr := ctx.ShouldBindJSON(&req); bindErr != nil {
 		h.respondBindError(ctx, bindErr)
         return
 	}
-	
-	if req == (dto.UpdateCategoryRequest{}) {
-		h.respondBindError(ctx, dto.CErrUpdateEmptyParam)
-        return
+
+	if err := req.Validate(); err != nil {
+		h.respondBindError(ctx, err)
+		return
 	}
 
-	if data, err = h.service.Update(ctx, int32(id), req) ; err != nil {
+	res, err := h.service.UpdateFields(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[*dto.UpdateCategoryResponse]{
-		Status: http.StatusOK,
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.UpdateCategoryResponse]{
+		Status: dto.ErrOK.Status,
 		Code: dto.ErrOK.Code,
-		Detail: "Successfully changed category data.",
 		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully changed '%s' category fields.", res.Data.Name),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: data,
+		Result: res,
 	})
 }
 
 func (h *CategoryHandler) Delete(ctx *gin.Context) {
-	var data *model.Category
-	var err error
-	idStr := ctx.Param("id")
+	var req dto.DeleteCategoryRequest
 
-	if idStr == "" {
-		h.respondBindError(ctx, errors.New("The 'id' parameter is empty."))
-        return
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		h.respondBindError(ctx, err)
+		return
 	}
 
-	id, err := strconv.ParseInt(idStr, 10, 32)
-    if err != nil {
-        h.respondBindError(ctx, err)
-        return
-    }
-
-	if data, err = h.service.Delete(ctx, int32(id)) ; err != nil {
+	res, err := h.service.Delete(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[any]{
-		Status: http.StatusOK,
-		Code: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully Deleted category %s.", data.Name),
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[any]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully deleted '%s' category.", res.Name),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
 	})

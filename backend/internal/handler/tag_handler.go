@@ -1,15 +1,11 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
-	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/service"
 )
 
@@ -23,50 +19,8 @@ func NewTagHandler(service *service.TagService) *TagHandler {
 	return &TagHandler{service: service}
 }
 
-func (h *TagHandler) List(ctx *gin.Context) {
-	var req dto.GetTagRequest
-	var tags []*dto.TagObject
-	var err error
-
-	if bindErr := ctx.ShouldBindQuery(&req); bindErr != nil {
-		h.respondBindError(ctx, bindErr)
-        return
-	}
-
-	if tags, err = h.service.List(ctx, &req); err != nil {
-		h.respondProcessError(ctx, err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[dto.ListTagsResponse]{
-		Status: http.StatusOK,
-		Code: dto.ErrOK.Message,
-		Detail: "Successfully retrieved tags.",
-		Message: dto.ErrOK.Message,
-		Timestamp: time.Now().UTC(),
-		Path: ctx.Request.URL.Path,
-		Result: dto.ListTagsResponse{
-			Meta: dto.ListTagsMeta{
-				Sort: dto.SortMeta{
-					SortBy: req.SortBy,
-					SortDir: req.SortDir,
-				},
-				Limit: req.Limit,
-				Filters: dto.TagSummary{
-					ID: int32(req.ID),
-					Name: req.Name,
-					Slug: req.Slug,
-				},
-			},
-			Data: tags,
-		},
-	})
-}
-
 func (h *TagHandler) Create(ctx *gin.Context) {
 	var req dto.CreateTagRequest
-	var tag *model.Tag
-	var err error
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.respondBindError(ctx, err)
@@ -74,96 +28,127 @@ func (h *TagHandler) Create(ctx *gin.Context) {
 	}
 
 	// 태그 추가 처리
-	if tag, err = h.service.Create(ctx, &req) ; err != nil {
+	tag, err := h.service.Create(ctx, &req) 
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, dto.ResponseWrapper[*dto.CreateTagResponse]{
-		Status: http.StatusCreated,
+	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[*dto.CreateTagResponse]{
+		Status: dto.ErrCreated.Status,
 		Code: dto.ErrCreated.Code,
-		Detail: "Tag created successfully.",
+		Detail: fmt.Sprintf("Successfully created '%s' tag fields.", tag.Name),
 		Message: dto.ErrCreated.Message,
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
 		Result: &dto.CreateTagResponse{
-			ID: tag.ID,
-			Name: tag.Name,
-			Slug: tag.Slug,
-			CreatedAt: tag.CreatedAt,
-			UpdatedAt: tag.UpdatedAt,
+			TagDetail: dto.TagDetail{
+				TagPublic: dto.TagPublic{
+					ID: tag.ID,
+					Name: tag.Name,
+					Slug: tag.Slug,
+				},
+				CreatedAt: tag.CreatedAt,
+				UpdatedAt: tag.UpdatedAt,
+			},
+		},
+	})
+}
+
+func (h *TagHandler) List(ctx *gin.Context) {
+	var req dto.ReadTagsRequest
+	
+	req.SetDefaults()
+
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		h.respondBindError(ctx, err)
+        return
+	}
+
+	tags, err := h.service.GetList(ctx, &req)
+	if err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[dto.ReadTagsResponse]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
+		Detail: fmt.Sprintf("Successfully retrieved %d tags.", len(tags)),
+		Message: dto.ErrOK.Message,
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: dto.ReadTagsResponse{
+			Meta: dto.ReadTagsMetadata{
+				Sort: dto.SortMeta{
+					SortBy: req.SortBy,
+					SortDir: req.SortDir,
+				},
+				Limit: req.Limit,
+				Filters: dto.ReadTagsFilters{
+					ID: req.ID,
+					Name: req.Name,
+					Slug: req.Slug,
+				},
+			},
+			Datas: tags,
 		},
 	})
 }
 
 func (h *TagHandler) Update(ctx *gin.Context) {
 	var req dto.UpdateTagRequest
-	var data *dto.UpdateTagResponse
-	var err error
-	idStr := ctx.Param("id")
 
-	if idStr == "" {
-		h.respondBindError(ctx, errors.New("The 'id' parameter is empty."))
-        return
+	if paramErr := ctx.ShouldBindUri(&req); paramErr != nil {
+		h.respondBindError(ctx, paramErr)
+		return
 	}
-
-	id, err := strconv.ParseInt(idStr, 10, 32)
-    if err != nil {
-        h.respondBindError(ctx, err)
-        return
-    }
 
 	if bindErr := ctx.ShouldBindJSON(&req); bindErr != nil {
 		h.respondBindError(ctx, bindErr)
         return
 	}
-	
-	if req == (dto.UpdateTagRequest{}) {
-		h.respondBindError(ctx, dto.CErrUpdateEmptyParam)
-        return
+
+	if err := req.Validate(); err != nil {
+		h.respondBindError(ctx, err)
+		return
 	}
 
-	if data, err = h.service.Update(ctx, int32(id), req) ; err != nil {
+	res, err := h.service.UpdateFields(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[*dto.UpdateTagResponse]{
-		Status: http.StatusOK,
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.UpdateTagResponse]{
+		Status: dto.ErrOK.Status,
 		Code: dto.ErrOK.Code,
-		Detail: "Successfully changed tag data.",
+		Detail: fmt.Sprintf("Successfully changed '%s' tag fields.", res.Data.Slug),
 		Message: dto.ErrOK.Message,
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: data,
+		Result: res,
 	})
 }
 
 func (h *TagHandler) Delete(ctx *gin.Context) {
-	var data *model.Tag
-	var err error
-	idStr := ctx.Param("id")
+	var req dto.DeleteTagRequest
 
-	if idStr == "" {
-		h.respondBindError(ctx, errors.New("The 'id' parameter is empty."))
-        return
+	if err := ctx.ShouldBindUri(&req) ; err != nil {
+		h.respondBindError(ctx, err)
+		return
 	}
 
-	id, err := strconv.ParseInt(idStr, 10, 32)
-    if err != nil {
-        h.respondBindError(ctx, err)
-        return
-    }
-
-	if data, err = h.service.Delete(ctx, int32(id)) ; err != nil {
+	res, err := h.service.Delete(ctx, &req) 
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[any]{
-		Status: http.StatusOK,
-		Code: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully Deleted Tag %s.", data.Name),
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[any]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
+		Detail: fmt.Sprintf("Successfully deleted '%s' tag.", res.Name),
 		Message: dto.ErrOK.Message,
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,

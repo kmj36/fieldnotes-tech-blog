@@ -1,14 +1,11 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
-	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/service"
 )
 
@@ -31,92 +28,100 @@ func (h *AccountHandler) Create(ctx *gin.Context) {
 	}
 
 	// 계정 추가 처리
-	if err := h.service.Create(ctx, &req) ; err != nil {
+	account, err := h.service.Create(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, dto.ResponseWrapper[any]{
-		Status: http.StatusCreated,
+	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[dto.CreateAccountReponse]{
+		Status: dto.ErrCreated.Status,
 		Code: dto.ErrCreated.Code,
-		Detail: "Account created successfully.",
 		Message: dto.ErrCreated.Message,
+		Detail: fmt.Sprintf("Successfully added columns to '%s' account.", account.AccountID),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
+		Result: dto.CreateAccountReponse{
+			AccountDetail: dto.AccountDetail{
+				AccountPublic: dto.AccountPublic{
+					ID: account.ID,
+					AccountID: account.AccountID,
+					Nickname: account.Nickname,
+					AvatarURL: account.AvatarURL,
+					Role: account.Role,
+					Status: account.Status,
+				},
+				CreatedAt: account.CreatedAt,
+				UpdatedAt: account.UpdatedAt,
+			},
+		},
 	})
 }
 
 func (h *AccountHandler) Login(ctx *gin.Context) {
 	var req dto.LoginAccountRequest
 
-	if bindErr := ctx.ShouldBindJSON(&req); bindErr != nil {
-		h.respondBindError(ctx, bindErr)
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		h.respondBindError(ctx, err)
         return
 	}
 
-	//fmt.Print("[DEBUG] req: ")
-	//fmt.Println(req)
-
-	var auth string
-	var err error
-
-	auth, err = h.service.Login(ctx, &req)
-
-	//fmt.Print("[DEBUG] auth, err: ")
-	//fmt.Print(auth)
-	//fmt.Println(err)
-
+	accountID, token, err := h.service.Login(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[dto.LoginAccountResponse]{
-		Status: http.StatusOK,
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[dto.LoginAccountResponse]{
+		Status: dto.ErrOK.Status,
 		Code: dto.ErrOK.Code,
-		Detail: "Login successfully.",
 		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully login '%s' account.", accountID),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
 		Result: dto.LoginAccountResponse{
-			Token: auth,
+			Token: token,
 		},
 	})
 }
 
 func (h *AccountHandler) List(ctx *gin.Context) {
-	var req dto.ListAccountRequest
-	var accounts []*dto.AccountSummary
-	var err error
+	var req dto.ListAccountsRequest
 
-	if bindErr := ctx.ShouldBindQuery(&req); bindErr != nil {
-		h.respondBindError(ctx, bindErr)
+	req.SetDefaults()
+
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		h.respondBindError(ctx, err)
         return
 	}
 
-	if accounts, err = h.service.List(ctx, &req); err != nil {
+	accounts, err := h.service.GetList(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[dto.ListAccountResponse]{
-		Status: http.StatusOK,
-		Code: dto.ErrOK.Message,
-		Detail: "Successfully retrieved accounts.",
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[dto.ListAccountsResponse]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully retrieved %d accounts.", len(accounts)),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: dto.ListAccountResponse{
+		Result: dto.ListAccountsResponse{
 			Meta: dto.ListAccountMeta{
 				Sort: dto.SortMeta{
 					SortBy: req.SortBy,
 					SortDir: req.SortDir,
 				},
 				Limit: req.Limit,
-				Filters: dto.AccountSummary{
-					Id: req.ID,
+				Filters: dto.ListAccountFilter{
+					ID: req.ID,
 					AccountID: req.AccountID,
+					Nickname: req.Nickname,
+					AvatarURL: req.AvatarURL,
 					Role: req.Role,
+					Status: req.Status,
 				},
 			},
 			Data: accounts,
@@ -124,102 +129,85 @@ func (h *AccountHandler) List(ctx *gin.Context) {
 	})
 }
 
-func (h *AccountHandler) Get(ctx *gin.Context) {
-	var targetAccount = ctx.Param("account")
+func (h *AccountHandler) Read(ctx *gin.Context) {
+	var req dto.ReadAccountRequest
 
-	if targetAccount == "" {
-		h.respondBindError(ctx, errors.New("The 'account' parameter is empty."))
-        return
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		h.respondBindError(ctx, err)
+		return
 	}
 
-	var data *model.Account
-	var err error
-	var retrieval *dto.ReadAccountResponse
-
-	if data, err = h.service.GetAccount(ctx, targetAccount); err != nil {
+	account, err := h.service.GetAccount(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	retrieval = &dto.ReadAccountResponse{
-		ID: data.ID,
-		AccountID: data.AccountID,
-		Nickname: data.Nickname,
-		AvatarURL: data.AvatarURL,
-		Role: data.Role,
-		Status: data.Status,
-		CreatedAt: data.CreatedAt,
-		UpdatedAt: data.UpdatedAt,
-	}
-
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[*dto.ReadAccountResponse]{
-		Status: http.StatusOK,
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.ReadAccountResponse]{
+		Status: dto.ErrOK.Status,
 		Code: dto.ErrOK.Code,
-		Detail: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully retrieved '%s' account.", account.AccountID),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: retrieval,
+		Result: &dto.ReadAccountResponse{AccountDetail: *account},
 	})
 }
 
 func (h *AccountHandler) Update(ctx *gin.Context) {
 	var req dto.UpdateAccountRequest
-	var data *dto.UpdateAccountResponse
-	var err error
-	var account = ctx.Param("account")
 
-	if account == "" {
-		h.respondBindError(ctx, errors.New("The 'account' parameter is empty."))
-        return
+	if paramErr := ctx.ShouldBindUri(&req); paramErr != nil {
+		h.respondBindError(ctx, paramErr)
+		return
 	}
 
 	if bindErr := ctx.ShouldBindJSON(&req); bindErr != nil {
 		h.respondBindError(ctx, bindErr)
-        return
+		return
 	}
 
-	if req == (dto.UpdateAccountRequest{}) {
-		h.respondBindError(ctx, dto.CErrUpdateEmptyParam)
-        return
+	if err := req.Validate(); err != nil {
+		h.respondBindError(ctx, err)
+		return
 	}
 
-	if data, err = h.service.Update(ctx, account, req) ; err != nil {
+	res, err := h.service.UpdateFields(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[*dto.UpdateAccountResponse]{
-		Status: http.StatusOK,
-		Code: dto.ErrOK.Message,
-		Detail: "Successfully changed account data.",
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.UpdateAccountResponse]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully changed '%s' account fields.", res.Data.AccountID),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
-		Result: data,
+		Result: res,
 	})
 }
 
 func (h *AccountHandler) Delete(ctx *gin.Context) {
-	var data *model.Account
-	var err error
-	var account = ctx.Param("account")
+	var req dto.DeleteAccountRequest
 
-	if account == "" {
-		h.respondBindError(ctx, errors.New("The 'account' parameter is empty."))
-        return
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		h.respondBindError(ctx, err)
+		return
 	}
 
-	if data, err = h.service.Delete(ctx, account) ; err != nil {
+	res, err := h.service.Delete(ctx, &req)
+	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.ResponseWrapper[any]{
-		Status: http.StatusOK,
-		Code: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully Deleted account %s.", data.AccountID),
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[any]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully deleted '%s' account.", res.AccountID),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
 	})

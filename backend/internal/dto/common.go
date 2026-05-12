@@ -33,12 +33,11 @@ type CommonUpdateDiff struct {
     ChangedFields []string		`json:"changed_fields"`
 }
 
-var CErrAccountAlreadyExists = errors.New("account already exists.")
-var CErrCategoryAlreadyExists = errors.New("category already exists.")
-var CErrNicknameAlreadyExists = errors.New("nickname already exists.")
-var CErrTagAlreadyExists = errors.New("tag already exists.")
-var CErrLoginFailed = errors.New("Invalid credentials.")
+var CErrAlreadyExists = errors.New("resource already exists.")
+var CErrLoginFailed = errors.New("invalid credentials.")
+var CErrValidateFailed = errors.New("field validate failed.")
 var CErrUpdateEmptyParam = errors.New("no fields to update")
+var CErrChildNodeExists = errors.New("child Node exists.")
 
 // 에러 공통 리터럴
 var ( 

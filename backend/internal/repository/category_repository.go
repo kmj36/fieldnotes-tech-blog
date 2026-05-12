@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
@@ -14,15 +15,6 @@ type CategoryRepository struct {db *gorm.DB}
 
 func NewCategoryRepository(db *gorm.DB) *CategoryRepository {
 	return &CategoryRepository{db: db}
-}
-
-func (repo *CategoryRepository) Create(ctx *gin.Context, newCategory *model.Category) (*model.Category, error) {
-    query := repo.db.WithContext(ctx)
-	err := query.Create(newCategory).Error
-    if err != nil {
-        return nil, err
-    }
-    return newCategory, nil
 }
 
 func (repo *CategoryRepository) FindByName(ctx *gin.Context, name string) (*model.Category, error) {
@@ -40,11 +32,11 @@ func (repo *CategoryRepository) FindByName(ctx *gin.Context, name string) (*mode
     return &category, nil
 }
 
-func (repo *CategoryRepository) FindByID(ctx *gin.Context, id int32) (*model.Category, error) {
+func (repo *CategoryRepository) FindByID(ctx *gin.Context, id int16) (*model.Category, error) {
 	var category model.Category
 	
 	query := repo.db.WithContext(ctx)
-	
+
     result := query.Where("id = ?", id).First(&category)
     if result.Error != nil {
         if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -55,41 +47,60 @@ func (repo *CategoryRepository) FindByID(ctx *gin.Context, id int32) (*model.Cat
     return &category, nil
 }
 
-func (repo *CategoryRepository) List(ctx *gin.Context, req *dto.GetCategoryRequest) ([]*model.Category, error) {
+func (repo *CategoryRepository) CountByParentID(ctx *gin.Context, id int16) (int64, error) {
+    var count int64
+    err := repo.db.WithContext(ctx).
+        Model(&model.Category{}).
+        Where("parent_id = ?", id).
+        Count(&count).Error
+    return count, err
+}
+
+func (repo *CategoryRepository) GetList(ctx *gin.Context, req *dto.ReadCategoriesRequest) ([]*model.Category, error) {
     var categories []*model.Category
 
     query := repo.db.WithContext(ctx)
 
-    if req.ID != 0 {
-        query = query.Where("id = ?", req.ID)
+    if req.ID != nil {
+        query = query.Where("id = ?", *req.ID)
     }
 
     if req.ParentID != nil {
         query = query.Where("parent_id = ?", *req.ParentID)
     }
 
-    if req.Name != "" {
-        query = query.Where("name LIKE ?", "%"+req.Name+"%")
+    if req.Name != nil {
+        query = query.Where("name LIKE ?", fmt.Sprintf("%%%s%%", *req.Name))
     }
 
-    if req.Slug != "" {
-        query = query.Where("slug = ?", req.Slug)
+    if req.Slug != nil {
+        query = query.Where("slug = ?", *req.Slug)
     }
 
-    if req.SortBy != "" && req.SortDir != "" {
-        query = query.Order(req.SortBy + " " + req.SortDir)
+    query = query.Order(fmt.Sprintf("%s %s", req.SortBy, req.SortDir))
+    query = query.Limit(int(req.Limit))
+
+    if err := query.Find(&categories).Error ; err != nil {
+        return nil, err
     }
 
-    query = query.Limit(req.Limit)
-
-    return categories, query.Find(&categories).Error
+    return categories, nil
 }
 
-func (repo *CategoryRepository) Update(ctx *gin.Context, id int32, updates map[string]interface{}) (*model.Category, error) {
+func (repo *CategoryRepository) Create(ctx *gin.Context, newCategory *model.Category) (*model.Category, error) {
+    query := repo.db.WithContext(ctx)
+	err := query.Create(newCategory).Error
+    if err != nil {
+        return nil, err
+    }
+    return newCategory, nil
+}
+
+func (repo *CategoryRepository) Update(ctx *gin.Context, req *dto.UpdateCategoryRequest, updates map[string]any) (*model.Category, error) {
     var categoryData model.Category
 
     err := repo.db.WithContext(ctx).
-        Where("id = ?", id).
+        Where("id = ?", req.ID).
         First(&categoryData).Error
     if err != nil {
         return nil, err
@@ -106,20 +117,11 @@ func (repo *CategoryRepository) Update(ctx *gin.Context, id int32, updates map[s
     return &categoryData, nil
 }
 
-func (repo *CategoryRepository) UpdateDescendantPaths(ctx *gin.Context, oldPath string, newPath string) error {
-    var categoryData model.Category
-
-    return repo.db.WithContext(ctx).
-        Model(&categoryData).
-        Where("path LIKE ?", oldPath+"/%").
-        Update("path", gorm.Expr("REPLACE(path, ?, ?)", oldPath, newPath)).Error
-}
-
-func (repo *CategoryRepository) Delete(ctx *gin.Context, id int32) (*model.Category, error) {
+func (repo *CategoryRepository) Delete(ctx *gin.Context, req *dto.DeleteCategoryRequest) (*model.Category, error) {
     var categoryData model.Category
 
     err := repo.db.WithContext(ctx).
-        Where("id = ?", id).
+        Where("id = ?", req.ID).
         First(&categoryData).Error
     if err != nil {
         return nil, err
@@ -132,6 +134,15 @@ func (repo *CategoryRepository) Delete(ctx *gin.Context, id int32) (*model.Categ
     }
 
     return &categoryData, nil
+}
+
+func (repo *CategoryRepository) UpdateDescendantPaths(ctx *gin.Context, oldPath string, newPath string) error {
+    var categoryData model.Category
+
+    return repo.db.WithContext(ctx).
+        Model(&categoryData).
+        Where("path LIKE ?", oldPath+"/%").
+        Update("path", gorm.Expr("REPLACE(path, ?, ?)", oldPath, newPath)).Error
 }
 
 func (repo *CategoryRepository) ResetDescendantPaths(ctx *gin.Context, parentPath string) error {

@@ -4,44 +4,38 @@ import "time"
 
 // 응답 DTO (Client <- API)
 
+type TagPublic struct {
+	ID				int16		`json:"id"`
+	Name			string		`json:"name"`
+	Slug			string		`json:"slug"`
+}
+
+type TagDetail struct {
+	TagPublic
+	CreatedAt		time.Time	`json:"createdAt"`
+	UpdatedAt		time.Time	`json:"updatedAt"`
+}
+
 type CreateTagResponse struct {
-	ID				int32		`json:"id"`
-	Name			string		`json:"name"`
-	Slug			string		`json:"slug"`
-	CreatedAt		time.Time	`json:"created_at"`
-	UpdatedAt		time.Time	`json:"updated_at"`
+	TagDetail
 }
 
-type TagSummary struct {
-	ID				int32		`json:"id"`
-	Name			string		`json:"name"`
-	Slug			string		`json:"slug"`
+type ReadTagsFilters struct {
+	ID				*int16		`json:"id"`
+	Name			*string		`json:"name"`
+	Slug			*string		`json:"slug"`
 }
-
-type ListTagsMeta struct {
-	Sort	SortMeta	`json:"sort"`
-	Limit	int			`json:"limit"`
-	Filters	TagSummary	`json:"filters"`
+type ReadTagsMetadata struct {
+	Sort 		SortMeta		`json:"sort"`
+	Limit 		int16			`json:"limit"`
+	Filters 	ReadTagsFilters	`json:"filters"`
 }
-
-type ListTagsResponse struct {
-	Meta	ListTagsMeta	`json:"meta"`
-	Data	[]*TagObject	`json:"data"`
-}
-
-type TagObject struct {
-	ID				int32		`json:"id"`
-	Name			string		`json:"name"`
-	Slug			string		`json:"slug"`
+type ReadTagsResponse struct {
+	Meta 	ReadTagsMetadata	`json:"meta"`
+	Datas	[]*TagPublic		`json:"data"`
 }
 
 type UpdateTagResponse struct {
-	Data	CreateTagResponse	`json:"data"`
+	Data	TagDetail	`json:"data"`
 	Diff	CommonUpdateDiff	`json:"diff"`
-}
-
-type ReadTagResponse struct {
-	ID				int32		`json:"id"`
-	Name			string		`json:"name"`
-	Slug			string		`json:"slug"`
 }

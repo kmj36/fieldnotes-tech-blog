@@ -2,55 +2,188 @@ openapi: 3.0.3
 info:
   title: Fieldnotes Blog API
   version: 1.0.0
-  description: 블로그 사용자/관리자/공통 API v1 버전
+  description: 블로그 사용자/관리자 API v1
 
 servers:
-  - url: https://{SERVER_URL}:8080/
+  - url: http://{SERVER_URL}:8080/
     variables:
       SERVER_URL:
-        default: example.com
-           
+        default: localhost
+
 tags:
-  - name: Common
-    description: 공통 API
+  - name: Healthcheck
   - name: Public
-    description: 사용자 API
   - name: Admin
-    description: 관리자 API
 
 # ────────────────────────────────────────────
-# Security
+# Components
 # ────────────────────────────────────────────
 components:
   securitySchemes:
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: access_token
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
-  # ────────────────────────────────────────────
-  # Reusable Schemas
-  # ────────────────────────────────────────────
+  # ── 공통 응답 ──────────────────────────────
+  responses:
+    OK:
+      description: 성공
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CommonResponse'
+
+    NotFound:
+      description: 리소스 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 404
+            code: "E404_001"
+            detail: "resource not found."
+            message: "요청한 리소스를 찾을 수 없습니다."
+            timestamp: "2025-12-26T01:34:00+09:00"
+            path: "/api/v1/..."
+
+    BadRequest:
+      description: 잘못된 요청
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 400
+            code: "E400_002"
+            detail: "'AccountID' does not satisfy 'required' condition"
+            message: "요청 파라미터의 타입 또는 형식이 올바르지 않습니다."
+            timestamp: "2026-05-05T11:40:38.485176711Z"
+            path: "/api/v1/..."
+
+    Unauthorized:
+      description: 인증 실패
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 401
+            code: "E401_001"
+            detail: "Invalid admin credentials."
+            message: "인증에 실패하였습니다."
+            timestamp: "2025-12-26T01:34:00+09:00"
+            path: "/api/v1/..."
+
+    Conflict:
+      description: 리소스 중복
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 409
+            code: "E409_001"
+            detail: "resource already exists."
+            message: "서버의 현재 상태와 요청이 충돌하였습니다."
+            timestamp: "2025-12-26T01:34:00+09:00"
+            path: "/api/v1/..."
+
+    InternalServerError:
+      description: 서버 내부 오류
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 500
+            code: "E500_001"
+            detail: "failed to encode args[0]..."
+            message: "서버 내부 에러가 발생하였습니다."
+            timestamp: "2026-05-06T02:57:20.333687031Z"
+            path: "/api/v1/..."
+
+  # ── 재사용 파라미터 ───────────────────────────
+  parameters:
+    PathId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+    PathAccount:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+        default: testAccount1
+      description: 관리자 계정 ID
+
+    QueryPage:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10000
+        default: 1
+
+    QueryPageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 8
+
+    QuerySearch:
+      name: search
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+
+    QueryCategorySlug:
+      name: categorySlug
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+
+    QueryTagSlugs:
+      name: tagSlugs
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+        maxItems: 50
+      style: form
+      explode: false
+
+    QuerySortBy:
+      name: sortBy
+      in: query
+      schema:
+        type: string
+        enum: [createdAt, title, excerpt]
+        default: createdAt
+
+    QuerySortDir:
+      name: sortDir
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+
+  # ── 스키마 ────────────────────────────────
   schemas:
-    # ── 계정 수정 ─────────────────────────────
-    AccountUpdate:
-      type: object
-      required: [id, passwordStatus, nickname, avatarUrl]
-      properties: 
-        id:
-          type: string
-          example: "admin1"
-        passwordStatus:
-          type: string
-          example: "CHANGED"
-        nickname:
-          type: string
-          example: "Admin"
-        avatarUrl:
-          type: string
-          example: "https://example.com/avatar.png"
-
-    # ── 공통 응답 래퍼 ──────────────────────────
+    # ── 공통 ──────────────────────────────────
     CommonResponse:
       type: object
       required: [status, code, detail, message, timestamp, path]
@@ -75,12 +208,10 @@ components:
           type: string
           example: "/api/v1/posts"
 
-    # ── 에러 응답 ──────────────────────────────
     ErrorResponse:
       allOf:
         - $ref: '#/components/schemas/CommonResponse'
 
-    # ── 페이지네이션 ────────────────────────────
     Pagination:
       type: object
       required: [page, pageSize, total, totalPages, hasNextPage, hasPrevPage]
@@ -102,7 +233,6 @@ components:
         hasPrevPage:
           type: boolean
 
-    # ── 정렬 ────────────────────────────────────
     Sort:
       type: object
       required: [by, dir]
@@ -115,7 +245,17 @@ components:
           enum: [asc, desc]
           example: "desc"
 
-    # ── 태그 (Public) ────────────────────────────
+    Diff:
+      type: object
+      required: [changed_fields]
+      properties:
+        changed_fields:
+          type: array
+          items:
+            type: string
+          example: ["name", "slug"]
+
+    # ── 태그 ──────────────────────────────────
     TagPublic:
       type: object
       required: [id, name, slug]
@@ -130,29 +270,52 @@ components:
           type: string
           example: "tag-1"
 
-    # ── 카테고리 (Public: posts/post) ────────────
+    TagDetail:
+      type: object
+      required: [id, name, slug, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          example: 12
+        name:
+          type: string
+          example: "태그 12"
+        slug:
+          type: string
+          example: "tag-12"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ── 카테고리 ──────────────────────────────
     CategoryPublic:
       type: object
-      required: [id, name, slug, breadcrumb]
+      required: [id, parentId, name, slug, path]
       nullable: true
       properties:
         id:
           type: integer
           example: 2
+        parentId:
+          type: integer
+          nullable: true
+          example: 1
         name:
           type: string
           example: "개발"
         slug:
           type: string
           example: "development"
-        breadcrumb:
+        path:
           type: string
-          example: "전공 > 개발"
+          example: "/tech/frontend"
 
-    # ── 카테고리 상세 (Admin) ─────
     CategoryDetail:
       type: object
-      required: [id, parentId, name, slug, path, breadcrumb, createdAt, updatedAt]
+      required: [id, parentId, name, slug, path, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -169,10 +332,7 @@ components:
           example: "cpp"
         path:
           type: string
-          example: "0001/0002/0005"
-        breadcrumb:
-          type: string
-          example: "개발 > 응용 프로그램 > C++"
+          example: "/cpp"
         createdAt:
           type: string
           format: date-time
@@ -180,10 +340,10 @@ components:
           type: string
           format: date-time
 
-    # ── 게시물 요약 (Public 목록) ─────────────────
+    # ── 게시물 ────────────────────────────────
     PostSummaryPublic:
       type: object
-      required: [id, slug, title, excerpt, thumbnail, createdAt, category, tags]
+      required: [id, slug, title, excerpt, thumbnail, createdAt, updatedAt, category, tags]
       properties:
         id:
           type: integer
@@ -204,6 +364,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        updatedAt:
+          type: string
+          format: date-time
         category:
           nullable: true
           allOf:
@@ -213,7 +376,6 @@ components:
           items:
             $ref: '#/components/schemas/TagPublic'
 
-    # ── 게시물 상세 (Public 단건) ─────────────────
     PostDetailPublic:
       type: object
       required: [id, slug, title, content, thumbnail, createdAt, updatedAt, category, tags]
@@ -244,7 +406,6 @@ components:
           items:
             $ref: '#/components/schemas/TagPublic'
 
-    # ── 게시물 요약 (Admin 목록) ──────────────────
     PostSummaryAdmin:
       allOf:
         - $ref: '#/components/schemas/PostSummaryPublic'
@@ -263,7 +424,6 @@ components:
             isPrivate:
               type: boolean
 
-    # ── 게시물 상세 (Admin/Create/Patch) ──────────
     PostDetailAdmin:
       type: object
       required: [id, slug, title, content, thumbnail, createdAt, updatedAt, isPublish, isPrivate, category, tags]
@@ -298,20 +458,29 @@ components:
           items:
             $ref: '#/components/schemas/TagPublic'
 
-    # ── 태그 상세 (Admin Create/Patch 결과) ────────
-    TagDetail:
+    # ── 계정 ──────────────────────────────────
+    AccountDetail:
       type: object
-      required: [id, name, slug, createdAt, updatedAt]
+      required: [id, accountId, nickname, avatarUrl, role, status, createdAt, updatedAt]
       properties:
         id:
           type: integer
-          example: 12
-        name:
+          example: 5
+        accountId:
           type: string
-          example: "태그 12"
-        slug:
+          example: "admin"
+        nickname:
           type: string
-          example: "tag-12"
+          example: "admin"
+        avatarUrl:
+          type: string
+          example: "https://www.svgrepo.com/show/345423/admin.svg"
+        role:
+          type: string
+          example: "ADMIN"
+        status:
+          type: string
+          example: "ACTIVE"
         createdAt:
           type: string
           format: date-time
@@ -319,30 +488,39 @@ components:
           type: string
           format: date-time
 
-    # ── Diff (changedFields) ─────────────────────
-    Diff:
+    AccountPublic:
       type: object
-      required: [changedFields]
+      required: [id, accountId, role]
       properties:
-        changedFields:
-          type: array
-          items:
-            type: string
-          example: ["name", "slug"]
+        id:
+          type: integer
+          example: 5
+        accountId:
+          type: string
+          example: "admin"
+        nickname:
+          type: string
+          example: "관리자"
+        avatarUrl:
+          type: string
+          example: "https://example.com/avatar.png"
+        role:
+          type: string
+          example: "ADMIN"
+        status:
+          type: string
+          example: "ACTIVE"
 
 # ────────────────────────────────────────────
 # Paths
 # ────────────────────────────────────────────
 paths:
 
-  # ============================================================
-  # 공통
-  # ============================================================
+  # ── Healthcheck ───────────────────────────
   /api/v1/health:
     get:
-      tags: [Common]
+      tags: [Healthcheck]
       summary: 서버 헬스체크
-      description: 서버 상태를 확인합니다. 'OK'를 반환합니다.
       operationId: healthCheck
       responses:
         '200':
@@ -352,68 +530,25 @@ paths:
               schema:
                 type: string
                 example: "OK"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  # ============================================================
-  # 사용자 API
-  # ============================================================
+  # ── 게시물 ────────────────────────────────
   /api/v1/posts:
     get:
       tags: [Public]
       summary: 게시물 목록 조회
-      description: 게시물 목록을 조회합니다.
       operationId: getPosts
       parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 10000
-            default: 1
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 200
-            default: 8
-        - name: search
-          in: query
-          schema:
-            type: string
-            maxLength: 100
-        - name: categorySlug
-          in: query
-          schema:
-            type: string
-            maxLength: 100
-        - name: tagSlugs
-          in: query
-          schema:
-            type: array
-            items:
-              type: string
-            maxItems: 50
-          style: form
-          explode: false
-        - name: tagFilterMode
-          in: query
-          schema:
-            type: string
-            enum: [OR, AND]
-            default: OR
-        - name: sortBy
-          in: query
-          schema:
-            type: string
-            enum: [createdAt, title, excerpt]
-            default: createdAt
-        - name: sortDir
-          in: query
-          schema:
-            type: string
-            enum: [asc, desc]
-            default: desc
+        - $ref: '#/components/parameters/QueryPage'
+        - $ref: '#/components/parameters/QueryPageSize'
+        - $ref: '#/components/parameters/QuerySearch'
+        - $ref: '#/components/parameters/QueryCategorySlug'
+        - $ref: '#/components/parameters/QueryTagSlugs'
+        - $ref: '#/components/parameters/QuerySortBy'
+        - $ref: '#/components/parameters/QuerySortDir'
       responses:
         '200':
           description: 게시물 목록 조회 성공
@@ -439,15 +574,12 @@ paths:
                                 properties:
                                   search:
                                     type: string
-                                    example: null
                                     nullable: true
                                   categorySlug:
                                     type: string
-                                    example: null
                                     nullable: true
                                   tagSlugs:
                                     type: array
-                                    example: ["tag-1", "tag-2", "java", "spring", "retrospective"]
                                     items:
                                       type: string
                           data:
@@ -455,26 +587,18 @@ paths:
                             items:
                               $ref: '#/components/schemas/PostSummaryPublic'
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'limit' parameter must not exceed 200."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/posts"
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     post:
       tags: [Admin]
       summary: 게시물 생성
-      description: 게시물을 생성합니다. JWT 인증이 필요합니다.
       operationId: createPost
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -485,28 +609,22 @@ paths:
               properties:
                 slug:
                   type: string
-                  example: "introduced-my-life"
                   maxLength: 150
                 title:
                   type: string
-                  example: "내 일상 소개"
                   maxLength: 100
                 content:
                   type: string
-                  example: "안녕하세요. 좋은 일상을 보내고 계신가요? 아니면, 반복되는 일상을 버티면서 살고 계신가요? 일상은 참 다양하고..."
                   maxLength: 100000
                 thumbnail:
                   type: string
-                  example: "https://img.example.com/asdf.png"
                   nullable: true
                   maxLength: 2048
                 categoryId:
                   type: integer
-                  example: 2
                   nullable: true
                 tagIds:
                   type: array
-                  example: [3,4]
                   items:
                     type: integer
                   maxItems: 50
@@ -528,72 +646,21 @@ paths:
                     properties:
                       result:
                         $ref: '#/components/schemas/PostDetailAdmin'
-              example:
-                status: 201
-                code: "E201_001"
-                detail: "The post with ID '12' was created successfully."
-                message: "리소스가 성공적으로 생성되었습니다."
-                timestamp: "2026-01-16T13:19:00+09:00"
-                path: "/api/v1/posts"
-                result:
-                  id: 12
-                  slug: "introduced-my-life"
-                  title: "내 일상 소개"
-                  content: "안녕하세요. 좋은 일상을 보내고 계신가요? 아니면, 반복되는 일상을 간신히 버티면서 살고 계신가요? 각 사람의 일상은 참 다양하고..."
-                  thumbnail: "https://img.example.com/asdf.png"
-                  createdAt: "2025-12-22T18:07:23+09:00"
-                  updatedAt: "2025-12-22T18:07:23+09:00"
-                  isPublish: true
-                  isPrivate: false
-                  category:
-                    id: 12
-                    parentId: 7
-                    name: "자료구조"
-                    slug: "data-structure"
-                    path: "0001/0007/0012"
-                    breadcrumb: "IT > 컴퓨터 과학 > 자료구조"
-                    createdAt: "2026-01-16T13:19:00+09:00"
-                    updatedAt: "2026-01-26T21:30:00+09:00"
-                  tags:
-                    - id: 3
-                      name: "태그1"
-                      slug: "tag-1"
-                    - id: 4
-                      name: "태그2"
-                      slug: "tag-2"
-                
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'title' parameter must not exceed 100."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/posts"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Access Key is Invaild."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/posts"
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/posts/{slug}:
     get:
       tags: [Public]
       summary: 개별 게시물 조회
-      description: 게시물의 Slug 값으로 게시물 내용을 가져옵니다.
       operationId: getPostBySlug
       parameters:
         - name: slug
@@ -601,7 +668,6 @@ paths:
           required: true
           schema:
             type: string
-          example: "example-my-blog-1"
       responses:
         '200':
           description: 게시물 조회 성공
@@ -614,107 +680,33 @@ paths:
                     properties:
                       result:
                         $ref: '#/components/schemas/PostDetailPublic'
-              example:
-                status: 200
-                code: "E200_001"
-                detail: "Successfully retrieved the post."
-                message: "게시글을 정상적으로 조회하였습니다."
-                timestamp: "2026-01-16T13:19:00+09:00"
-                path: "/api/v1/posts/example-my-blog-1"
-                result:
-                  id: 1
-                  slug: "example-my-blog-1"
-                  title: "제목1"
-                  content: "전체 내용1"
-                  thumbnail: "https://img.example.com/test.png"
-                  createdAt: "2025-12-22T18:07:23+09:00"
-                  updatedAt: "2025-12-22T18:07:23+09:00"
-                  category:
-                    id: 2
-                    name: "개발"
-                    slug: "development"
-                    breadcrumb: "개발"
-                  tags:
-                    - id: 3
-                      name: "태그1"
-                      slug: "tag-1"
-                    - id: 5
-                      name: "태그2"
-                      slug: "tag-2"
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 404
-                code: "E404_001"
-                detail: "Post resource not found."
-                message: "요청한 리소스를 찾을 수 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/posts/example-my-blog8"
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/posts/admin:
     get:
       tags: [Admin]
       summary: 관리자용 게시물 목록 조회
-      description: 비공개글을 포함하여 전체 게시물 목록을 조회합니다. JWT 인증이 필요합니다.
       operationId: getPostsAdmin
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 10000
-            default: 1
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 200
-            default: 8
-        - name: search
-          in: query
-          schema:
-            type: string
-            maxLength: 100
-        - name: categorySlug
-          in: query
-          schema:
-            type: string
-            maxLength: 100
-        - name: tagSlugs
-          in: query
-          schema:
-            type: array
-            items:
-              type: string
-            maxItems: 50
-          style: form
-          explode: false
-        - name: tagFilterMode
-          in: query
-          schema:
-            type: string
-            enum: [OR, AND]
-            default: OR
+        - $ref: '#/components/parameters/QueryPage'
+        - $ref: '#/components/parameters/QueryPageSize'
+        - $ref: '#/components/parameters/QuerySearch'
+        - $ref: '#/components/parameters/QueryCategorySlug'
+        - $ref: '#/components/parameters/QueryTagSlugs'
         - name: sortBy
           in: query
           schema:
             type: string
             enum: [createdAt, updatedAt, title, excerpt]
             default: createdAt
-        - name: sortDir
-          in: query
-          schema:
-            type: string
-            enum: [asc, desc]
-            default: desc
+        - $ref: '#/components/parameters/QuerySortDir'
         - name: isPublish
           in: query
           schema:
@@ -766,139 +758,24 @@ paths:
                             type: array
                             items:
                               $ref: '#/components/schemas/PostSummaryAdmin'
-              example:
-                status: 200
-                code: "E200_001"
-                detail: "Successfully retrieved 3 posts."
-                message: "정상적으로 페이지를 조회하였습니다."
-                timestamp: "2026-01-20T16:31:00+09:00"
-                path: "/api/v1/posts/admin"
-                result:
-                  meta:
-                    pagination:
-                      page: 1
-                      pageSize: 8
-                      total: 3
-                      totalPages: 1
-                      hasNextPage: false
-                      hasPrevPage: false
-                    sort:
-                      by: "createdAt"
-                      dir: "desc"
-                    filters:
-                      search: null
-                      categorySlug: null
-                      tagSlugs:
-                        - "tag-1"
-                        - "tag-2"
-                        - "java"
-                        - "spring"
-                        - "retrospective"
-                      isPublish: true
-                      isPrivate: false
-                  data:
-                    - id: 1
-                      slug: "example-my-blog-1"
-                      title: "제목1"
-                      excerpt: "내용 요약 1"
-                      thumbnail: "https://img.example.com/test.png"
-                      createdAt: "2025-12-22T18:07:23+09:00"
-                      updatedAt: "2025-12-22T18:07:23+09:00"
-                      category: null
-                      tags:
-                        - id: 3
-                          name: "태그1"
-                          slug: "tag-1"
-                        - id: 5
-                          name: "태그2"
-                          slug: "tag-2"
-                      isPublish: true
-                      isPrivate: false
-                    - id: 2
-                      slug: "example-my-blog-2"
-                      title: "제목2"
-                      excerpt: "내용 요약 2"
-                      thumbnail: null
-                      createdAt: "2025-12-23T09:15:10+09:00"
-                      updatedAt: "2026-01-22T14:18:23+09:00"
-                      category:
-                        id: 2
-                        parentId: 1
-                        name: "개발"
-                        slug: "development"
-                        path: "0001/0002"
-                        breadcrumb: "자기계발 > 개발"
-                      tags:
-                        - id: 1
-                          name: "Java"
-                          slug: "java"
-                        - id: 4
-                          name: "Spring"
-                          slug: "spring"
-                      isPublish: true
-                      isPrivate: false
-                    - id: 3
-                      slug: "example-my-blog-3"
-                      title: "제목3"
-                      excerpt: "내용 요약 3"
-                      thumbnail: "https://img.example.com/test3.png"
-                      createdAt: "2025-12-24T21:42:55+09:00"
-                      updatedAt: "2026-01-22T14:18:23+09:00"
-                      category:
-                        id: 3
-                        parentId: 4
-                        name: "일상"
-                        slug: "daily"
-                        path: "0004/0003"
-                        breadcrumb: "개인 > 일상"
-                      tags:
-                        - id: 6
-                          name: "회고"
-                          slug: "retrospective"
-                      isPublish: true
-                      isPrivate: false
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'pageSize' parameter must not exceed 200."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/posts/admin"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Access Key is Invaild."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/posts/admin"
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/posts/{id}:
     patch:
       tags: [Admin]
       summary: 게시물 수정
-      description: 게시물의 내용을 수정합니다. JWT 인증이 필요합니다.
       operationId: updatePost
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 12
+        - $ref: '#/components/parameters/PathId'
       requestBody:
         required: true
         content:
@@ -948,256 +825,116 @@ paths:
                             $ref: '#/components/schemas/PostDetailAdmin'
                           diff:
                             $ref: '#/components/schemas/Diff'
-              example:
-                status: 200
-                code: "E200_001"
-                detail: "The post with ID '12' was changed successfully."
-                message: "정상적으로 처리되었습니다."
-                timestamp: "2026-01-16T13:19:00+09:00"
-                path: "/api/v1/posts/12"
-                result:
-                  data:
-                    id: 12
-                    slug: "my-blog-1"
-                    title: "오늘 개발 일지 (2026-01-19)"
-                    content: "오늘 개발한 개발 블로그 내용은"
-                    thumbnail: "https://img.example.com/Daily_Dev.png"
-                    createdAt: "2025-12-22T18:07:23+09:00"
-                    updatedAt: "2026-01-19T16:20:00+09:00"
-                    category:
-                      id: 12
-                      parentId: 7
-                      name: "자료구조"
-                      slug: "data-structure"
-                      path: "0001/0007/0012"
-                      breadcrumb: "IT > 컴퓨터 과학 > 자료구조"
-                      createdAt: "2026-01-16T13:19:00+09:00"
-                      updatedAt: "2026-01-26T21:30:00+09:00"
-                    tags:
-                      - id: 3
-                        name: "태그1"
-                        slug: "tag-1"
-                      - id: 4
-                        name: "태그1.5"
-                        slug: "tag-1.5"
-                    isPublish: true
-                    isPrivate: false
-                  diff:
-                    changedFields:
-                      - "slug"
-                      - "title"
-                      - "content"
-                      - "thumbnail"
-                      - "category"
-                      - "tags"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'title' parameter must not exceed 100."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/posts/12"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Access Key is Invaild."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/posts/12"
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 404
-                code: "E404_001"
-                detail: "Post ID '12' resource not found."
-                message: "호출한 페이지를 찾을 수 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/posts/12"
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     delete:
       tags: [Admin]
       summary: 게시물 삭제
-      description: 게시물을 삭제합니다. JWT 인증이 필요합니다.
       operationId: deletePost
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 12
+        - $ref: '#/components/parameters/PathId'
       responses:
         '200':
-          description: 게시물 삭제 성공
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommonResponse'
+          $ref: '#/components/responses/OK'
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  # ============================================================
-  # 카테고리
-  # ============================================================
+  # ── 카테고리 ──────────────────────────────
   /api/v1/category:
     get:
       tags: [Public]
       summary: 카테고리 목록 조회
-      description: 카테고리 목록을 조회합니다.
       operationId: getCategories
       parameters:
-        - name: search
+        - name: limit
           in: query
           schema:
-            type: string
-            maxLength: 100
+            type: integer
         - name: sortBy
           in: query
           schema:
             type: string
-            enum: [id, name, slug, path]
+            enum: [id, parent_id, name, slug]
             default: id
-        - name: sortDir
+        - $ref: '#/components/parameters/QuerySortDir'
+        - name: id
+          in: query
+          schema:
+            type: integer
+            format: int16
+        - name: parentId
+          in: query
+          schema:
+            type: integer
+            format: int16
+            nullable: true
+        - name: name
           in: query
           schema:
             type: string
-            enum: [asc, desc]
-            default: asc
+        - name: slug
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: 카테고리 목록 조회 성공
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/CommonResponse'
-                  - type: object
-                    properties:
-                      result:
-                        type: object
-                        properties:
-                          meta:
-                            type: object
-                            properties:
-                              sort:
-                                $ref: '#/components/schemas/Sort'
-                              total:
-                                type: integer
-                                example: 4
-                              filters:
-                                type: object
-                                properties:
-                                  search:
-                                    type: string
-                                    nullable: true
-                          data:
-                            type: array
-                            items:
-                              type: object
-                              required: [id, name, slug, breadcrumb, depth]
-                              properties:
-                                id:
-                                  type: integer
-                                name:
-                                  type: string
-                                slug:
-                                  type: string
-                                breadcrumb:
-                                  type: string
-                                depth:
-                                  type: integer
-                                  description: 루트=0
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully retrieved 4 categories."
-                message: "정상적으로 호출되었습니다."
-                timestamp: "2026-01-16T13:19:00+09:00"
+                detail: "Successfully retrieved categories."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-05T08:22:08.148673804Z"
                 path: "/api/v1/category"
                 result:
                   meta:
                     sort:
                       by: "id"
-                      dir: "asc"
-                    total: 4
+                      dir: "desc"
+                    limit: 10
                     filters:
-                      search: null
+                      id: null
+                      parentId: null
+                      name: null
+                      slug: "europe"
                   data:
-                    - id: 1
-                      name: "개발"
-                      slug: "dev"
-                      breadcrumb: "개발"
-                      depth: 0
-                    - id: 2
-                      name: "일상"
-                      slug: "life"
-                      breadcrumb: "일상"
-                      depth: 0
-                    - id: 3
-                      name: "백엔드"
-                      slug: "backend"
-                      breadcrumb: "개발 > 백엔드"
-                      depth: 1
-                    - id: 4
-                      name: "프론트엔드"
-                      slug: "frontend"
-                      breadcrumb: "개발 > 프론트엔드"
-                      depth: 1
+                    - id: 30
+                      parentId: 19
+                      name: "유럽"
+                      slug: "europe"
+                      path: "/life/travel/overseas/europe"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_002"
-                message: "요청 파라미터의 타입 또는 형식이 올바르지 않습니다."
-                detail: "Invalid 'sort' parameter. Allowed values are: id, name, slug, path"
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/category"
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     post:
       tags: [Admin]
       summary: 카테고리 생성
-      description: 카테고리를 생성합니다. JWT 인증이 필요합니다.
       operationId: createCategory
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1213,11 +950,9 @@ paths:
                 name:
                   type: string
                   maxLength: 100
-                  example: "개발"
                 slug:
                   type: string
                   maxLength: 150
-                  example: "dev"
       responses:
         '201':
           description: 카테고리 생성 성공
@@ -1233,60 +968,38 @@ paths:
               example:
                 status: 201
                 code: "E201_001"
-                detail: "The category with ID '5' was created successfully."
+                detail: "Category '테스트2' created Successfully."
                 message: "리소스가 성공적으로 생성되었습니다."
-                timestamp: "2026-01-16T13:19:00+09:00"
+                timestamp: "2026-05-07T08:26:02.045722981Z"
                 path: "/api/v1/category"
                 result:
-                  id: 5
-                  parentId: 2
-                  name: "C++"
-                  slug: "cpp"
-                  path: "0001/0002/0005"
-                  breadcrumb: "개발 > 응용 프로그램 > C++"
-                  createdAt: "2026-01-16T13:19:00+09:00"
-                  updatedAt: "2026-01-16T13:19:00+09:00"
+                  id: 33
+                  parentId: 1
+                  path: "/tech/test2"
+                  name: "테스트2"
+                  slug: "test2"
+                  createdAt: "2026-05-07T17:26:02.038725893+09:00"
+                  updatedAt: "2026-05-07T17:26:02.038725893+09:00"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'name' parameter must not exceed 100."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/category"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Access Key is Invaild."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/category"
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/category/{id}:
     patch:
       tags: [Admin]
       summary: 카테고리 수정
-      description: 카테고리 내용을 수정합니다. JWT 인증이 필요합니다.
       operationId: updateCategory
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/PathId'
       requestBody:
         required: true
         content:
@@ -1296,15 +1009,12 @@ paths:
               properties:
                 parentId:
                   type: integer
-                  example: 7
                   nullable: true
                 name:
                   type: string
-                  example: "리눅스 보안 가이드"
                   maxLength: 100
                 slug:
                   type: string
-                  example: "linux-security-guide"
                   maxLength: 150
       responses:
         '200':
@@ -1326,237 +1036,125 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "The category with ID '12' was changed successfully."
+                detail: "Successfully changed category data."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-01-16T13:19:00+09:00"
-                path: "/api/v1/category/12"
+                timestamp: "2026-05-06T02:23:19.20868238Z"
+                path: "/api/v1/category/32"
                 result:
                   data:
-                    id: 12
-                    parentId: 7
-                    name: "자료구조"
-                    slug: "data-structure"
-                    path: "0001/0007/0012"
-                    breadcrumb: "IT > 컴퓨터 과학 > 자료구조"
-                    createdAt: "2026-01-16T13:19:00+09:00"
-                    updatedAt: "2026-01-26T21:30:00+09:00"
+                    id: 32
+                    parentId: null
+                    name: "str"
+                    slug: "str"
+                    path: "/str"
+                    createdAt: "2026-05-06T11:18:25.123544+09:00"
+                    updatedAt: "2026-05-06T11:23:19.198746982+09:00"
                   diff:
                     changedFields:
-                      - "parentId"
                       - "name"
                       - "slug"
-                      - "updatedAt"
                       - "path"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_002"
-                detail: "Parent category with ID '4' does not exist."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/category/12"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Access Key is Invaild."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/category/12"
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 404
-                code: "E404_001"
-                detail: "category ID '12' resource not found."
-                message: "호출한 페이지를 찾을 수 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/category/12"
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     delete:
       tags: [Admin]
       summary: 카테고리 삭제
-      description: 카테고리를 삭제합니다. JWT 인증이 필요합니다.
       operationId: deleteCategory
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/PathId'
       responses:
         '200':
-          description: 카테고리 삭제 성공
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommonResponse'
-              example:
-                status: 200
-                code: "E200_001"
-                detail: "The Category ID '12' has been deleted."
-                message: "정상적으로 처리되었습니다."
-                timestamp: "2026-01-20T12:21:00+09:00"
-                path: "/api/v1/category/12"
+          $ref: '#/components/responses/OK'
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "Invalid request. Category ID must be 0 or greater."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/category/-46543"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 404
-                code: "E404_001"
-                detail: "Category ID '12' resource not found."
-                message: "호출한 페이지를 찾을 수 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/category/12"
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Access Key is Invaild."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/category/12"
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  # ============================================================
-  # 태그
-  # ============================================================
+  # ── 태그 ──────────────────────────────────
   /api/v1/tag:
     get:
       tags: [Public]
       summary: 태그 목록 조회
-      description: 태그 목록을 조회합니다.
       operationId: getTags
       parameters:
-        - name: search
+        - name: limit
           in: query
           schema:
-            type: string
-            maxLength: 100
+            type: integer
+            default: 10
         - name: sortBy
           in: query
           schema:
             type: string
             enum: [id, name, slug]
             default: id
-        - name: sortDir
+        - $ref: '#/components/parameters/QuerySortDir'
+        - name: id
+          in: query
+          schema:
+            type: integer
+        - name: name
           in: query
           schema:
             type: string
-            enum: [asc, desc]
-            default: asc
+            default: ""
+        - name: slug
+          in: query
+          schema:
+            type: string
+            default: ""
       responses:
         '200':
           description: 태그 목록 조회 성공
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/CommonResponse'
-                  - type: object
-                    properties:
-                      result:
-                        type: object
-                        properties:
-                          meta:
-                            type: object
-                            properties:
-                              sort:
-                                $ref: '#/components/schemas/Sort'
-                              total:
-                                type: integer
-                              filters:
-                                type: object
-                                properties:
-                                  search:
-                                    type: string
-                                    nullable: true
-                          data:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/TagPublic'
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully retrieved 3 tags."
-                message: "정상적으로 호출되었습니다."
-                timestamp: "2026-01-16T13:19:00+09:00"
+                detail: "Successfully retrieved tags."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-05T08:37:02.770263057Z"
                 path: "/api/v1/tag"
                 result:
                   meta:
                     sort:
                       by: "id"
-                      dir: "asc"
-                    total: 3
+                      dir: "desc"
+                    limit: 10
                     filters:
-                      search: null
+                      id: 0
+                      name: ""
+                      slug: ""
                   data:
-                    - id: 1
-                      name: "태그1"
-                      slug: "tag-1"
-                    - id: 2
-                      name: "태그2"
-                      slug: "tag-2"
-                    - id: 3
-                      name: "태그3"
-                      slug: "tag-3"
+                    - id: 15
+                      name: "GORM"
+                      slug: "gorm"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_002"
-                message: "요청 파라미터의 타입 또는 형식이 올바르지 않습니다."
-                detail: "Invalid 'sort' parameter. Allowed values are: id, name, slug"
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/tag"
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     post:
       tags: [Admin]
       summary: 태그 생성
-      description: 태그를 생성합니다. JWT 인증이 필요합니다.
       operationId: createTag
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1567,11 +1165,9 @@ paths:
               properties:
                 name:
                   type: string
-                  example: "태그 1"
                   maxLength: 100
                 slug:
                   type: string
-                  example: "tag-1"
                   maxLength: 150
       responses:
         '201':
@@ -1585,60 +1181,26 @@ paths:
                     properties:
                       result:
                         $ref: '#/components/schemas/TagDetail'
-              example:
-                status: 201
-                code: "E201_001"
-                detail: "The tag with ID '12' was created successfully."
-                message: "리소스가 성공적으로 생성되었습니다."
-                timestamp: "2026-01-16T13:19:00+09:00"
-                path: "/api/v1/tag"
-                result:
-                  id: 12
-                  name: "태그 12"
-                  slug: "tag-12"
-                  createdAt: "2026-01-16T13:19:00+09:00"
-                  updatedAt: "2026-01-16T13:19:00+09:00"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'name' parameter must not exceed 100."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/tag"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Access Key is Invaild."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/tag"
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/tag/{id}:
     patch:
       tags: [Admin]
       summary: 태그 수정
-      description: 태그를 수정합니다. JWT 인증이 필요합니다.
       operationId: updateTag
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/PathId'
       requestBody:
         required: true
         content:
@@ -1648,11 +1210,9 @@ paths:
               properties:
                 name:
                   type: string
-                  example: "태그 12"
                   maxLength: 100
                 slug:
                   type: string
-                  example: "tag-12"
                   maxLength: 150
       responses:
         '200':
@@ -1674,136 +1234,55 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "The tag with ID '12' was changed successfully."
+                detail: "Successfully changed tag data."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-01-16T13:19:00+09:00"
-                path: "/api/v1/tag/12"
+                timestamp: "2026-05-06T03:35:20.188673008Z"
+                path: "/api/v1/tag/13"
                 result:
                   data:
-                    id: 12
-                    name: "LinuxGSM 게임 서버 점검"
-                    slug: "linuxgsm-maintanence"
-                    createdAt: "2026-01-16T13:19:00+09:00"
-                    updatedAt: "2026-01-23T14:03:00+09:00"
+                    id: 13
+                    name: "ㅁㄴㅇㄹ"
+                    slug: "asdf"
+                    createdAt: "2026-05-05T20:35:54.052013+09:00"
+                    updatedAt: "2026-05-06T12:35:20.176124591+09:00"
                   diff:
                     changedFields:
                       - "name"
                       - "slug"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'name' parameter must not exceed 100."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/tag/12"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Access Key is Invaild."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/tag/12"
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 404
-                code: "E404_001"
-                detail: "Tag ID '12' resource not found."
-                message: "호출한 페이지를 찾을 수 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/tag/12"
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     delete:
       tags: [Admin]
       summary: 태그 삭제
-      description: 태그를 삭제합니다. JWT 인증이 필요합니다.
       operationId: deleteTag
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/PathId'
       responses:
         '200':
-          description: 태그 삭제 성공
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommonResponse'
-              example:
-                status: 200
-                code: "E200_001"
-                detail: "The tag ID '12' has been deleted."
-                message: "정상적으로 처리되었습니다."
-                timestamp: "2026-01-20T12:21:00+09:00"
-                path: "/api/v1/tag/12"
+          $ref: '#/components/responses/OK'
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "Invalid request. Tag ID must be 0 or greater."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/tag/-46543"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Access Key is Invaild."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/tag/12"
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 404
-                code: "E404_001"
-                detail: "Tag ID '12' resource not found."
-                message: "호출한 페이지를 찾을 수 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/tag/12"
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  # ============================================================
-  # 정적 파일
-  # ============================================================
+  # ── 정적 파일 ─────────────────────────────
   /api/v1/static/{file}:
     get:
       tags: [Public]
       summary: 정적 파일 조회
-      description: 정적 파일(이미지 등)을 반환합니다.
       operationId: getStaticFile
       parameters:
         - name: file
@@ -1811,37 +1290,196 @@ paths:
           required: true
           schema:
             type: string
-          example: "test.png"
       responses:
         '200':
           description: 파일 반환 성공
-          headers:
-            Content-Type:
-              schema:
-                type: string
-                example: "image/png"
-            Cache-Control:
-              schema:
-                type: string
-                example: "public, max-age=31536000"
           content:
             image/*:
               schema:
                 type: string
                 format: binary
-        '403':
-          description: 허용되지 않은 파일 타입
         '404':
-          description: 파일 없음
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  # ============================================================
-  # 인증 (Auth)
-  # ============================================================
-  /api/v1/auth/login: 
+  # ── 인증 ──────────────────────────────────
+  /api/v1/auth/{accountId}:
+    get:
+      tags: [Admin]
+      summary: 관리자 계정 조회
+      operationId: getAccount
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PathAccount'
+      responses:
+        '200':
+          description: 계정 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/AccountDetail'
+              example:
+                status: 200
+                code: "E200_001"
+                detail: "Successfully retrieved 'admin' account."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-12T04:30:26.826058992Z"
+                path: "/api/v1/auth/admin"
+                result:
+                  id: 4
+                  accountId: "admin"
+                  nickname: "admin"
+                  avatarUrl: "https://www.svgrepo.com/show/345423/admin.svg"
+                  role: "ADMIN"
+                  status: "ACTIVE"
+                  createdAt: "2026-05-12T13:27:51.404057+09:00"
+                  updatedAt: "2026-05-12T13:27:51.404057+09:00"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/list:
+    get:
+      tags: [Admin]
+      summary: 관리자 계정 목록 조회
+      operationId: listAccounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [id, accountId, role]
+            default: id
+        - $ref: '#/components/parameters/QuerySortDir'
+        - name: id
+          in: query
+          schema:
+            type: integer
+        - name: accountId
+          in: query
+          schema:
+            type: string
+        - name: nickname
+          in: query
+          schema:
+            type: string
+        - name: avatarUrl
+          in: query
+          schema:
+            type: string
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [USER, ADMIN]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, SUSPENDED]
+      responses:
+        '200':
+          description: 계정 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          meta:
+                            type: object
+                            properties:
+                              sort:
+                                $ref: '#/components/schemas/Sort'
+                              limit:
+                                type: integer
+                                example: 10
+                              filters:
+                                type: object
+                                properties:
+                                  id:
+                                    type: integer
+                                    nullable: true
+                                  accountId:
+                                    type: string
+                                    nullable: true
+                                  nickname:
+                                    type: string
+                                    nullable: true
+                                  avatarUrl:
+                                    type: string
+                                    nullable: true
+                                  role:
+                                    type: string
+                                    nullable: true
+                                  status:
+                                    type: string
+                                    nullable: true
+                          data:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/AccountPublic'
+              example:
+                status: 200
+                code: "E200_001"
+                detail: "Successfully retrieved 1 accounts."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-12T04:42:32.204823929Z"
+                path: "/api/v1/auth/list"
+                result:
+                  meta:
+                    sort:
+                      by: "id"
+                      dir: "desc"
+                    limit: 2
+                    filters:
+                      id: null
+                      accountId: null
+                      nickname: "2번_관리자"
+                      avatarUrl: null
+                      role: null
+                      status: null
+                  data:
+                    - id: 5
+                      accountId: "admin2"
+                      nickname: "2번_관리자"
+                      avatarUrl: "https://example.com/avatar.png"
+                      role: "ADMIN"
+                      status: "ACTIVE"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/login:
     post:
       tags: [Admin]
       summary: 관리자 로그인
-      description: 관리자 계정으로 로그인하여 JWT 쿠키를 발급합니다.
       operationId: login
       requestBody:
         required: true
@@ -1849,181 +1487,136 @@ paths:
           application/json:
             schema:
               type: object
-              required: [id, password]
+              required: [accountId, password]
               properties:
-                id:
+                accountId:
                   type: string
-                  example: "admin"
+                  default: admin
                 password:
                   type: string
                   format: password
-                  example: "p455w06d"
+                  default: '******'
       responses:
         '200':
           description: 로그인 성공
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=eyJ...; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CommonResponse'
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        required: [token]
+                        properties:
+                          token:
+                            type: string
               example:
                 status: 200
                 code: "E200_001"
+                detail: "Successfully login 'admin' account."
                 message: "정상적으로 처리되었습니다."
-                detail: "Login successfully."
-                timestamp: "2026-01-16T13:19:00+09:00"
+                timestamp: "2026-05-12T04:44:03.867780601Z"
                 path: "/api/v1/auth/login"
+                result:
+                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiQURNSU4iLCJpc3MiOiJmaWVsZG5vdGVzX3RlY2hfYmxvZyIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzc4NjQ3NDQzLCJpYXQiOjE3Nzg1NjEwNDMsImp0aSI6IjcwYmIxOWZhLWYzMWUtNDM3OS04Y2I5LTAwMGVjNTYyNzkwMyJ9.p9VJI4okBUblWMw7yQFtCQRD5i8Qy5v6mGBx25-hHAQ"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_002"
-                message: "요청 파라미터의 타입 또는 형식이 올바르지 않습니다."
-                detail: "The request parameter 'id' is invalid."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/login"
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 401
-                code: "E401_001"
-                message: "관리자 로그인에 실패하였습니다. 비밀번호를 다시 확인해주세요."
-                detail: "Invalid admin credentials."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/login"
-              
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/auth/register:
     post:
       tags: [Admin]
       summary: 관리자 계정 생성
-      description: |
-        관리자 계정을 생성합니다.  
-        DB에 계정이 없는 경우(Bootstrap) JWT 없이 1개 생성 가능.  
-        이후 추가 생성 시 JWT 인증이 필요합니다.
       operationId: register
       security:
-        - {}
-        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [id, password]
+              required: [accountId, password, nickname, role, status]
               properties:
-                id:
+                accountId:
                   type: string
-                  example: "admin"
+                  default: testAccount1
                   minLength: 3
                   maxLength: 31
                 password:
                   type: string
-                  example: "p455w06d"
                   format: password
+                  default: testAccount1
                   minLength: 8
                   maxLength: 80
                 nickname:
                   type: string
-                  example: "Administrator"
+                  default: 테스트_계정1
                   minLength: 2
                   maxLength: 20
                 avatarUrl:
                   type: string
-                  example: "https://example.com/avatar.svg"
+                  default: "https://example.com/avatar.png"
                   maxLength: 2048
+                role:
+                  type: string
+                  default: ADMIN
+                status:
+                  type: string
+                  default: ACTIVE
       responses:
         '201':
           description: 계정 생성 성공
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CommonResponse'
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/AccountDetail'
               example:
                 status: 201
                 code: "E201_001"
+                detail: "Successfully added columns to 'testAccount2' account."
                 message: "리소스가 성공적으로 생성되었습니다."
-                detail: "Account created successfully."
-                timestamp: "2026-01-16T13:19:00+09:00"
+                timestamp: "2026-05-12T04:46:24.661956113Z"
                 path: "/api/v1/auth/register"
+                result:
+                  id: 6
+                  accountId: "testAccount2"
+                  nickname: "테스트_계정2"
+                  avatarUrl: "https://example.com/avatar.png"
+                  role: "ADMIN"
+                  status: "ACTIVE"
+                  createdAt: "2026-05-12T13:46:24.658372556+09:00"
+                  updatedAt: "2026-05-12T13:46:24.658372556+09:00"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'id' parameter must not exceed 31."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/register"
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 401
-                code: "E401_001"
-                message: "인증에 실패하였습니다."
-                detail: "Invalid admin credentials."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/register"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Admin Role required."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/register"
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
-          description: Conflict (아이디 중복)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 409
-                code: "E409_001"
-                detail: "accountId already exists."
-                message: "서버의 현재 상태와 요청이 충돌하였습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/register"
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/auth/update:
+  /api/v1/auth/update/{accountId}:
     patch:
       tags: [Admin]
       summary: 관리자 계정 수정
-      description: 관리자 계정 정보를 수정합니다. JWT 인증이 필요합니다.
       operationId: updateAccount
       security:
-        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PathAccount'
       requestBody:
         required: true
         content:
@@ -2033,19 +1626,25 @@ paths:
               properties:
                 password:
                   type: string
-                  example: "p455w06d"
                   format: password
+                  default: testAccount1
                   minLength: 8
                   maxLength: 80
                 nickname:
                   type: string
-                  example: "Administrator"
+                  default: 테스트_계정1
                   minLength: 2
                   maxLength: 20
                 avatarUrl:
                   type: string
-                  example: "https://example.com/avatar.svg"
+                  default: "https://example.com/avatar.png"
                   maxLength: 2048
+                role:
+                  type: string
+                  default: ADMIN
+                status:
+                  type: string
+                  default: ACTIVE
       responses:
         '200':
           description: 계정 수정 성공
@@ -2060,101 +1659,61 @@ paths:
                         type: object
                         properties:
                           data:
-                            $ref: '#/components/schemas/AccountUpdate'
+                            allOf:
+                              - $ref: '#/components/schemas/AccountDetail'
+                              - type: object
+                                properties:
+                                  isPasswordChanged:
+                                    type: boolean
                           diff:
-                            $ref: '#/components/schemas/Diff'
+                            type: object
+                            properties:
+                              changed_fields:
+                                type: array
+                                items:
+                                  type: string
+                                example: ["passwordHash"]
               example:
                 status: 200
                 code: "E200_001"
+                detail: "Successfully changed 'testAccount1' account fields."
                 message: "정상적으로 처리되었습니다."
-                detail: "Account information has been updated."
-                timestamp: "2026-01-16T13:19:00+09:00"
-                path: "/api/v1/auth/update"
+                timestamp: "2026-05-12T04:48:00.653716296Z"
+                path: "/api/v1/auth/update/testAccount1"
                 result:
                   data:
-                    id: "admin1"
-                    passwordStatus: "CHANGED"
-                    nickname: "Admin"
+                    isPasswordChanged: true
+                    id: 7
+                    accountId: "testAccount1"
+                    nickname: "테스트_계정1"
                     avatarUrl: "https://example.com/avatar.png"
+                    role: "ADMIN"
+                    status: "ACTIVE"
+                    createdAt: "2026-05-12T13:47:13.524613+09:00"
+                    updatedAt: "2026-05-12T13:48:00.648882621+09:00"
                   diff:
-                    changedFields:
-                      - "password"
-                      - "nickname"
-                      - "avatarUrl"
+                    changed_fields:
+                      - "passwordHash"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'password' parameter must not exceed 80."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/update"
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 401
-                code: "E401_001"
-                message: "인증에 실패하였습니다."
-                detail: "Invalid admin credentials."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/update"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Admin Role required."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/update"
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
-          description: Conflict (닉네임 중복)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 409
-                code: "E409_001"
-                detail: "nickname already exists."
-                message: "서버의 현재 상태와 요청이 충돌하였습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/update"
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/auth/delete:
+  /api/v1/auth/delete/{accountId}:
     delete:
       tags: [Admin]
       summary: 관리자 계정 삭제
-      description: 관리자 계정을 삭제합니다. JWT 인증이 필요합니다.
       operationId: deleteAccount
       security:
-        - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [id]
-              properties:
-                id:
-                  type: string
-                  example: "admin2"
-                  maxLength: 32
-                  description: 삭제할 관리자 계정 ID
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PathAccount'
       responses:
         '200':
           description: 계정 삭제 성공
@@ -2165,59 +1724,15 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
+                detail: "Successfully deleted 'testAccount1' account."
                 message: "정상적으로 처리되었습니다."
-                detail: "Account deleted successfully."
-                timestamp: "2026-01-16T13:19:00+09:00"
-                path: "/api/v1/auth/delete"
+                timestamp: "2026-05-12T04:49:31.576551915Z"
+                path: "/api/v1/auth/delete/testAccount1"
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 400
-                code: "E400_003"
-                detail: "The 'id' parameter must not exceed 31."
-                message: "요청 파라미터의 값이 허용된 범위를 벗어났습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/delete"
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 401
-                code: "E401_001"
-                message: "인증에 실패하였습니다."
-                detail: "Invalid admin credentials."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/delete"
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 403
-                code: "E403_001"
-                detail: "Admin Role required."
-                message: "접근 권한이 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/delete"
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                status: 404
-                code: "E404_001"
-                detail: "Account 'admin2' does not exist."
-                message: "요청한 리소스를 찾을 수 없습니다."
-                timestamp: "2025-12-26T01:34:00+09:00"
-                path: "/api/v1/auth/delete"
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'

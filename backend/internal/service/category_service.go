@@ -6,6 +6,7 @@ import (
 	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/repository"
 	"github.com/kmj36/fieldnotes-tech-blog/pkg/cryption"
+	"gorm.io/gorm"
 )
 
 // 카테고리 관련 비즈니스 로직
@@ -22,14 +23,14 @@ func (s *CategoryService) Create(ctx *gin.Context, req *dto.CreateCategoryReques
 	var existing *model.Category
 	var err error
 	var path string
-	var parentID *int32
+	var parentID *int16
 
 	existing, err = s.repo.FindByName(ctx, req.Name)
 	if err != nil {
 		return nil, err
 	}
 	if existing != nil {
-		return nil, dto.CErrCategoryAlreadyExists
+		return nil, dto.CErrAlreadyExists
 	}
 
 	if req.ParentID == nil || *req.ParentID == 0 {
@@ -39,6 +40,9 @@ func (s *CategoryService) Create(ctx *gin.Context, req *dto.CreateCategoryReques
 		parent, err := s.repo.FindByID(ctx, *req.ParentID)
 		if err != nil {
 			return nil, err
+		}
+		if parent == nil {
+			return nil, gorm.ErrRecordNotFound
 		}
 		path = parent.Path + "/" + req.Slug
 		parentID = req.ParentID
@@ -54,141 +58,145 @@ func (s *CategoryService) Create(ctx *gin.Context, req *dto.CreateCategoryReques
 	return s.repo.Create(ctx, newCategory)
 }
 
-func (s *CategoryService) List(ctx *gin.Context, req *dto.GetCategoryRequest) ([]*dto.CategoriesObject, error) {
-	var categories []*dto.CategoriesObject
-	var datas	[]*model.Category
-	var err		error
-	
+func (s *CategoryService) GetList(ctx *gin.Context, req *dto.ReadCategoriesRequest) ([]*dto.CategoryPublic, error) {
+	var result  []*dto.CategoryPublic
 
-	if req.SortBy == "" {
-		req.SortBy = "id"
-	}
-
-	if req.SortDir == "" {
-		req.SortDir = "desc"
-	}
-
-	if req.Limit == 0 {
-		req.Limit = 10
-	}
-
-	datas, err = s.repo.List(ctx, req)
+	array, err := s.repo.GetList(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	categories = make([]*dto.CategoriesObject, len(datas))
+	result = make([]*dto.CategoryPublic, len(array))
 
-	for idx, data := range datas {
-		categories[idx] = &dto.CategoriesObject{
-			ID: data.ID,
-			ParentID: data.ParentID,
-			Name: data.Name,
-			Slug: data.Slug,
-			Path: data.Path,
+	for idx, item := range array {
+		result[idx] = &dto.CategoryPublic{
+			ID: item.ID,
+			ParentID: item.ParentID,
+			Path: item.Path,
+			Name: item.Name,
+			Slug: item.Slug,
 		}
 	}
 
-	return categories, nil
+	return result, nil
 }
 
-func (s *CategoryService) Update(ctx *gin.Context, id int32, req dto.UpdateCategoryRequest) (*dto.UpdateCategoryResponse, error) {
-	var changed *dto.UpdateCategoryResponse
-	var data *model.Category
-	var err error
-
-	updates := map[string]interface{}{}
-
+func (s *CategoryService) UpdateFields(ctx *gin.Context, req *dto.UpdateCategoryRequest) (*dto.UpdateCategoryResponse, error) {
 	// 업데이트 전 현재 카테고리 조회
-	current, err := s.repo.FindByID(ctx, id)
+	existing, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
 		return nil, err
 	}
-	oldPath := current.Path
+	if existing == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
 
-    if req.Name != "" {
+	updates := map[string]interface{}{}
+	changedFields := []string{}
+
+    if req.Name != nil && *req.Name != existing.Name {
         updates["name"] = req.Name
+		changedFields = append(changedFields, "name")
     }
 
-	slug := current.Slug
-	if req.Slug != "" {
-		slug = req.Slug
+	slug := existing.Slug
+	if req.Slug != nil && *req.Slug != existing.Slug {
+		slug = *req.Slug
 		updates["slug"] = slug
+		changedFields = append(changedFields, "slug")
 	}
 
-	// parent_id가 전달된 경우에만 path 재조합
-	if req.ParentID != nil {
-		if *req.ParentID == 0 {
-			// 최상위로 변경
-			updates["path"] = "/" + slug
-			updates["parent_id"] = nil
-		} else {
-			// 특정 부모로 변경
-			parent, err := s.repo.FindByID(ctx, *req.ParentID)
-			if err != nil {
-				return nil, err
-			}
-			updates["path"] = parent.Path + "/" + slug
-			updates["parent_id"] = req.ParentID
-		}
-	} else if req.Slug != "" {
-		// parent_id 변경 없이 slug만 변경된 경우 path 재조합
-		if current.ParentID == nil {
-			updates["path"] = "/" + slug
-		} else {
-			parent, err := s.repo.FindByID(ctx, *current.ParentID)
-			if err != nil {
-				return nil, err
-			}
-			updates["path"] = parent.Path + "/" + slug
-		}
-	}
+	slugChanged := req.Slug != nil && *req.Slug != existing.Slug
+    parentChanged := req.ParentID != nil && (existing.ParentID == nil || *req.ParentID != *existing.ParentID)
 
-	var changedFields []string
-    for key := range updates {
-        changedFields = append(changedFields, key)
+	if parentChanged || slugChanged {
+        changedFields = append(changedFields, "path")
+        if parentChanged {
+            changedFields = append(changedFields, "parentId")
+        }
+
+        if req.ParentID != nil && *req.ParentID == 0 {
+            // 최상위로 변경
+            updates["path"] = "/" + slug
+            updates["parent_id"] = nil
+        } else {
+		   var parentID *int16
+			if parentChanged {
+				parentID = req.ParentID
+			} else {
+				parentID = existing.ParentID
+			}
+			if parentID == nil {
+				updates["path"] = "/" + slug
+			} else {
+				parent, err := s.repo.FindByID(ctx, *parentID)
+				if err != nil {
+					return nil, err
+				}
+				if parent == nil {
+					return nil, gorm.ErrRecordNotFound
+				}
+				updates["path"] = parent.Path + "/" + slug
+			}
+			if parentChanged {
+				updates["parent_id"] = req.ParentID
+			}
+        }
     }
-	
-	if data, err = s.repo.Update(ctx, id, updates) ; err != nil {
+
+	if len(updates) == 0 {
+		return nil, dto.CErrUpdateEmptyParam
+	} 
+
+	data, err := s.repo.Update(ctx, req, updates)
+	if err != nil {
 		return nil, err
 	}
 
 	// 하위 카테고리 연쇄 업데이트
-	s.repo.UpdateDescendantPaths(ctx, oldPath, updates["path"].(string))
+	if newPath, ok := updates["path"].(string); ok {
+		s.repo.UpdateDescendantPaths(ctx, existing.Path, newPath)
+	}
 
-	changed = &dto.UpdateCategoryResponse{
-		Data: dto.CreateCategoryResponse{
-			ID: data.ID,
-			ParentID: data.ParentID,
-			Name: data.Name,
-			Slug: data.Slug,
-			Path: data.Path,
+	return &dto.UpdateCategoryResponse{
+		Data: dto.CategoryDetail{
+			CategoryPublic: dto.CategoryPublic{
+				ID: data.ID,
+				ParentID: data.ParentID,
+				Path: data.Path,
+				Name: data.Name,
+				Slug: data.Slug,
+			},
 			CreatedAt: data.CreatedAt,
 			UpdatedAt: data.UpdatedAt,
 		},
 		Diff: dto.CommonUpdateDiff{
 			ChangedFields: changedFields,
 		},
-	}
-
-    return changed, err
+	}, nil
 }
 
-func (s *CategoryService) Delete(ctx *gin.Context, id int32) (*model.Category, error) {
-	var data *model.Category
-	var current *model.Category
-	var err error
-
-	current, err = s.repo.FindByID(ctx, id)
+func (s *CategoryService) Delete(ctx *gin.Context, req *dto.DeleteCategoryRequest) (*model.Category, error) {
+	current, err := s.repo.FindByID(ctx, req.ID)
     if err != nil {
         return nil, err
     }
+	if current == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
 
-	if data, err = s.repo.Delete(ctx, id) ; err != nil {
+	count, err := s.repo.CountByParentID(ctx, current.ID)
+	if err != nil {
+		return nil, err
+	}
+	if count > 0 {
+		return nil, dto.CErrChildNodeExists
+	}
+
+	result, err := s.repo.Delete(ctx, req) 
+	if err != nil {
 		return nil, err
 	}
 
-	s.repo.ResetDescendantPaths(ctx, current.Path)
-
-	return data, nil
+	return result, nil
 }

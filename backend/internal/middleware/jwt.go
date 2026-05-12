@@ -33,11 +33,11 @@ func JWTAuthMiddleware(jwtmanager *cryption.JWTManager) gin.HandlerFunc {
 
 		token, err := jwtmanager.ValidateJWT(parts[1])
 
-		if authHeader == "" || !token.Valid || err != nil {
+		if err != nil || token == nil || !token.Valid {
 			ctx.JSON(http.StatusUnauthorized, dto.ResponseWrapper[any]{
 				Status: http.StatusUnauthorized,
-				Code: "E401_001",
-				Message: "인증에 실패하였습니다.",
+				Code: dto.ErrUnauthorized.Code,
+				Message: dto.ErrUnauthorized.Message,
 				Detail: "Invalid admin credentials.",
 				Timestamp: time.Now().UTC(),
 				Path: ctx.Request.URL.Path,

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
@@ -32,7 +33,7 @@ func (repo *TagRepository) FindByName(ctx *gin.Context, name string) (*model.Tag
 }
 
 
-func (repo *TagRepository) FindByID(ctx *gin.Context, id int32) (*model.Tag, error) {
+func (repo *TagRepository) FindByID(ctx *gin.Context, id int16) (*model.Tag, error) {
 	var tag model.Tag
 	
 	query := repo.db.WithContext(ctx)
@@ -47,30 +48,31 @@ func (repo *TagRepository) FindByID(ctx *gin.Context, id int32) (*model.Tag, err
     return &tag, nil
 }
 
-func (repo *TagRepository) List(ctx *gin.Context, req *dto.GetTagRequest) ([]*model.Tag, error) {
+func (repo *TagRepository) GetList(ctx *gin.Context, req *dto.ReadTagsRequest) ([]*model.Tag, error) {
     var tags []*model.Tag
 
     query := repo.db.WithContext(ctx)
 
-    if req.ID != 0 {
+    if req.ID != nil {
         query = query.Where("id = ?", req.ID)
     }
 
-    if req.Name != "" {
-        query = query.Where("name LIKE ?", "%"+req.Name+"%")
+    if req.Name != nil {
+        query = query.Where("name LIKE ?", fmt.Sprintf("%%%s%%", *req.Name))
     }
 
-    if req.Slug != "" {
+    if req.Slug != nil {
         query = query.Where("slug = ?", req.Slug)
     }
 
-    if req.SortBy != "" && req.SortDir != "" {
-        query = query.Order(req.SortBy + " " + req.SortDir)
+    query = query.Order(fmt.Sprintf("%s %s", req.SortBy, req.SortDir))
+    query = query.Limit(int(req.Limit))
+
+    if err := query.Find(&tags).Error ; err != nil {
+        return nil, err
     }
 
-    query = query.Limit(req.Limit)
-
-    return tags, query.Find(&tags).Error
+    return tags, nil
 }
 
 func (repo *TagRepository) Create(ctx *gin.Context, newTag *model.Tag) (*model.Tag, error) {
@@ -82,11 +84,11 @@ func (repo *TagRepository) Create(ctx *gin.Context, newTag *model.Tag) (*model.T
     return newTag, nil
 }
 
-func (repo *TagRepository) Update(ctx *gin.Context, id int32, updates map[string]interface{}) (*model.Tag, error) {
+func (repo *TagRepository) Update(ctx *gin.Context, req *dto.UpdateTagRequest, updates map[string]any) (*model.Tag, error) {
    var tagData model.Tag
 
     err := repo.db.WithContext(ctx).
-        Where("id = ?", id).
+        Where("id = ?", req.ID).
         First(&tagData).Error
     if err != nil {
         return nil, err
@@ -103,11 +105,11 @@ func (repo *TagRepository) Update(ctx *gin.Context, id int32, updates map[string
     return &tagData, nil
 }
 
-func (repo *TagRepository) Delete(ctx *gin.Context, id int32) (*model.Tag, error) {
+func (repo *TagRepository) Delete(ctx *gin.Context, req *dto.DeleteTagRequest) (*model.Tag, error) {
     var tagData model.Tag
 
     err := repo.db.WithContext(ctx).
-        Where("id = ?", id).
+        Where("id = ?", req.ID).
         First(&tagData).Error
     if err != nil {
         return nil, err

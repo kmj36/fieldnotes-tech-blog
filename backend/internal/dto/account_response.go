@@ -6,47 +6,57 @@ import (
 
 // 응답 DTO (Client <- API)
 
-type UpdateAccountData struct {
-    ID             int		`json:"id"`
-    AccountID       string  `json:"account_id"`
-    Password_updated bool	`json:"password_updated"`
-    Nickname       string		`json:"nickname"`
-    AvatarURL      string		`json:"avatar_url"`
+type AccountPublic struct {
+    ID          int16   `json:"id"`
+    AccountID   string  `json:"accountId"`
+    Nickname    string  `json:"nickname"`
+    AvatarURL   *string  `json:"avatarUrl"`
+    Role        string  `json:"role"`
+    Status	    string  `json:"status"`
 }
 
-type UpdateAccountResponse struct {
-	Data		UpdateAccountData	`json:"data"`
-	Diff		CommonUpdateDiff	`json:"diff"`
-}
-
-type ReadAccountResponse struct {
-	ID				int		`json:"id"`
-	AccountID		string		`json:"account_id"`
-	Nickname		string		`json:"nickname"`
-	AvatarURL		string		`json:"avatar_url"`
-	Role			string		`json:"role"`
-	Status			string		`json:"status"`
-	CreatedAt		time.Time	`json:"created_at"`
-	UpdatedAt		time.Time	`json:"updated_at"`
+type AccountDetail struct {
+    AccountPublic
+    CreatedAt		time.Time	`json:"createdAt"`
+	UpdatedAt		time.Time	`json:"updatedAt"`
 }
 
 type LoginAccountResponse struct {
 	Token			string		`json:"token"`
 }
 
-type AccountSummary struct {
-    Id        int    `json:"id"`
-    AccountID string `json:"account_id"`
-    Role      string `json:"role"`
+type CreateAccountReponse struct {
+    AccountDetail
 }
 
+type ReadAccountResponse struct {
+    AccountDetail
+}
+
+type ListAccountFilter struct {
+    ID				*int16		`json:"id"`
+	AccountID		*string		`json:"accountId"`
+	Nickname		*string		`json:"nickname"`
+	AvatarURL		*string		`json:"avatarUrl"`
+	Role			*string		`json:"role"`
+	Status			*string		`json:"status"`
+}
 type ListAccountMeta struct {
-    Sort    SortMeta       `json:"sort"`
-    Limit   int            `json:"limit"`
-    Filters AccountSummary `json:"filters"`
+    Sort    SortMeta          `json:"sort"`
+    Limit   int16             `json:"limit"`
+    Filters ListAccountFilter `json:"filters"`
+}
+type ListAccountsResponse struct {
+	Meta     ListAccountMeta     `json:"meta"`
+    Data    []*AccountPublic	 `json:"data"`
 }
 
-type ListAccountResponse struct {
-    Meta ListAccountMeta          `json:"meta"`
-    Data []*AccountSummary	 `json:"data"`
+type UpdateAccountData struct {
+    IsPasswordChanged   bool    `json:"isPasswordChanged"`
+    AccountDetail
+}
+
+type UpdateAccountResponse struct {
+	Data		UpdateAccountData	`json:"data"`
+	Diff		CommonUpdateDiff	`json:"diff"`
 }

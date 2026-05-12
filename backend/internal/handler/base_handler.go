@@ -9,7 +9,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
+	"gorm.io/gorm"
 )
 
 type BaseHandler struct {}
@@ -67,10 +69,21 @@ func (h *BaseHandler) respondBindError(ctx *gin.Context, err error) {
 }
 
 func (h *BaseHandler) respondProcessError(ctx *gin.Context, err error) {
+	var pgErr *pgconn.PgError
+
 	switch {
-	case errors.Is(err, dto.CErrAccountAlreadyExists),
-		 errors.Is(err, dto.CErrNicknameAlreadyExists),
-		 errors.Is(err, dto.CErrCategoryAlreadyExists):
+	case errors.Is(err, dto.CErrUpdateEmptyParam),
+		errors.Is(err, dto.CErrChildNodeExists):
+		ctx.JSON(dto.ErrBadRequestType.Status, dto.ResponseWrapper[any]{
+			Status: dto.ErrBadRequestType.Status,
+			Code: dto.ErrBadRequestType.Code,
+			Detail: err.Error(),
+			Message: dto.ErrBadRequestType.Message,
+			Timestamp: time.Now().UTC(),
+			Path: ctx.Request.URL.Path,
+		})
+	case errors.Is(err, dto.CErrAlreadyExists),
+		errors.As(err, &pgErr) && pgErr.Code == "23505":
 		ctx.JSON(http.StatusConflict, dto.ResponseWrapper[any]{
 			Status: http.StatusConflict,
 			Code: dto.ErrConflict.Code,
@@ -85,6 +98,15 @@ func (h *BaseHandler) respondProcessError(ctx *gin.Context, err error) {
 			Code: dto.ErrUnauthorized.Code,
 			Detail: err.Error(),
 			Message: dto.ErrUnauthorized.Message,
+			Timestamp: time.Now().UTC(),
+			Path: ctx.Request.URL.Path,
+		})
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		ctx.JSON(dto.ErrNotFound.Status, dto.ResponseWrapper[any]{
+			Status: dto.ErrNotFound.Status,
+			Code: dto.ErrNotFound.Code,
+			Detail: err.Error(),
+			Message: dto.ErrNotFound.Message,
 			Timestamp: time.Now().UTC(),
 			Path: ctx.Request.URL.Path,
 		})
