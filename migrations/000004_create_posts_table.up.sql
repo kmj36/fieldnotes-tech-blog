@@ -14,7 +14,6 @@ CREATE TABLE posts (
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  deleted_at TIMESTAMPTZ,
 
   CONSTRAINT fk_posts_account
     FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE,

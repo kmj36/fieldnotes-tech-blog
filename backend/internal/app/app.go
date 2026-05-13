@@ -28,6 +28,7 @@ type App struct {
 	accountHandler 	*handler.AccountHandler
 	categoryHandler *handler.CategoryHandler
 	tagHandler		*handler.TagHandler
+	postHandler		*handler.PostHandler
 
 	jwtManager 	*cryption.JWTManager
 
@@ -45,6 +46,9 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 	categoryService := service.NewCategoryService(categoryRepo, jwtManager)
 	tagRepo := repository.NewTagRepository(db)
 	tagService := service.NewTagService(tagRepo, jwtManager)
+	postRepo := repository.NewPostRepository(db)
+	
+	postService := service.NewPostService(postRepo, tagRepo, categoryRepo, jwtManager)
 
 	return &App{
 		router: gin.New(),
@@ -55,6 +59,7 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 		accountHandler: handler.NewAccountHandler(accountService),
 		categoryHandler: handler.NewCategoryHandler(categoryService),
 		tagHandler: handler.NewTagHandler(tagService),
+		postHandler: handler.NewPostHandler(postService),
 
 		jwtManager: jwtManager,
 		db: db,
@@ -115,6 +120,7 @@ func (app *App) setupRoutes() {
 		auth.GET("/auth/:accountId", app.accountHandler.Read)
 		auth.PATCH("/auth/update/:accountId", app.accountHandler.Update)
 		auth.DELETE("/auth/delete/:accountId", app.accountHandler.Delete)
+		auth.POST("/post", app.postHandler.Create)
 		auth.POST("/category", app.categoryHandler.Create)
 		auth.PATCH("/category/:id", app.categoryHandler.Update)
 		auth.DELETE("/category/:id", app.categoryHandler.Delete)

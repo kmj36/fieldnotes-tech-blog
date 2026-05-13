@@ -129,8 +129,8 @@ INSERT INTO posts (account_id, slug, title, content, thumbnail, category_id, pub
     TRUE
   );
 
--- ── posts_tags ────────────────────────────────────────────────
-INSERT INTO posts_tags (post_id, tag_id) VALUES
+-- ── post_tags ────────────────────────────────────────────────
+INSERT INTO post_tags (post_id, tag_id) VALUES
   ((SELECT id FROM posts WHERE slug = 'getting-started-with-go'), (SELECT id FROM tags WHERE slug = 'go')),
   ((SELECT id FROM posts WHERE slug = 'getting-started-with-go'), (SELECT id FROM tags WHERE slug = 'gorm')),
   ((SELECT id FROM posts WHERE slug = 'docker-compose-guide'),    (SELECT id FROM tags WHERE slug = 'docker')),

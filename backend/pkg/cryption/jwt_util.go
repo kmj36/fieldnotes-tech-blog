@@ -23,7 +23,7 @@ func NewJWTManager(secret []byte, expiry time.Duration) *JWTManager {
 }
 
 func (j *JWTManager) GenerateJWT(userAccountID string, role string) (string, error) {
-	now := time.Now()
+	now := time.Now().UTC()
 
 	claims := CustomClaims{
 		Role: role,

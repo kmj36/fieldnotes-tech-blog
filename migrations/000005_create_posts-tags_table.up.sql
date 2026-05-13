@@ -1,4 +1,4 @@
-CREATE TABLE posts_tags (
+CREATE TABLE post_tags (
   post_id INTEGER NOT NULL,
   tag_id SMALLINT NOT NULL,
   PRIMARY KEY (post_id, tag_id),

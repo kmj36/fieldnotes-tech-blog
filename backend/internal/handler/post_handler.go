@@ -1,0 +1,44 @@
+package handler
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
+	"github.com/kmj36/fieldnotes-tech-blog/internal/service"
+)
+
+type PostHandler struct {
+	BaseHandler
+	service *service.PostService
+}
+
+func NewPostHandler(service *service.PostService) *PostHandler {
+	return &PostHandler{service: service}
+}
+
+func (h *PostHandler) Create(ctx *gin.Context) {
+	var req dto.CreatePostRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		h.respondBindError(ctx, err)
+		return
+	}
+
+	// 게시물 추가 처리
+	post, err := h.service.Create(ctx, &req)
+	if err != nil {
+		h.respondProcessError(ctx, err)
+	}
+
+	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[*dto.CreatePostResponse]{
+		Status: dto.ErrCreated.Status,
+		Code: dto.ErrCreated.Code,
+		Message: dto.ErrCreated.Message,
+		Detail: fmt.Sprintf("Successfully added columns to '%s' post.", post.Slug),
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: post,
+	})
+}
