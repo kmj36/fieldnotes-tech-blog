@@ -47,6 +47,27 @@ func (repo *CategoryRepository) FindByID(ctx *gin.Context, id int16) (*model.Cat
     return &category, nil
 }
 
+func (repo *CategoryRepository) FindByIDs(ctx *gin.Context, ids []int16) (map[int16]*model.Category, error) {
+    var categories []*model.Category
+
+    query := repo.db.WithContext(ctx)
+    
+    if len(ids) == 0 {
+        return map[int16]*model.Category{}, nil
+    }
+
+    if err := query.Where("id IN ?", ids).Find(&categories).Error; err != nil {
+        return nil, err
+    }
+
+    result := make(map[int16]*model.Category)
+    for _, item := range categories {
+        result[item.ID] = item
+    }
+
+    return result, nil
+}
+
 func (repo *CategoryRepository) CountByParentID(ctx *gin.Context, id int16) (int64, error) {
     var count int64
     err := repo.db.WithContext(ctx).
@@ -55,6 +76,7 @@ func (repo *CategoryRepository) CountByParentID(ctx *gin.Context, id int16) (int
         Count(&count).Error
     return count, err
 }
+
 
 func (repo *CategoryRepository) List(ctx *gin.Context, req *dto.ReadCategoriesRequest) ([]*model.Category, error) {
     var categories []*model.Category

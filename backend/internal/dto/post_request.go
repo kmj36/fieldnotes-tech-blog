@@ -12,15 +12,34 @@ type CreatePostRequest struct {
     IsPrivate   *bool      	`json:"isPrivate" binding:"omitempty"`
 }
 
-type ReadPostRequest struct {
-	Page			int32		`json:"page" binding:"min=1,max=10000"`
-	PageSize		int32		`json:"page_size" binding:"max=200"`
-	Search			string		`json:"search" binding:"max=100"`
-	CategorySlug	string		`json:"category_slug" binding:"max=100"`
-	TagSlugs		[]string	`json:"tag_slugs" binding:"max=50"`
-	TagSort			string		`json:"tag_sort"`
-	SortBy			string		`json:"sort_by"`
-	SortDir			string		`json:"sort_dir"`
+type ListPostsRequest struct {
+	Page			int			`form:"page"      binding:"min=1"`
+	PageLimit		int			`form:"pageLimit" binding:"min=1"`
+	SortBy			string		`form:"sortBy"    binding:"oneof=id created_at updated_at published_at title slug"`
+	SortDir			string		`form:"sortDir"   binding:"oneof=asc desc"`
+	
+	ID				*int		`form:"id"         binding:"omitempty,min=1"`
+	AccountID 		*string		`form:"accountId"  binding:"omitempty,max=255"`
+	Slug   	    	*string    	`form:"slug"       binding:"omitempty,min=1,max=150"`
+	Title    		*string    	`form:"title"      binding:"omitempty,min=1,max=100"`
+	CategoryID  	*int16     	`form:"categoryId" binding:"omitempty,min=1"`
+	TagSlugs		[]string	`form:"tagSlugs"   binding:"omitempty,max=50"`
+	IsPrivate   	*bool      	`form:"isPrivate"  binding:"omitempty"` // ADMIN ONLY
+}
+
+func (r *ListPostsRequest) SetDefaults() {
+	if r.Page == 0 {
+		r.Page = 1
+	}
+	if r.PageLimit == 0 {
+		r.PageLimit = 8
+	}
+	if r.SortBy == "" {
+		r.SortBy = "createdAt"
+	}
+	if r.SortDir == "" {
+		r.SortDir = "desc"
+	}
 }
 
 type UpdatePostRequest struct {

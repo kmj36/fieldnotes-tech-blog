@@ -136,3 +136,113 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 
 	return res, nil
 }
+
+func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.ListPostsResponse, error) {
+	var result []*dto.PostPublic
+	
+	array, total, err := s.postRepo.List(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 게시물 ID, 카테고리 ID 목록 추출
+	postIDs := make([]int, len(array))
+	categoryIDs := make([]int16, 0, len(array))
+	for i, post := range array {
+		postIDs[i] = post.ID
+		if post.CategoryID != nil {
+			categoryIDs = append(categoryIDs, *post.CategoryID)
+		}
+	}
+
+	// 게시물 ID 카테고리 확인
+	categoryMap, err := s.categoryRepo.FindByIDs(ctx, categoryIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 게시물 ID 태그 확인
+	tagMap, err := s.tagRepo.FindByPostID(ctx, postIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	result = make([]*dto.PostPublic, len(array))
+	for idx, post := range array {
+		// 게시물 유니코드 150자 절삭
+		var excerpt string
+		var category *dto.CategoryPublic
+		var postTag []dto.TagPublic
+
+		runes := []rune(post.Content)
+		if len(runes) > 150 {
+			excerpt = string(runes[:150])
+		} else {
+			excerpt = string(runes)
+		}
+
+		if post.CategoryID != nil {
+			CategoryData := categoryMap[*post.CategoryID]
+			category = &dto.CategoryPublic{
+				ID: CategoryData.ID,
+				ParentID: CategoryData.ParentID,
+				Path: CategoryData.Path,
+				Name: CategoryData.Name,
+				Slug: CategoryData.Slug,
+			}
+
+		}
+
+		postTag = make([]dto.TagPublic, len(tagMap[post.ID]))
+		for idx, tagData := range tagMap[post.ID] {
+			postTag[idx] = dto.TagPublic{
+				ID: tagData.ID,
+				Name: tagData.Name,
+				Slug: tagData.Slug,
+			}
+		}
+
+		result[idx] = &dto.PostPublic{
+			ID: post.ID,
+			Slug: post.Slug,
+			Title: post.Title,
+			Excerpt: excerpt,
+			Thumbnail: post.Thumbnail,
+			PublishedAt: post.PublishedAt,
+			UpdatedAt: post.UpdatedAt,
+			Category: category,
+			Tags: postTag,
+		}
+	}
+
+	var TotalPages int = (total + req.PageLimit - 1) / req.PageLimit
+
+	res := &dto.ListPostsResponse{
+		Meta: dto.ListPostsMetaData{
+			Pagination: dto.ListPostsPagination{
+				Page:        req.Page,
+				PageLimit:   req.PageLimit,
+				Total:       total, // DB에서 COUNT 쿼리로 가져온 전체 수
+				TotalPages:  (total + req.PageLimit - 1) / req.PageLimit,
+				HasNextPage: req.Page < TotalPages,
+				HasPrevPage: req.Page > 1,
+			},
+			Sort: dto.SortMeta{
+				SortBy: req.SortBy,
+				SortDir: req.SortDir,
+			},
+			Filter: dto.ListPostsFilter{
+				ID: req.ID,
+				AccountID: req.AccountID,
+				Slug: req.Slug,
+				Title: req.Title,
+				CategoryID: req.CategoryID,
+				TagSlugs: req.TagSlugs,
+				IsPrivate: req.IsPrivate,
+			},
+		},
+		Datas: result,
+	}
+
+	return res, nil
+}

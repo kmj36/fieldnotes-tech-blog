@@ -131,8 +131,8 @@ components:
         maximum: 10000
         default: 1
 
-    QueryPageSize:
-      name: pageSize
+    QueryPageLimit:
+      name: pageLimit
       in: query
       schema:
         type: integer
@@ -140,19 +140,41 @@ components:
         maximum: 200
         default: 8
 
-    QuerySearch:
-      name: search
+    QueryPostId:
+      name: id
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+
+    QueryAccountId:
+      name: accountId
+      in: query
+      schema:
+        type: string
+        maxLength: 255
+
+    QuerySlug:
+      name: slug
+      in: query
+      schema:
+        type: string
+        maxLength: 150
+
+    QueryTitle:
+      name: title
       in: query
       schema:
         type: string
         maxLength: 100
 
-    QueryCategorySlug:
-      name: categorySlug
+    QueryCategoryId:
+      name: categoryId
       in: query
       schema:
-        type: string
-        maxLength: 100
+        type: integer
+        format: int16
+        minimum: 1
 
     QueryTagSlugs:
       name: tagSlugs
@@ -165,13 +187,13 @@ components:
       style: form
       explode: false
 
-    QuerySortBy:
+    QueryPostSortBy:
       name: sortBy
       in: query
       schema:
         type: string
-        enum: [createdAt, title, excerpt]
-        default: createdAt
+        enum: [id, created_at, updated_at, published_at, title, slug]
+        default: created_at
 
     QuerySortDir:
       name: sortDir
@@ -214,12 +236,12 @@ components:
 
     Pagination:
       type: object
-      required: [page, pageSize, total, totalPages, hasNextPage, hasPrevPage]
+      required: [page, pageLimit, total, totalPages, hasNextPage, hasPrevPage]
       properties:
         page:
           type: integer
           example: 1
-        pageSize:
+        pageLimit:
           type: integer
           example: 8
         total:
@@ -239,7 +261,7 @@ components:
       properties:
         by:
           type: string
-          example: "createdAt"
+          example: "created_at"
         dir:
           type: string
           enum: [asc, desc]
@@ -594,12 +616,15 @@ paths:
       operationId: getPosts
       parameters:
         - $ref: '#/components/parameters/QueryPage'
-        - $ref: '#/components/parameters/QueryPageSize'
-        - $ref: '#/components/parameters/QuerySearch'
-        - $ref: '#/components/parameters/QueryCategorySlug'
-        - $ref: '#/components/parameters/QueryTagSlugs'
-        - $ref: '#/components/parameters/QuerySortBy'
+        - $ref: '#/components/parameters/QueryPageLimit'
+        - $ref: '#/components/parameters/QueryPostSortBy'
         - $ref: '#/components/parameters/QuerySortDir'
+        - $ref: '#/components/parameters/QueryPostId'
+        - $ref: '#/components/parameters/QueryAccountId'
+        - $ref: '#/components/parameters/QuerySlug'
+        - $ref: '#/components/parameters/QueryTitle'
+        - $ref: '#/components/parameters/QueryCategoryId'
+        - $ref: '#/components/parameters/QueryTagSlugs'
       responses:
         '200':
           description: 게시물 목록 조회 성공
@@ -623,20 +648,131 @@ paths:
                               filters:
                                 type: object
                                 properties:
-                                  search:
+                                  id:
+                                    type: integer
+                                    nullable: true
+                                  accountId:
                                     type: string
                                     nullable: true
-                                  categorySlug:
+                                  slug:
                                     type: string
+                                    nullable: true
+                                  title:
+                                    type: string
+                                    nullable: true
+                                  categoryId:
+                                    type: integer
                                     nullable: true
                                   tagSlugs:
                                     type: array
+                                    nullable: true
                                     items:
                                       type: string
                           data:
                             type: array
                             items:
                               $ref: '#/components/schemas/PostSummaryPublic'
+              example:
+                status: 200
+                code: "E200_001"
+                detail: "Successfully retrieved 4 posts."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-15T07:39:02.320119958Z"
+                path: "/api/v1/post"
+                result:
+                  meta:
+                    pagination:
+                      page: 3
+                      pageLimit: 4
+                      total: 12
+                      totalPages: 3
+                      hasNextPage: false
+                      hasPrevPage: true
+                    sort:
+                      by: "published_at"
+                      dir: "desc"
+                    filter:
+                      id: null
+                      accountId: null
+                      slug: null
+                      title: null
+                      categoryId: null
+                      tagSlugs: null
+                  data:
+                    - id: 4
+                      slug: "japan-travel-log"
+                      title: "일본 여행 후기"
+                      excerpt: "## 도쿄 3박 4일\\n처음 방문한 일본은 정말 인상적이었습니다..."
+                      thumbnail: "https://img.example.com/japan.png"
+                      publishedAt: "2026-05-09T14:34:06.425355+09:00"
+                      updatedAt: "2026-05-13T14:34:06.425355+09:00"
+                      category:
+                        id: 29
+                        parentId: 19
+                        path: "/life/travel/overseas/japan"
+                        name: "일본"
+                        slug: "japan"
+                      tags:
+                        - id: 10
+                          name: "여행기"
+                          slug: "travel-log"
+                    - id: 3
+                      slug: "react-hooks-deep-dive"
+                      title: "React Hooks 완벽 정리"
+                      excerpt: "## useState, useEffect\\nReact Hooks는 함수형 컴포넌트에서..."
+                      thumbnail: null
+                      publishedAt: "2026-05-07T14:34:06.425355+09:00"
+                      updatedAt: "2026-05-13T14:34:06.425355+09:00"
+                      category:
+                        id: 22
+                        parentId: 10
+                        path: "/tech/frontend/react/hooks"
+                        name: "React Hooks"
+                        slug: "hooks"
+                      tags:
+                        - id: 4
+                          name: "React"
+                          slug: "react"
+                    - id: 2
+                      slug: "docker-compose-guide"
+                      title: "Docker Compose 실전 가이드"
+                      excerpt: "## Docker Compose\\n여러 컨테이너를 한 번에 관리하는 방법..."
+                      thumbnail: "https://img.example.com/docker.png"
+                      publishedAt: "2026-05-05T14:34:06.425355+09:00"
+                      updatedAt: "2026-05-13T14:34:06.425355+09:00"
+                      category:
+                        id: 28
+                        parentId: 16
+                        path: "/tech/devops/docker/compose"
+                        name: "Docker Compose"
+                        slug: "compose"
+                      tags:
+                        - id: 7
+                          name: "Docker"
+                          slug: "docker"
+                        - id: 8
+                          name: "Kubernetes"
+                          slug: "kubernetes"
+                    - id: 1
+                      slug: "getting-started-with-go"
+                      title: "Go 시작하기"
+                      excerpt: "## Go란?\\nGo는 구글이 만든 정적 타입 컴파일 언어입니다..."
+                      thumbnail: "https://img.example.com/go.png"
+                      publishedAt: "2026-05-03T14:34:06.425355+09:00"
+                      updatedAt: "2026-05-13T14:34:06.425355+09:00"
+                      category:
+                        id: 13
+                        parentId: 5
+                        path: "/tech/backend/go"
+                        name: "Go"
+                        slug: "go"
+                      tags:
+                        - id: 1
+                          name: "Go"
+                          slug: "go"
+                        - id: 11
+                          name: "GORM"
+                          slug: "gorm"
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -719,7 +855,7 @@ paths:
                   id: 7
                   slug: "go_learning_1"
                   title: "GORM 이란?"
-                  excerpt: "GORM은 Go 언어에서 사용하는 ORM(Object Relational Mapping) 라이브러리입니다. SQL 쿼리를 직접 작성하지 않고도 Go 구조체를 통해 데이터베이스를 조작할 수 있습니다. GORM은 MySQL, PostgreSQL, SQLite, SQL Se"
+                  excerpt: "GORM은 Go 언어에서 사용하는 ORM(Object Relational Mapping) 라이브러리입니다."
                   thumbnail: "https://example.com/thumbnail.png"
                   publishedAt: "2026-05-13T05:37:24.71177312Z"
                   updatedAt: "2026-05-13T14:37:24.712436929+09:00"
@@ -786,27 +922,28 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/QueryPage'
-        - $ref: '#/components/parameters/QueryPageSize'
-        - $ref: '#/components/parameters/QuerySearch'
-        - $ref: '#/components/parameters/QueryCategorySlug'
-        - $ref: '#/components/parameters/QueryTagSlugs'
+        - $ref: '#/components/parameters/QueryPageLimit'
         - name: sortBy
           in: query
           schema:
             type: string
-            enum: [createdAt, updatedAt, title, excerpt]
-            default: createdAt
+            enum: [id, created_at, updated_at, published_at, title, slug]
+            default: created_at
         - $ref: '#/components/parameters/QuerySortDir'
+        - $ref: '#/components/parameters/QueryPostId'
+        - $ref: '#/components/parameters/QueryAccountId'
+        - $ref: '#/components/parameters/QuerySlug'
+        - $ref: '#/components/parameters/QueryTitle'
+        - $ref: '#/components/parameters/QueryCategoryId'
+        - $ref: '#/components/parameters/QueryTagSlugs'
         - name: isPublish
           in: query
           schema:
             type: boolean
-            default: true
         - name: isPrivate
           in: query
           schema:
             type: boolean
-            default: false
       responses:
         '200':
           description: 관리자 게시물 목록 조회 성공
@@ -830,20 +967,32 @@ paths:
                               filters:
                                 type: object
                                 properties:
-                                  search:
+                                  id:
+                                    type: integer
+                                    nullable: true
+                                  accountId:
                                     type: string
                                     nullable: true
-                                  categorySlug:
+                                  slug:
                                     type: string
+                                    nullable: true
+                                  title:
+                                    type: string
+                                    nullable: true
+                                  categoryId:
+                                    type: integer
                                     nullable: true
                                   tagSlugs:
                                     type: array
+                                    nullable: true
                                     items:
                                       type: string
                                   isPublish:
                                     type: boolean
+                                    nullable: true
                                   isPrivate:
                                     type: boolean
+                                    nullable: true
                           data:
                             type: array
                             items:
@@ -892,7 +1041,7 @@ paths:
                 tagSlugs:
                   type: array
                   items:
-                    type: integer
+                    type: string
                   maxItems: 50
                 isPublish:
                   type: boolean
@@ -1457,7 +1606,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [id, accountId, role]
+            enum: [id, account_id, role]
             default: id
         - $ref: '#/components/parameters/QuerySortDir'
         - name: id
@@ -1610,7 +1759,7 @@ paths:
                 timestamp: "2026-05-12T04:44:03.867780601Z"
                 path: "/api/v1/auth/login"
                 result:
-                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiQURNSU4iLCJpc3MiOiJmaWVsZG5vdGVzX3RlY2hfYmxvZyIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzc4NjQ3NDQzLCJpYXQiOjE3Nzg1NjEwNDMsImp0aSI6IjcwYmIxOWZhLWYzMWUtNDM3OS04Y2I5LTAwMGVjNTYyNzkwMyJ9.p9VJI4okBUblWMw7yQFtCQRD5i8Qy5v6mGBx25-hHAQ"
+                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

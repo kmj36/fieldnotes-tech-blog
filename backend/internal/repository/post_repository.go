@@ -2,8 +2,10 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/model"
 	"gorm.io/gorm"
 )
@@ -57,4 +59,58 @@ func (repo *PostRepository) Create(ctx *gin.Context, newPost *model.Post, tags [
     }
 
 	return newPost, nil
+}
+
+func (repo *PostRepository) List(ctx *gin.Context, req *dto.ListPostsRequest) ([]*model.Post, int, error) {
+    var total int64
+    var posts []*model.Post
+
+    query := repo.db.WithContext(ctx).Model(&model.Post{})
+
+    if req.ID != nil {
+        query = query.Where("id = ?", req.ID)
+    }
+
+    if req.AccountID != nil {
+        query = query.Where("account_id = ?", req.AccountID)
+    }
+
+    if req.Slug != nil {
+        query = query.Where("slug = ?", req.Slug)
+    }
+
+    if req.Title != nil {
+        query = query.Where("title LIKE ?", fmt.Sprintf("%%%s%%", *req.Title))
+    }
+
+    if req.CategoryID != nil {
+        query = query.Where("category_id = ?", req.CategoryID)
+    }
+
+    if len(req.TagSlugs) > 0 {
+        query = query.Where(`
+            id IN (
+                SELECT post_id FROM post_tags
+                WHERE tag_id IN (
+                    SELECT id FROM tags WHERE slug IN ?
+                )
+            )
+        `, req.TagSlugs)
+    }
+
+    query = query.Where("is_private = ?", false).Where("published_at IS NOT NULL")
+
+    if err := query.Count(&total).Error; err != nil {
+        return nil, 0, err
+    }
+
+    if err := query.
+        Order(fmt.Sprintf("%s %s", req.SortBy, req.SortDir)).
+        Offset((req.Page - 1) * req.PageLimit).
+        Limit(req.PageLimit).
+        Find(&posts).Error; err != nil {
+        return nil, 0, err
+    }
+
+    return posts, int(total), nil
 }

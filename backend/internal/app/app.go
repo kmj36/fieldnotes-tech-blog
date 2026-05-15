@@ -107,6 +107,7 @@ func (app *App) setupRoutes() {
 	{
         api.GET("/health", app.healthHandler.HealthCheck)
 		api.POST("/auth/login", app.accountHandler.Login)
+		api.GET("/post", app.postHandler.List)
 		api.GET("/category", app.categoryHandler.List)
 		api.GET("/tag", app.tagHandler.List)
 	}
