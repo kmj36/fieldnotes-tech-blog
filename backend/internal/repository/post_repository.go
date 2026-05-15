@@ -29,41 +29,32 @@ func (repo *PostRepository) FindBySlug(ctx *gin.Context, postSlug string) (*mode
     return &post, nil
 }
 
-func (repo *PostRepository) Create(ctx *gin.Context, newPost *model.Post) (*model.Post, error) {
-	query := repo.db.WithContext(ctx)
-	err := query.Create(newPost).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return newPost, nil
-}
-
-func (repo *PostRepository) CreatePostTags(ctx *gin.Context, postID int, tagSlugs []string) ([]*model.Tag, error) {
-	if len(tagSlugs) == 0 {
-        return []*model.Tag{}, nil
-    }
-
-    // slug 로 tag 조회
-    var tags []*model.Tag
-    if err := repo.db.WithContext(ctx).
-        Where("slug IN ?", tagSlugs).
-        Find(&tags).Error; err != nil {
+func (repo *PostRepository) Create(ctx *gin.Context, newPost *model.Post, tags []*model.Tag) (*model.Post, error) {
+	tx := repo.db.WithContext(ctx).Begin()
+	
+    if err := tx.Create(newPost).Error; err != nil {
+        tx.Rollback()
         return nil, err
     }
 
-    // post_tags 일괄 등록
-    postTags := make([]model.PostTag, len(tags))
-    for idx, tag := range tags {
-        postTags[idx] = model.PostTag{
-            PostID: postID,
-            TagID:  tag.ID,
+    if len(tags) > 0 {
+        postTags := make([]model.PostTag, len(tags))
+        for i, tag := range tags {
+            postTags[i] = model.PostTag{
+                PostID: newPost.ID,
+                TagID: tag.ID,
+            }
+        }
+
+        if err := tx.Create(&postTags).Error; err != nil {
+            tx.Rollback()
+            return nil, err
         }
     }
 
-    if err := repo.db.WithContext(ctx).Create(&postTags).Error; err != nil {
+    if err := tx.Commit().Error; err != nil {
         return nil, err
     }
 
-    return tags, nil
+	return newPost, nil
 }

@@ -32,6 +32,7 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 	var publishedAt *time.Time
 	var category	*dto.CategoryPublic
 	var tags		[]dto.TagPublic
+	var tagDatas	[]*model.Tag
 
 	// 게시물 중복 여부 확인
 	existing, err := s.postRepo.FindBySlug(ctx, req.Slug)
@@ -60,6 +61,23 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 		}
 	}
 
+	// 태그 Slugs 존재 여부 확인
+	if len(req.TagSlugs) > 0 {
+		var err error
+		tagDatas, err = s.tagRepo.FindBySlugs(ctx, req.TagSlugs)
+		if err != nil {
+			return nil, err
+		}
+		tags = make([]dto.TagPublic, len(tagDatas))
+		for idx, item := range tagDatas {
+			tags[idx] = dto.TagPublic{
+				ID: item.ID,
+				Name: item.Name,
+				Slug: item.Slug,
+			}
+		}
+	}
+
 	// JWT Claim 에서 계정 ID 추출 
 	account := ctx.GetString("accountId")
 	if account == "" {
@@ -67,7 +85,9 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 	}
 
 	// 게시물 발행, 비공개 여부 확인
-	if req.IsPrivate == nil || !*req.IsPrivate {
+	if req.IsPrivate != nil && *req.IsPrivate {
+		isPrivate = true
+	} else {
 		now := time.Now().UTC()
 		publishedAt = &now
 	}
@@ -85,13 +105,7 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 	}
 
 	// 게시물 DB 컬럼 등록 시도
-	post, err := s.postRepo.Create(ctx, newPost)
-	if err != nil {
-		return nil, err
-	}
-
-	// 게시물-태그 매핑테이블 등록 시도
-	tagdatas, err := s.postRepo.CreatePostTags(ctx, post.ID, req.TagSlugs)
+	post, err := s.postRepo.Create(ctx, newPost, tagDatas)
 	if err != nil {
 		return nil, err
 	}
@@ -103,15 +117,6 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 		excerpt = string(runes[:150])
 	} else {
 		excerpt = string(runes)
-	}
-
-	tags = make([]dto.TagPublic, len(tagdatas))
-	for idx, item := range tagdatas {
-		tags[idx] = dto.TagPublic{
-			ID: item.ID,
-			Name: item.Name,
-			Slug: item.Slug,
-		}
 	}
 
 	// 서비스 응답 반환값 생성
