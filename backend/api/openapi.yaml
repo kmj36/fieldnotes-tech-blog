@@ -742,43 +742,70 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully retrieved 3 posts."
+                detail: "Successfully retrieved 2 posts."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-15T08:59:13.184518021Z"
+                timestamp: "2026-05-16T11:39:20.222697942Z"
                 path: "/api/v1/post"
                 result:
                   meta:
                     pagination:
                       page: 1
-                      pageLimit: 3
-                      total: 12
-                      totalPages: 4
-                      hasNextPage: true
+                      pageLimit: 8
+                      total: 2
+                      totalPages: 1
+                      hasNextPage: false
                       hasPrevPage: false
                     sort:
                       by: "created_at"
                       dir: "desc"
                     filter:
-                      id: null
-                      nickname: null
-                      matchType: null
-                      slug: null
-                      title: null
-                      categoryId: null
-                      tagSlugs: null
-                      dateFilter: null
-                      dateTarget: null
-                      dateFrom: null
-                      dateTo: null
+                      match:
+                        matchType: null
+                        id: null
+                        nickname: null
+                        slug: null
+                        title: null
+                        categoryId: null
+                        tagSlugs: null
+                        isPrivate: false
+                      date:
+                        dateFilter: "between"
+                        dateTarget: "published_at"
+                        dateFrom: "2026-05-14"
+                        dateTo: "2026-05-16"
                   data:
+                    - id: 65
+                      nickname: "개발자1"
+                      accountId: "devuser1"
+                      slug: "linux-shell-tips"
+                      title: "개발자를 위한 Linux 쉘 명령어 모음"
+                      excerpt: "## 자주 쓰는 명령어 50선\\n생산성을 높여주는 쉘 명령어와 별칭 설정..."
+                      thumbnail: null
+                      isPrivate: false
+                      createdAt: "2026-05-16T19:56:26.886227+09:00"
+                      updatedAt: "2026-05-16T19:56:26.886227+09:00"
+                      publishedAt: "2026-05-15T19:56:26.886227+09:00"
+                      category:
+                        id: 6
+                        parentId: 1
+                        path: "/tech/devops"
+                        name: "DevOps"
+                        slug: "devops"
+                      tags:
+                        - id: 20
+                          name: "Linux"
+                          slug: "linux"
                     - id: 15
                       nickname: "admin"
+                      accountId: "admin"
                       slug: "go_learning_102"
                       title: "GORM 이란?"
-                      excerpt: "GORM은 Go 언어에서 사용하는 ORM(Object Relational Mapping) 라이브러리입니다. SQL 쿼리를 직접 작성하지 않고도 Go 구조체를 통해 데이터베이스를 조작할 수 있습니다."
+                      excerpt: "GORM은 Go 언어에서 사용하는 ORM(Object Relational Mapping) 라이브러리입니다. SQL 쿼리를 직접 작성하지 않고도 Go 구조체를 통해 데이터베이스를 조작할 수 있습니다. GORM은 MySQL, PostgreSQL, SQLite, SQL Se"
                       thumbnail: "https://example.com/thumbnail.png"
-                      publishedAt: "2026-05-15T13:39:17.098501+09:00"
+                      isPrivate: false
+                      createdAt: "2026-05-15T13:39:17.099659+09:00"
                       updatedAt: "2026-05-15T13:39:17.099659+09:00"
+                      publishedAt: "2026-05-15T13:39:17.098501+09:00"
                       category:
                         id: 13
                         parentId: 5
@@ -789,26 +816,6 @@ paths:
                         - id: 9
                           name: "독서"
                           slug: "reading"
-                    - id: 14
-                      nickname: "admin"
-                      slug: "go_learning_10"
-                      title: "GORM 이란?"
-                      excerpt: "GORM"
-                      thumbnail: "https://example.com/thumbnail.png"
-                      publishedAt: "2026-05-13T15:11:55.953764+09:00"
-                      updatedAt: "2026-05-13T15:11:55.95477+09:00"
-                      category: null
-                      tags: []
-                    - id: 13
-                      nickname: "admin"
-                      slug: "go_learning_7"
-                      title: "GORM 이란?"
-                      excerpt: "GORM"
-                      thumbnail: "https://example.com/thumbnail.png"
-                      publishedAt: "2026-05-13T15:08:25.030944+09:00"
-                      updatedAt: "2026-05-13T15:08:25.032172+09:00"
-                      category: null
-                      tags: []
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -1052,36 +1059,37 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully retrieved 1 posts."
+                detail: "Successfully retrieved 8 posts."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-15T09:09:32.085890865Z"
+                timestamp: "2026-05-16T11:16:15.758947767Z"
                 path: "/api/v1/post/admin"
                 result:
                   meta:
                     pagination:
                       page: 1
                       pageLimit: 8
-                      total: 1
-                      totalPages: 1
-                      hasNextPage: false
+                      total: 9
+                      totalPages: 2
+                      hasNextPage: true
                       hasPrevPage: false
                     sort:
-                      by: "created_at"
+                      by: "published_at"
                       dir: "desc"
                     filter:
-                      id: null
-                      accountId: null
-                      nickname: null
-                      matchType: null
-                      slug: null
-                      title: null
-                      categoryId: null
-                      tagSlugs: null
-                      dateFilter: null
-                      dateTarget: null
-                      dateFrom: null
-                      dateTo: null
-                      isPrivate: true
+                      match:
+                        matchType: null
+                        id: null
+                        nickname: null
+                        slug: null
+                        title: null
+                        categoryId: null
+                        tagSlugs: null
+                        isPrivate: true
+                      date:
+                        dateFilter: null
+                        dateTarget: null
+                        dateFrom: null
+                        dateTo: null
                   data:
                     - id: 6
                       nickname: "테스트계정1"
@@ -1090,10 +1098,101 @@ paths:
                       title: "비공개 초안"
                       excerpt: "아직 작성 중인 글입니다..."
                       thumbnail: null
-                      publishedAt: null
-                      updatedAt: "2026-05-13T14:34:06.425355+09:00"
-                      createdAt: "2026-05-13T14:34:06.425355+09:00"
                       isPrivate: true
+                      createdAt: "2026-05-13T14:34:06.425355+09:00"
+                      updatedAt: "2026-05-13T14:34:06.425355+09:00"
+                      publishedAt: null
+                      category: null
+                      tags: []
+                    - id: 58
+                      nickname: "일반유저1"
+                      accountId: "user1"
+                      slug: "draft-go-generics"
+                      title: "Go 제네릭 정리 초안"
+                      excerpt: "아직 정리 중인 Go 제네릭 관련 글..."
+                      thumbnail: null
+                      isPrivate: true
+                      createdAt: "2026-05-16T19:56:26.886227+09:00"
+                      updatedAt: "2026-05-16T19:56:26.886227+09:00"
+                      publishedAt: null
+                      category: null
+                      tags: []
+                    - id: 59
+                      nickname: "일반유저2"
+                      accountId: "user2"
+                      slug: "draft-travel-plan"
+                      title: "다음 여행 계획 메모"
+                      excerpt: "베트남 다낭 여행 계획 정리 중..."
+                      thumbnail: null
+                      isPrivate: true
+                      createdAt: "2026-05-16T19:56:26.886227+09:00"
+                      updatedAt: "2026-05-16T19:56:26.886227+09:00"
+                      publishedAt: null
+                      category: null
+                      tags: []
+                    - id: 60
+                      nickname: "블로거1"
+                      accountId: "blogger1"
+                      slug: "draft-book-notes"
+                      title: "독서 노트 임시 저장"
+                      excerpt: "읽고 있는 책들의 메모들..."
+                      thumbnail: null
+                      isPrivate: true
+                      createdAt: "2026-05-16T19:56:26.886227+09:00"
+                      updatedAt: "2026-05-16T19:56:26.886227+09:00"
+                      publishedAt: null
+                      category: null
+                      tags: []
+                    - id: 148
+                      nickname: "테스트계정1"
+                      accountId: "testaccount1"
+                      slug: "draft-kubernetes-advanced"
+                      title: "쿠버네티스 심화 초안"
+                      excerpt: "쿠버네티스 오퍼레이터 패턴 정리 중..."
+                      thumbnail: null
+                      isPrivate: true
+                      createdAt: "2026-05-16T19:59:57.233224+09:00"
+                      updatedAt: "2026-05-16T19:59:57.233224+09:00"
+                      publishedAt: null
+                      category: null
+                      tags: []
+                    - id: 149
+                      nickname: "Editor"
+                      accountId: "editor"
+                      slug: "draft-go-stdlib-tour"
+                      title: "Go 표준 라이브러리 투어 초안"
+                      excerpt: "아직 정리되지 않은 내용들..."
+                      thumbnail: null
+                      isPrivate: true
+                      createdAt: "2026-05-16T19:59:57.233224+09:00"
+                      updatedAt: "2026-05-16T19:59:57.233224+09:00"
+                      publishedAt: null
+                      category: null
+                      tags: []
+                    - id: 150
+                      nickname: "개발자1"
+                      accountId: "devuser1"
+                      slug: "draft-system-design-notes"
+                      title: "시스템 설계 면접 메모"
+                      excerpt: "학습 중인 내용을 임시로 저장..."
+                      thumbnail: null
+                      isPrivate: true
+                      createdAt: "2026-05-16T19:59:57.233224+09:00"
+                      updatedAt: "2026-05-16T19:59:57.233224+09:00"
+                      publishedAt: null
+                      category: null
+                      tags: []
+                    - id: 151
+                      nickname: "블로거1"
+                      accountId: "blogger1"
+                      slug: "draft-europe-plan"
+                      title: "내년 유럽 여행 계획"
+                      excerpt: "이탈리아 루트 조사 중..."
+                      thumbnail: null
+                      isPrivate: true
+                      createdAt: "2026-05-16T19:59:57.233224+09:00"
+                      updatedAt: "2026-05-16T19:59:57.233224+09:00"
+                      publishedAt: null
                       category: null
                       tags: []
         '400':

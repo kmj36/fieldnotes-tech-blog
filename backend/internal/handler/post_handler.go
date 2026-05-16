@@ -46,7 +46,8 @@ func (h *PostHandler) Create(ctx *gin.Context) {
 func (h *PostHandler) List(ctx *gin.Context) {
 	var req dto.ListPostsRequest
 
-	_, isAuthenticated := ctx.Get("claims")
+	_, isAuthenticated := ctx.Get("accountId")
+	fmt.Print(isAuthenticated)
 
 	req.SetDefaults()
 
@@ -56,6 +57,8 @@ func (h *PostHandler) List(ctx *gin.Context) {
 	}
 
 	if !isAuthenticated {
+		isPrivate := false
+		req.IsPrivate = &isPrivate
 		req.AccountID = nil
 	}
 
