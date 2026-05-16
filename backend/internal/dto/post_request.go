@@ -20,11 +20,20 @@ type ListPostsRequest struct {
 	
 	ID				*int		`form:"id"         binding:"omitempty,min=1"`
 	AccountID 		*string		`form:"accountId"  binding:"omitempty,max=255"`
+	Nickname		*string		`form:"nickname"   binding:"omitempty,max=255"`
+	
+	MatchType 		*string 	`form:"matchType"  binding:"omitempty,oneof=equal prefix suffix contains"`
 	Slug   	    	*string    	`form:"slug"       binding:"omitempty,min=1,max=150"`
 	Title    		*string    	`form:"title"      binding:"omitempty,min=1,max=100"`
+	IsPrivate		*bool		`form:"isPrivate" binding:"omitempty"`
+
 	CategoryID  	*int16     	`form:"categoryId" binding:"omitempty,min=1"`
 	TagSlugs		[]string	`form:"tagSlugs"   binding:"omitempty,max=50"`
-	IsPrivate   	*bool      	`form:"isPrivate"  binding:"omitempty"` // ADMIN ONLY
+
+	DateFilter  	*string 	`form:"dateFilter"  binding:"omitempty,oneof=eq gt lt gte lte between"`
+	DateTarget 		*string 	`form:"dateTarget"  binding:"omitempty,oneof=created_at updated_at published_at"`
+	DateFrom    	*string 	`form:"dateFrom"    binding:"omitempty"`
+	DateTo      	*string 	`form:"dateTo"      binding:"omitempty"`
 }
 
 func (r *ListPostsRequest) SetDefaults() {
@@ -35,13 +44,21 @@ func (r *ListPostsRequest) SetDefaults() {
 		r.PageLimit = 8
 	}
 	if r.SortBy == "" {
-		r.SortBy = "createdAt"
+		r.SortBy = "created_at"
 	}
 	if r.SortDir == "" {
 		r.SortDir = "desc"
 	}
-}
+	if r.Slug != nil || r.Title != nil {
+		match := "equal"
+		r.MatchType = &match
+	}
+	if r.DateTarget != nil {
+		dateFilter := "eq"
+		r.DateFilter = &dateFilter
+	}
 
+}
 type UpdatePostRequest struct {
 	Slug			string		`json:"slug" binding:"max=150"`
 	Title			string		`json:"title" binding:"max=100"`

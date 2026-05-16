@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kmj36/fieldnotes-tech-blog/internal/dto"
@@ -61,35 +62,96 @@ func (repo *PostRepository) Create(ctx *gin.Context, newPost *model.Post, tags [
 	return newPost, nil
 }
 
+func (repo *PostRepository) buildLikeQuery(filter, keyword string) string {
+    switch filter {
+    case "equal":
+        return keyword
+    case "prefix":
+        return keyword + "%"
+    case "suffix":
+        return "%" + keyword
+    case "contains":
+        return "%" + keyword + "%"
+    default:
+        return keyword
+    }
+}
+
+func (repo *PostRepository) buildDateQuery(column, filter string, from, to *time.Time) (string, []interface{}) {
+    switch filter {
+    case "eq":
+        endOfDay := from.Add(24*time.Hour - time.Second)
+        return column + " BETWEEN ? AND ?", []interface{}{from, endOfDay}
+    case "gt":
+        return column + " > ?", []interface{}{from}
+    case "lt":
+        return column + " < ?", []interface{}{from}
+    case "gte":
+        return column + " >= ?", []interface{}{from}
+    case "lte":
+        return column + " <= ?", []interface{}{from}
+    case "between":
+        if to == nil {
+            return "", nil
+        }
+        toVal := *to
+        if (*from).Equal(*to) {
+            toVal = from.Add(24*time.Hour - time.Second)
+        }
+        return column + " BETWEEN ? AND ?", []interface{}{from, &toVal}
+    default:
+        return "", nil
+    }
+}
+
+func (repo *PostRepository) parseDate(s *string) (*time.Time, error) {
+    if s == nil {
+        return nil, nil
+    }
+    t, err := time.Parse("2006-01-02", *s)
+    if err != nil {
+        return nil, fmt.Errorf("invalid date format: %s (expected YYYY-MM-DD)", *s)
+    }
+    return &t, nil
+}
+
 func (repo *PostRepository) List(ctx *gin.Context, req *dto.ListPostsRequest) ([]*model.Post, int, error) {
     var total int64
     var posts []*model.Post
 
-    query := repo.db.WithContext(ctx).Model(&model.Post{})
+    query := repo.db.WithContext(ctx).Model(&model.Post{}).
+        Select("posts.*, accounts.nickname AS nickname").
+        Joins("LEFT JOIN accounts ON posts.account_id = accounts.account_id")
 
     if req.ID != nil {
-        query = query.Where("id = ?", req.ID)
+        query = query.Where("posts.id = ?", req.ID)
     }
 
     if req.AccountID != nil {
-        query = query.Where("account_id = ?", req.AccountID)
+        query = query.Where("posts.account_id = ?", req.AccountID)
     }
 
-    if req.Slug != nil {
-        query = query.Where("slug = ?", req.Slug)
+    if req.Nickname != nil {
+        query = query.Where("nickname = ?", req.Nickname)
     }
 
-    if req.Title != nil {
-        query = query.Where("title LIKE ?", fmt.Sprintf("%%%s%%", *req.Title))
+    if req.Slug != nil && req.MatchType != nil {
+        pattern := repo.buildLikeQuery(*req.MatchType, *req.Slug)
+        query = query.Where("posts.slug LIKE ?", pattern)
+    }
+
+    if req.Title != nil && req.MatchType != nil {
+        pattern := repo.buildLikeQuery(*req.MatchType, *req.Title)
+        query = query.Where("posts.title LIKE ?", pattern)
     }
 
     if req.CategoryID != nil {
-        query = query.Where("category_id = ?", req.CategoryID)
+        query = query.Where("posts.category_id = ?", req.CategoryID)
     }
 
     if len(req.TagSlugs) > 0 {
         query = query.Where(`
-            id IN (
+            posts.id IN (
                 SELECT post_id FROM post_tags
                 WHERE tag_id IN (
                     SELECT id FROM tags WHERE slug IN ?
@@ -98,7 +160,30 @@ func (repo *PostRepository) List(ctx *gin.Context, req *dto.ListPostsRequest) ([
         `, req.TagSlugs)
     }
 
-    query = query.Where("is_private = ?", false).Where("published_at IS NOT NULL")
+    if req.DateFilter != nil && req.DateTarget != nil {
+        target := "posts." + *req.DateTarget
+
+        from, err := repo.parseDate(req.DateFrom)
+        if err != nil {
+            return nil, 0, err
+        }
+
+        to, err := repo.parseDate(req.DateTo)
+        if err != nil {
+            return nil, 0, err
+        }
+
+        pattern, args := repo.buildDateQuery(target, *req.DateFilter, from, to)
+        if pattern != "" {
+            query = query.Where(pattern, args...)
+        }
+    }
+
+    if req.IsPrivate != nil {
+        query = query.Where("posts.is_private = ?", req.IsPrivate)
+    }
+
+    // 필터 끝
 
     if err := query.Count(&total).Error; err != nil {
         return nil, 0, err
@@ -108,7 +193,7 @@ func (repo *PostRepository) List(ctx *gin.Context, req *dto.ListPostsRequest) ([
         Order(fmt.Sprintf("%s %s", req.SortBy, req.SortDir)).
         Offset((req.Page - 1) * req.PageLimit).
         Limit(req.PageLimit).
-        Find(&posts).Error; err != nil {
+        Scan(&posts).Error; err != nil {
         return nil, 0, err
     }
 

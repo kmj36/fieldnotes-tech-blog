@@ -169,11 +169,11 @@ func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.Li
 
 	result = make([]*dto.PostPublic, len(array))
 	for idx, post := range array {
-		// 게시물 유니코드 150자 절삭
 		var excerpt string
 		var category *dto.CategoryPublic
 		var postTag []dto.TagPublic
 
+		// 게시물 유니코드 150자 절삭
 		runes := []rune(post.Content)
 		if len(runes) > 150 {
 			excerpt = string(runes[:150])
@@ -204,12 +204,21 @@ func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.Li
 
 		result[idx] = &dto.PostPublic{
 			ID: post.ID,
+
+			Nickname: post.Nickname,
+			AccountID: post.AccountID,
+
 			Slug: post.Slug,
 			Title: post.Title,
 			Excerpt: excerpt,
 			Thumbnail: post.Thumbnail,
+			
+			IsPrivate: post.IsPrivate,
+
+			CreatedAt: post.CreatedAt,
 			PublishedAt: post.PublishedAt,
 			UpdatedAt: post.UpdatedAt,
+
 			Category: category,
 			Tags: postTag,
 		}
@@ -232,13 +241,27 @@ func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.Li
 				SortDir: req.SortDir,
 			},
 			Filter: dto.ListPostsFilter{
-				ID: req.ID,
-				AccountID: req.AccountID,
-				Slug: req.Slug,
-				Title: req.Title,
-				CategoryID: req.CategoryID,
-				TagSlugs: req.TagSlugs,
-				IsPrivate: req.IsPrivate,
+				Match: dto.ListPostsMatchFilters{
+					MatchType: req.MatchType,
+
+					ID: req.ID,
+					AccountID: req.AccountID,
+					Nickname: req.Nickname,
+
+					Slug: req.Slug,
+					Title: req.Title,
+
+					CategoryID: req.CategoryID,
+					TagSlugs: req.TagSlugs,
+
+					IsPrivate: req.IsPrivate,
+				},
+				Date: dto.ListPostsDateFilters{
+					DateFilter: req.DateFilter,
+					DateTarget: req.DateTarget,
+					DateFrom: req.DateFrom,
+					DateTo: req.DateTo,
+				},
 			},
 		},
 		Datas: result,

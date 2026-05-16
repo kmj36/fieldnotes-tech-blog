@@ -46,11 +46,17 @@ func (h *PostHandler) Create(ctx *gin.Context) {
 func (h *PostHandler) List(ctx *gin.Context) {
 	var req dto.ListPostsRequest
 
+	_, isAuthenticated := ctx.Get("claims")
+
 	req.SetDefaults()
 
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		h.respondBindError(ctx, err)
 		return
+	}
+
+	if !isAuthenticated {
+		req.AccountID = nil
 	}
 
 	// 게시물 조회
