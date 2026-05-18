@@ -81,15 +81,7 @@ type ListPostsResponse struct {
 }
 
 type ReadPostResponse struct {
-	ID				int32		`json:"id"`
-	Slug			string		`json:"slug"`
-	Title			string		`json:"title"`
-	Content			string		`json:"content"`
-	Thumbnail		string		`json:"thumbnail"`
-	CreatedAt		time.Time	`json:"created_at"`
-	UpdatedAt		time.Time	`json:"updated_at"`
-	CategoryID		CategoryPublic	`json:"category"`
-	TagID			[]ReadTagsResponse		`json:"tags"`
+	PostDetail
 }
 
 type UpdatedPostResponse struct {

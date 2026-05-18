@@ -20,9 +20,11 @@ func NewPostRepository(db *gorm.DB) *PostRepository {
 func (repo *PostRepository) FindBySlug(ctx *gin.Context, postSlug string) (*model.Post, error) {
 	var post model.Post
 
-    query := repo.db.WithContext(ctx)
+    query := repo.db.WithContext(ctx).Model(&model.Post{}).
+            Select("posts.*, accounts.nickname AS nickname").
+            Joins("LEFT JOIN accounts ON posts.account_id = accounts.account_id")
 
-    result := query.Where("slug = ?", postSlug).First(&post)
+    result := query.Where("posts.slug = ?", postSlug).First(&post)
     if result.Error != nil {
         if errors.Is(result.Error, gorm.ErrRecordNotFound) {
             return nil, nil

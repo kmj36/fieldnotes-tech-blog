@@ -106,10 +106,11 @@ func (app *App) setupRoutes() {
 	api := app.router.Group("/api/v1")
 	{
         api.GET("/health", app.healthHandler.HealthCheck)
-		api.POST("/auth/login", app.accountHandler.Login)
 		api.GET("/post", app.postHandler.List)
+		api.GET("/post/:postSlug", app.postHandler.Read)
 		api.GET("/category", app.categoryHandler.List)
 		api.GET("/tag", app.tagHandler.List)
+		api.POST("/auth/login", app.accountHandler.Login)
 	}
 
 	// 인증 라우트
