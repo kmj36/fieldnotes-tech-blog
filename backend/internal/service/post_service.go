@@ -269,3 +269,88 @@ func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.Li
 
 	return res, nil
 }
+
+func (s *PostService) Read(ctx *gin.Context, req *dto.ReadPostRequest, isAuthenticated bool) (res *dto.ReadPostResponse, err error) {
+	var accountId string = ""
+	var category *dto.CategoryPublic
+	
+	post, err := s.postRepo.FindBySlug(ctx, req.Slug)
+	if err != nil {
+		return nil, err
+	}
+	if post == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+	if isAuthenticated {
+		accountId = post.AccountID
+	}
+	if post.IsPrivate && !isAuthenticated {
+		return nil, dto.CErrForbidden
+	}
+
+	// 게시물 ID 카테고리 확인
+	if post.CategoryID != nil {
+		categoryData, err := s.categoryRepo.FindByID(ctx, *post.CategoryID)
+		if err != nil {
+			return nil, err
+		}
+		category = &dto.CategoryPublic{
+			ID: categoryData.ID,
+			ParentID: categoryData.ParentID,
+			Path: categoryData.Path,
+			Name: categoryData.Name,
+			Slug: categoryData.Slug,
+		}
+	}
+
+	// 게시물 ID 태그 확인
+	tagMap, err := s.tagRepo.FindByPostID(ctx, []int{post.ID})
+	if err != nil {
+		return nil, err
+	}
+	postTag := make([]dto.TagPublic, len(tagMap[post.ID]))
+	for idx, tagData := range tagMap[post.ID] {
+		postTag[idx] = dto.TagPublic{
+			ID: tagData.ID,
+			Name: tagData.Name,
+			Slug: tagData.Slug,
+		}
+	}
+
+	// 게시물 유니코드 150자 절삭
+	var excerpt string
+	runes := []rune(post.Content)
+	if len(runes) > 150 {
+		excerpt = string(runes[:150])
+	} else {
+		excerpt = string(runes)
+	}
+
+	res = &dto.ReadPostResponse{
+		PostDetail: dto.PostDetail{
+			Content: post.Content,
+			PostPublic: dto.PostPublic{
+				ID: post.ID,
+				
+				Nickname: post.Nickname,
+				AccountID: accountId,
+				
+				Slug: post.Slug,
+				Title: post.Title,
+				Excerpt: excerpt,
+				Thumbnail: post.Thumbnail,
+
+				IsPrivate: post.IsPrivate,
+
+				CreatedAt: post.CreatedAt,
+				UpdatedAt: post.UpdatedAt,
+				PublishedAt: post.PublishedAt,
+				
+				Category: category,
+				Tags: postTag,
+			},
+		},
+	}
+
+	return res, nil
+}

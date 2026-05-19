@@ -35,7 +35,6 @@ type ListPostsRequest struct {
 	DateFrom    	*string 	`form:"dateFrom"    binding:"omitempty"`
 	DateTo      	*string 	`form:"dateTo"      binding:"omitempty"`
 }
-
 func (r *ListPostsRequest) SetDefaults() {
 	if r.Page == 0 {
 		r.Page = 1
@@ -58,6 +57,10 @@ func (r *ListPostsRequest) SetDefaults() {
 		r.DateFilter = &dateFilter
 	}
 
+}
+
+type ReadPostRequest struct {
+	Slug		string		`uri:"postSlug" binding:"required,min=1,max=150"`
 }
 type UpdatePostRequest struct {
 	Slug			string		`json:"slug" binding:"max=150"`

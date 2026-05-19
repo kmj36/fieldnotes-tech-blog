@@ -47,7 +47,6 @@ func (h *PostHandler) List(ctx *gin.Context) {
 	var req dto.ListPostsRequest
 
 	_, isAuthenticated := ctx.Get("accountId")
-	fmt.Print(isAuthenticated)
 
 	req.SetDefaults()
 
@@ -77,5 +76,33 @@ func (h *PostHandler) List(ctx *gin.Context) {
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
 		Result: list,
+	})
+}
+
+func (h *PostHandler) Read(ctx *gin.Context) {
+	var req dto.ReadPostRequest
+
+	_, isAuthenticated := ctx.Get("accountId")
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		h.respondBindError(ctx, err)
+		return
+	}
+
+	// 게시물 상세 조회
+	post, err := h.service.Read(ctx, &req, isAuthenticated)
+	if err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.ReadPostResponse]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
+		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully retrieved id:%d '%s' post.", post.ID, post.Title),
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: post,
 	})
 }

@@ -38,6 +38,7 @@ var CErrLoginFailed = errors.New("invalid credentials.")
 var CErrValidateFailed = errors.New("field validate failed.")
 var CErrUpdateEmptyParam = errors.New("no fields to update")
 var CErrChildNodeExists = errors.New("child Node exists.")
+var CErrForbidden = errors.New("this post requires access permission.")
 
 // 에러 공통 리터럴
 var ( 
