@@ -107,6 +107,7 @@ func (app *App) setupRoutes() {
 	{
         api.GET("/health", app.healthHandler.HealthCheck)
 		api.POST("/auth/login", app.accountHandler.Login)
+		api.GET("/post", app.postHandler.List)
 		api.GET("/category", app.categoryHandler.List)
 		api.GET("/tag", app.tagHandler.List)
 	}
@@ -121,6 +122,7 @@ func (app *App) setupRoutes() {
 		auth.PATCH("/auth/update/:accountId", app.accountHandler.Update)
 		auth.DELETE("/auth/delete/:accountId", app.accountHandler.Delete)
 		auth.POST("/post", app.postHandler.Create)
+		auth.GET("/post/admin", app.postHandler.List)
 		auth.POST("/category", app.categoryHandler.Create)
 		auth.PATCH("/category/:id", app.categoryHandler.Update)
 		auth.DELETE("/category/:id", app.categoryHandler.Delete)

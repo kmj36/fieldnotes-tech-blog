@@ -61,6 +61,36 @@ func (repo *TagRepository) FindBySlugs(ctx *gin.Context, tagSlugs []string) ([]*
     return tags, nil
 }
 
+func (repo *TagRepository) FindByPostID(ctx *gin.Context, postIDs []int) (map[int][]*model.Tag, error) {
+    query := repo.db.WithContext(ctx)
+    
+    if len(postIDs) == 0 {
+        return map[int][]*model.Tag{}, nil
+    }
+
+    type tagRow struct {
+        PostID int `db:"post_id"`
+        model.Tag
+    }
+
+    var rows []tagRow
+    if err := query.Table("tags").
+        Select("tags.*, post_tags.post_id").
+        Joins("JOIN post_tags ON tags.id = post_tags.tag_id").
+        Where("post_tags.post_id IN ?", postIDs).
+        Scan(&rows).Error ; err != nil {
+        return nil, err
+    }
+
+    result := make(map[int][]*model.Tag)
+    for _, row := range rows {
+        r := row
+        result[row.PostID] = append(result[row.PostID], &r.Tag)
+    }
+
+    return result, nil
+}
+
 func (repo *TagRepository) List(ctx *gin.Context, req *dto.ReadTagsRequest) ([]*model.Tag, error) {
     var tags []*model.Tag
 

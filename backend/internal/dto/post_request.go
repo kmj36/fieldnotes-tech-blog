@@ -12,17 +12,53 @@ type CreatePostRequest struct {
     IsPrivate   *bool      	`json:"isPrivate" binding:"omitempty"`
 }
 
-type ReadPostRequest struct {
-	Page			int32		`json:"page" binding:"min=1,max=10000"`
-	PageSize		int32		`json:"page_size" binding:"max=200"`
-	Search			string		`json:"search" binding:"max=100"`
-	CategorySlug	string		`json:"category_slug" binding:"max=100"`
-	TagSlugs		[]string	`json:"tag_slugs" binding:"max=50"`
-	TagSort			string		`json:"tag_sort"`
-	SortBy			string		`json:"sort_by"`
-	SortDir			string		`json:"sort_dir"`
+type ListPostsRequest struct {
+	Page			int			`form:"page"      binding:"min=1"`
+	PageLimit		int			`form:"pageLimit" binding:"min=1"`
+	SortBy			string		`form:"sortBy"    binding:"oneof=id created_at updated_at published_at title slug"`
+	SortDir			string		`form:"sortDir"   binding:"oneof=asc desc"`
+	
+	ID				*int		`form:"id"         binding:"omitempty,min=1"`
+	AccountID 		*string		`form:"accountId"  binding:"omitempty,max=255"`
+	Nickname		*string		`form:"nickname"   binding:"omitempty,max=255"`
+	
+	MatchType 		*string 	`form:"matchType"  binding:"omitempty,oneof=equal prefix suffix contains"`
+	Slug   	    	*string    	`form:"slug"       binding:"omitempty,min=1,max=150"`
+	Title    		*string    	`form:"title"      binding:"omitempty,min=1,max=100"`
+	IsPrivate		*bool		`form:"isPrivate" binding:"omitempty"`
+
+	CategoryID  	*int16     	`form:"categoryId" binding:"omitempty,min=1"`
+	TagSlugs		[]string	`form:"tagSlugs"   binding:"omitempty,max=50"`
+
+	DateFilter  	*string 	`form:"dateFilter"  binding:"omitempty,oneof=eq gt lt gte lte between"`
+	DateTarget 		*string 	`form:"dateTarget"  binding:"omitempty,oneof=created_at updated_at published_at"`
+	DateFrom    	*string 	`form:"dateFrom"    binding:"omitempty"`
+	DateTo      	*string 	`form:"dateTo"      binding:"omitempty"`
 }
 
+func (r *ListPostsRequest) SetDefaults() {
+	if r.Page == 0 {
+		r.Page = 1
+	}
+	if r.PageLimit == 0 {
+		r.PageLimit = 8
+	}
+	if r.SortBy == "" {
+		r.SortBy = "created_at"
+	}
+	if r.SortDir == "" {
+		r.SortDir = "desc"
+	}
+	if r.Slug != nil || r.Title != nil {
+		match := "equal"
+		r.MatchType = &match
+	}
+	if r.DateTarget != nil {
+		dateFilter := "eq"
+		r.DateFilter = &dateFilter
+	}
+
+}
 type UpdatePostRequest struct {
 	Slug			string		`json:"slug" binding:"max=150"`
 	Title			string		`json:"title" binding:"max=100"`

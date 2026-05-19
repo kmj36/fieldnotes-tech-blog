@@ -42,3 +42,40 @@ func (h *PostHandler) Create(ctx *gin.Context) {
 		Result: post,
 	})
 }
+
+func (h *PostHandler) List(ctx *gin.Context) {
+	var req dto.ListPostsRequest
+
+	_, isAuthenticated := ctx.Get("accountId")
+	fmt.Print(isAuthenticated)
+
+	req.SetDefaults()
+
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		h.respondBindError(ctx, err)
+		return
+	}
+
+	if !isAuthenticated {
+		isPrivate := false
+		req.IsPrivate = &isPrivate
+		req.AccountID = nil
+	}
+
+	// 게시물 조회
+	list, err := h.service.List(ctx, &req)
+	if err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.ListPostsResponse]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
+		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully retrieved %d posts.", len(list.Datas)),
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: list,
+	})
+}
