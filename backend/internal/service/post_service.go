@@ -552,3 +552,27 @@ func (s *PostService) Update(ctx *gin.Context, req *dto.UpdatePostRequest) (*dto
 
 	return res, nil
 }
+
+func (s *PostService) Delete(ctx *gin.Context, req *dto.DeletePostRequest) (*dto.DeletePostResponse, error) {
+	// 게시물이 존재하는지 확인
+	exist, err := s.postRepo.FindByID(ctx, req.ID)
+	if err != nil {
+		return nil, err
+	}
+	if exist == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	// 게시물 삭제 Repository 계층 요청
+	result, err := s.postRepo.Delete(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// service 계층 반환값 생성
+	res := &dto.DeletePostResponse{
+		ID: result.ID,
+	}
+
+	return res, nil
+}

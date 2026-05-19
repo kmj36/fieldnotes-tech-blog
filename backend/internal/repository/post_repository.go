@@ -280,3 +280,39 @@ func (repo *PostRepository) Update(ctx *gin.Context, req *dto.UpdatePostRequest,
 
 	return &postData, nil
 }
+
+func (repo *PostRepository) Delete(ctx *gin.Context, req *dto.DeletePostRequest) (*model.Post, error) {
+    var postData model.Post
+
+    // 게시물 삭제 트랜잭션 시작
+    tx := repo.db.WithContext(ctx).Begin()
+    if tx.Error != nil {
+        return nil, tx.Error
+    }
+
+    // 프로그램 패닉 시 리커버리 후 트랜잭션 롤백
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
+
+    // 원본 게시물 정보 반환을 위해 선조회 진행
+    if err := tx.Where("id = ?", req.ID).First(&postData).Error; err != nil {
+        tx.Rollback()
+        return nil, err
+    }
+
+    // 게시물 삭제 진행
+    if err := tx.Delete(&postData).Error; err != nil {
+        tx.Rollback()
+        return nil, err
+    }
+
+    // 트랜잭션 커밋
+    if err := tx.Commit().Error; err != nil {
+        return nil, err
+    }
+
+    return &postData, nil
+}

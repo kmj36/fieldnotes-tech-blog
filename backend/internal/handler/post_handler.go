@@ -142,3 +142,31 @@ func (h *PostHandler) Update(ctx *gin.Context) {
 		Result: res,
 	})
 }
+
+func (h *PostHandler) Delete(ctx *gin.Context) {
+	// HTTP 요청 바인딩 초기화
+	var req dto.DeletePostRequest
+
+	// 바인딩 수행
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		h.respondBindError(ctx, err)
+		return
+	}
+
+	// 게시물 삭제 서비스 계층 요청
+	res, err := h.service.Delete(ctx, &req)
+	if err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	// HTTP 응답 JSON 반환
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[any]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
+		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully deleted id:'%d' post.", res.ID),
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+	})
+}
