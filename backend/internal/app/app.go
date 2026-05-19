@@ -124,6 +124,7 @@ func (app *App) setupRoutes() {
 		auth.DELETE("/auth/delete/:accountId", app.accountHandler.Delete)
 		auth.POST("/post", app.postHandler.Create)
 		auth.PATCH("/post/:postId", app.postHandler.Update)
+		auth.DELETE("/post/:postId", app.postHandler.Delete)
 		auth.GET("/post/admin", app.postHandler.List)
 		auth.GET("/post/admin/:postSlug", app.postHandler.Read)
 		auth.POST("/category", app.categoryHandler.Create)

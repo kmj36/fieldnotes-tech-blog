@@ -88,3 +88,7 @@ func (r *UpdatePostRequest) Validate() error {
 	}
 	return nil
 }
+
+type DeletePostRequest struct {
+	ID			int			`uri:"postId" binding:"required,min=1"`
+}

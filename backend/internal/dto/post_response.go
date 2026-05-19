@@ -88,3 +88,7 @@ type UpdatePostResponse struct {
 	Data		PostDetail			`json:"data"`
 	Diff		CommonUpdateDiff	`json:"diff"`
 }
+
+type DeletePostResponse struct {
+	ID			int
+}
