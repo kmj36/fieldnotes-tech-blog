@@ -77,7 +77,7 @@ func (repo *AccountRepository) Update(ctx *gin.Context, req *dto.UpdateAccountRe
         return nil, err
     }
 
-    // 업데이트 후 재조회
+    // 조회 후 업데이트
     err = repo.db.WithContext(ctx).
         Model(&accountData).
         Updates(updates).Error
@@ -120,6 +120,27 @@ func (repo *AccountRepository) FindByAccountID(ctx *gin.Context, accountID strin
         return nil, result.Error
     }
     return &account, nil
+}
+
+func (repo *AccountRepository) FindByAccountIDs(ctx *gin.Context, accountID []string) (map[string]*model.Account, error) {
+    var accounts []*model.Account
+
+    query := repo.db.WithContext(ctx)
+    
+    if len(accountID) == 0 {
+        return map[string]*model.Account{}, nil
+    }
+
+    if err := query.Where("account_id IN ?", accountID).Find(&accounts).Error; err != nil {
+        return nil, err
+    }
+
+    result := make(map[string]*model.Account)
+    for _, item := range accounts {
+        result[item.AccountID] = item
+    }
+
+    return result, nil
 }
 
 func (repo *AccountRepository) FindByNickname(ctx *gin.Context, accountNickname string) (*model.Account, error) {

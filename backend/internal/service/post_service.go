@@ -15,14 +15,16 @@ type PostService struct {
 	postRepo *repository.PostRepository
 	tagRepo *repository.TagRepository
 	categoryRepo *repository.CategoryRepository
+	accountRepo *repository.AccountRepository
 	jwt *cryption.JWTManager
 }
 
-func NewPostService(postRepo *repository.PostRepository, tagRepo *repository.TagRepository, categoryRepo *repository.CategoryRepository, jwtManager *cryption.JWTManager) *PostService {
+func NewPostService(postRepo *repository.PostRepository, tagRepo *repository.TagRepository, categoryRepo *repository.CategoryRepository, accountRepo *repository.AccountRepository, jwtManager *cryption.JWTManager) *PostService {
 	return &PostService{
 		postRepo: postRepo,
 		tagRepo: tagRepo,
 		categoryRepo: categoryRepo,
+		accountRepo: accountRepo,
 		jwt:jwtManager,
 	}
 }
@@ -78,10 +80,14 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 		}
 	}
 
-	// JWT Claim 에서 계정 ID 추출 
-	account := ctx.GetString("accountId")
-	if account == "" {
+	// JWT Claim 에서 계정 ID 추출 및 계정 조회
+	accountId := ctx.GetString("accountId")
+	if accountId == "" {
 		return nil, dto.CErrLoginFailed
+	}
+	account, err := s.accountRepo.FindByAccountID(ctx, accountId)
+	if err != nil {
+		return nil, err
 	}
 
 	// 게시물 발행, 비공개 여부 확인
@@ -94,7 +100,7 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 
 	// Post Create 모델 생성
 	newPost := &model.Post{
-		AccountID: account,
+		AccountID: account.AccountID,
 		Slug: req.Slug,
 		Title: req.Title,
 		Content: req.Content,
@@ -123,12 +129,21 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 	res := &dto.CreatePostResponse{
 		PostPublic: dto.PostPublic{
 			ID: post.ID,
+
+			AccountID: post.AccountID,
+			Nickname: account.Nickname,
+
 			Slug: post.Slug,
 			Title: post.Title,
 			Excerpt: excerpt,
 			Thumbnail: post.Thumbnail,
-			PublishedAt: post.PublishedAt,
+
+			IsPrivate: post.IsPrivate,
+
+			CreatedAt: post.CreatedAt,
 			UpdatedAt: post.UpdatedAt,
+			PublishedAt: post.PublishedAt,
+
 			Category: category,
 			Tags: tags, 
 		},
@@ -137,7 +152,9 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 	return res, nil
 }
 
-func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.ListPostsResponse, error) {
+// Public Post List API
+func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest, isAuthenticated bool) (*dto.ListPostsResponse, error) {
+	accountId := ""
 	var result []*dto.PostPublic
 	
 	array, total, err := s.postRepo.List(ctx, req)
@@ -145,11 +162,15 @@ func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.Li
 		return nil, err
 	}
 
-	// 게시물 ID, 카테고리 ID 목록 추출
+	// 게시물 ID, 카테고리 ID, 계정ID 목록 추출
 	postIDs := make([]int, len(array))
 	categoryIDs := make([]int16, 0, len(array))
+	accountIDs := make([]string, len(array))
+
 	for i, post := range array {
 		postIDs[i] = post.ID
+		accountIDs[i] = post.AccountID
+
 		if post.CategoryID != nil {
 			categoryIDs = append(categoryIDs, *post.CategoryID)
 		}
@@ -163,6 +184,12 @@ func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.Li
 
 	// 게시물 ID 태그 확인
 	tagMap, err := s.tagRepo.FindByPostID(ctx, postIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 게시물 ID 계정 확인
+	accountMap, err := s.accountRepo.FindByAccountIDs(ctx, accountIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -202,11 +229,15 @@ func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.Li
 			}
 		}
 
+		if isAuthenticated {
+			accountId = post.AccountID
+		}
+
 		result[idx] = &dto.PostPublic{
 			ID: post.ID,
 
-			Nickname: post.Nickname,
-			AccountID: post.AccountID,
+			Nickname: accountMap[post.AccountID].Nickname,
+			AccountID: accountId,
 
 			Slug: post.Slug,
 			Title: post.Title,
@@ -270,8 +301,9 @@ func (s *PostService) List(ctx *gin.Context, req *dto.ListPostsRequest) (*dto.Li
 	return res, nil
 }
 
-func (s *PostService) Read(ctx *gin.Context, req *dto.ReadPostRequest, isAuthenticated bool) (res *dto.ReadPostResponse, err error) {
-	var accountId string = ""
+// Public Post Read API
+func (s *PostService) Read(ctx *gin.Context, req *dto.ReadPostRequest, isAuthenticated bool) (*dto.ReadPostResponse, error) {
+	accountId := ""
 	var category *dto.CategoryPublic
 	
 	post, err := s.postRepo.FindBySlug(ctx, req.Slug)
@@ -317,6 +349,12 @@ func (s *PostService) Read(ctx *gin.Context, req *dto.ReadPostRequest, isAuthent
 		}
 	}
 
+	// 게시물 ID 계정 확인
+	account, err := s.accountRepo.FindByAccountID(ctx, post.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
 	// 게시물 유니코드 150자 절삭
 	var excerpt string
 	runes := []rune(post.Content)
@@ -326,13 +364,13 @@ func (s *PostService) Read(ctx *gin.Context, req *dto.ReadPostRequest, isAuthent
 		excerpt = string(runes)
 	}
 
-	res = &dto.ReadPostResponse{
+	res := &dto.ReadPostResponse{
 		PostDetail: dto.PostDetail{
 			Content: post.Content,
 			PostPublic: dto.PostPublic{
 				ID: post.ID,
 				
-				Nickname: post.Nickname,
+				Nickname: account.Nickname,
 				AccountID: accountId,
 				
 				Slug: post.Slug,
@@ -349,6 +387,166 @@ func (s *PostService) Read(ctx *gin.Context, req *dto.ReadPostRequest, isAuthent
 				Category: category,
 				Tags: postTag,
 			},
+		},
+	}
+
+	return res, nil
+}
+
+func (s *PostService) Update(ctx *gin.Context, req *dto.UpdatePostRequest) (*dto.UpdatePostResponse, error) {
+	// 게시물 존재 여부 확인
+	existing, err := s.postRepo.FindByID(ctx, req.ID)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	// 필요 변수 초기화
+	var tagDatas	[]*model.Tag
+	var category	*dto.CategoryPublic
+	var tags		[]dto.TagPublic
+
+	updates := map[string]interface{}{}
+	changedFields := []string{}
+	
+	// 업데이트할 일반 필드 판별
+	if req.Slug != nil && *req.Slug != existing.Slug {
+		updates["slug"] = req.Slug
+		changedFields = append(changedFields, "slug")
+	}
+	if req.Title != nil && *req.Title != existing.Title {
+		updates["title"] = req.Title
+		changedFields = append(changedFields, "title")
+	}
+	if req.Content != nil && *req.Content != existing.Content {
+		updates["content"] = req.Content
+		changedFields = append(changedFields, "content")
+	}
+	if req.Thumbnail != nil {
+		existingData := ""
+		if existing.Thumbnail != nil {
+			existingData = *existing.Thumbnail
+		}
+		if *req.Thumbnail != existingData {
+			updates["thumbnail"] = req.Thumbnail
+			changedFields = append(changedFields, "thumbnail")
+		}
+	}
+
+	// 카테고리 필드 업데이트 여부 확인
+	if req.CategoryID != nil {
+		var existingData int16
+		if existing.CategoryID != nil {
+			existingData = *existing.CategoryID
+		}
+		
+		categoryData, err := s.categoryRepo.FindByID(ctx, *req.CategoryID)
+		if err != nil {
+			return nil, err
+		}
+		if categoryData == nil {
+			return nil, gorm.ErrRecordNotFound
+		}
+		category = &dto.CategoryPublic{
+			ID:       categoryData.ID,
+			ParentID: categoryData.ParentID,
+			Path:     categoryData.Path,
+			Name:     categoryData.Name,
+			Slug:     categoryData.Slug,
+		}
+
+		if *req.CategoryID != existingData {
+			updates["category_id"] = req.CategoryID
+			changedFields = append(changedFields, "categoryId")
+		}
+	}
+	// 태그 필드 업데이트 여부 확인
+	if req.TagSlugs != nil {
+		if len(*req.TagSlugs) > 0 {
+			var err error
+			tagDatas, err = s.tagRepo.FindBySlugs(ctx, *req.TagSlugs)
+			if err != nil {
+				return nil, err
+			}
+			tags = make([]dto.TagPublic, len(tagDatas))
+			for idx, item := range tagDatas {
+				tags[idx] = dto.TagPublic{
+					ID: item.ID,
+					Name: item.Name,
+					Slug: item.Slug,
+				}
+			}
+		}
+
+		changedFields = append(changedFields, "tags")
+	}
+	
+	// 공개여부 변경 업데이트 판별
+	if req.IsPrivate != nil && *req.IsPrivate != existing.IsPrivate {
+		if *req.IsPrivate == false && existing.PublishedAt == nil {
+			updates["published_at"] = time.Now().UTC()
+			changedFields = append(changedFields, "publishedAt")
+		}
+
+		updates["is_private"] = req.IsPrivate
+		changedFields = append(changedFields, "isPrivate")
+	}
+
+	// 업데이트하지 않는 경우 반환
+	if len(updates) == 0 && len(changedFields) == 0 {
+		return nil, dto.CErrUpdateEmptyParam
+	}
+
+	// 게시물 업데이트
+	data, err := s.postRepo.Update(ctx, req, updates, tagDatas)
+	if err != nil || data == nil {
+		return nil, err
+	}
+
+	// 닉네임 반환을 위한 게시물 사용자ID 조회
+	account, err := s.accountRepo.FindByAccountID(ctx, data.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 게시물 유니코드 150자 절삭
+	var excerpt string
+	runes := []rune(data.Content)
+	if len(runes) > 150 {
+		excerpt = string(runes[:150])
+	} else {
+		excerpt = string(runes)
+	}
+
+	// 반환 데이터 초기화
+	res := &dto.UpdatePostResponse{
+		Data: dto.PostDetail{
+			Content: data.Content,
+			PostPublic: dto.PostPublic{
+				ID: data.ID,
+
+				Nickname: account.Nickname,
+				AccountID: data.AccountID,
+
+				Slug: data.Slug,
+				Title: data.Title,
+				Excerpt: excerpt,
+				Thumbnail: data.Thumbnail,
+
+				IsPrivate: data.IsPrivate,
+
+				CreatedAt: data.CreatedAt,
+				PublishedAt: data.PublishedAt,
+				UpdatedAt: data.UpdatedAt,
+
+				Category: category,
+				Tags: tags,
+			},
+		},
+		Diff: dto.CommonUpdateDiff{
+			ChangedFields: changedFields,
 		},
 	}
 

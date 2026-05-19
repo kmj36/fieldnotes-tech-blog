@@ -48,7 +48,7 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 	tagService := service.NewTagService(tagRepo, jwtManager)
 	postRepo := repository.NewPostRepository(db)
 	
-	postService := service.NewPostService(postRepo, tagRepo, categoryRepo, jwtManager)
+	postService := service.NewPostService(postRepo, tagRepo, categoryRepo, accountRepo, jwtManager)
 
 	return &App{
 		router: gin.New(),
@@ -123,7 +123,9 @@ func (app *App) setupRoutes() {
 		auth.PATCH("/auth/update/:accountId", app.accountHandler.Update)
 		auth.DELETE("/auth/delete/:accountId", app.accountHandler.Delete)
 		auth.POST("/post", app.postHandler.Create)
+		auth.PATCH("/post/:postId", app.postHandler.Update)
 		auth.GET("/post/admin", app.postHandler.List)
+		auth.GET("/post/admin/:postSlug", app.postHandler.Read)
 		auth.POST("/category", app.categoryHandler.Create)
 		auth.PATCH("/category/:id", app.categoryHandler.Update)
 		auth.DELETE("/category/:id", app.categoryHandler.Delete)
