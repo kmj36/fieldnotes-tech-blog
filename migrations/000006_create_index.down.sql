@@ -16,8 +16,5 @@ DROP INDEX idx_posts_account_published;
 -- 카테고리별 게시글 목록
 DROP INDEX idx_posts_category_published;
 
--- soft delete 관리용 (어드민)
-DROP INDEX idx_posts_deleted_at;
-
 -- 태그ID 역참조
-DROP INDEX idx_posts_tags_tag_id;
+DROP INDEX idx_post_tags_tag_id;

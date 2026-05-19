@@ -4,19 +4,35 @@ import (
 	"time"
 )
 
+type PostPublic struct {
+	ID				int					`json:"id"`
+	Slug			string				`json:"slug"`
+	Title			string				`json:"title"`
+	Excerpt			string				`json:"excerpt"`
+	Thumbnail		*string				`json:"thumbnail"`
+	PublishedAt		*time.Time			`json:"publishedAt"`
+	UpdatedAt		time.Time			`json:"updatedAt"`
+	Category		*CategoryPublic		`json:"category"`
+	Tags			[]TagPublic			`json:"tags"`
+}
+
+type PostDetail struct {
+	ID				int					`json:"id"`
+	Slug			string				`json:"slug"`
+	Title			string				`json:"title"`
+	Content			string				`json:"content"`
+	Thumbnail		*string				`json:"thumbnail"`
+	PublishedAt		*time.Time			`json:"publishedAt"`
+	UpdatedAt		time.Time			`json:"updatedAt"`
+	CreatedAt		*time.Time			`json:"createdAt,omitempty"`	// Role ADMIN only
+	IsPrivate		*bool				`json:"isPrivate,omitempty"`	// Role ADMIN only
+	Category		*CategoryPublic		`json:"category"`
+	Tags			[]TagPublic			`json:"tags"`
+}
+
 // 응답 DTO (Client <- API)
 type CreatePostResponse struct {
-	ID				int32		`json:"id"`
-	Slug			string		`json:"slug"`
-	Title			string		`json:"title"`
-	Content			string		`json:"content"`
-	Thumbnail		string		`json:"thumbnail"`
-	CreatedAt		time.Time	`json:"created_at"`
-	UpdatedAt		time.Time	`json:"updated_at"`
-	IsPublish		bool		`json:"is_publish"`
-	IsPrivate		bool		`json:"is_private"`
-	CategoryID		CategoryPublic	`json:"category"`
-	TagID			[]ReadTagsResponse		`json:"tags"`
+	PostPublic
 }
 
 type ReadPostsResponse struct {

@@ -341,6 +341,57 @@ components:
           format: date-time
 
     # ── 게시물 ────────────────────────────────
+    PostPublic:
+      type: object
+      required: [id, slug, title, excerpt, thumbnail, publishedAt, updatedAt, category, tags]
+      properties:
+        id:
+          type: integer
+          example: 7
+        slug:
+          type: string
+          example: "go_learning_1"
+        title:
+          type: string
+          example: "GORM 이란?"
+        excerpt:
+          type: string
+          example: "GORM은 Go 언어에서 사용하는 ORM..."
+        thumbnail:
+          type: string
+          nullable: true
+          example: "https://example.com/thumbnail.png"
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+        category:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/CategoryPublic'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagPublic'
+
+    PostDetail:
+      allOf:
+        - $ref: '#/components/schemas/PostPublic'
+        - type: object
+          properties:
+            content:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+              nullable: true
+            isPrivate:
+              type: boolean
+              nullable: true
+
     PostSummaryPublic:
       type: object
       required: [id, slug, title, excerpt, thumbnail, createdAt, updatedAt, category, tags]
@@ -623,10 +674,10 @@ paths:
                 categoryId:
                   type: integer
                   nullable: true
-                tagIds:
+                tagSlugs:
                   type: array
                   items:
-                    type: integer
+                    type: string
                   maxItems: 50
                 isPublish:
                   type: boolean
@@ -634,6 +685,17 @@ paths:
                 isPrivate:
                   type: boolean
                   default: false
+            example:
+              slug: "go_learning_1"
+              title: "GORM 이란?"
+              content: "GORM"
+              thumbnail: "https://example.com/thumbnail.png"
+              categoryId: 13
+              tagSlugs:
+                - "gorm"
+                - "reading"
+              isPublish: true
+              isPrivate: false
       responses:
         '201':
           description: 게시물 생성 성공
@@ -645,7 +707,35 @@ paths:
                   - type: object
                     properties:
                       result:
-                        $ref: '#/components/schemas/PostDetailAdmin'
+                        $ref: '#/components/schemas/PostPublic'
+              example:
+                status: 201
+                code: "E201_001"
+                detail: "Successfully added columns to 'go_learning_1' post."
+                message: "리소스가 성공적으로 생성되었습니다."
+                timestamp: "2026-05-13T05:37:24.728783333Z"
+                path: "/api/v1/post"
+                result:
+                  id: 7
+                  slug: "go_learning_1"
+                  title: "GORM 이란?"
+                  excerpt: "GORM은 Go 언어에서 사용하는 ORM(Object Relational Mapping) 라이브러리입니다. SQL 쿼리를 직접 작성하지 않고도 Go 구조체를 통해 데이터베이스를 조작할 수 있습니다. GORM은 MySQL, PostgreSQL, SQLite, SQL Se"
+                  thumbnail: "https://example.com/thumbnail.png"
+                  publishedAt: "2026-05-13T05:37:24.71177312Z"
+                  updatedAt: "2026-05-13T14:37:24.712436929+09:00"
+                  category:
+                    id: 13
+                    parentId: 5
+                    path: "/tech/backend/go"
+                    name: "Go"
+                    slug: "go"
+                  tags:
+                    - id: 9
+                      name: "독서"
+                      slug: "reading"
+                    - id: 11
+                      name: "GORM"
+                      slug: "gorm"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -799,7 +889,7 @@ paths:
                 categoryId:
                   type: integer
                   nullable: true
-                tagIds:
+                tagSlugs:
                   type: array
                   items:
                     type: integer

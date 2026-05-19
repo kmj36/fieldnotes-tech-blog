@@ -48,6 +48,19 @@ func (repo *TagRepository) FindByID(ctx *gin.Context, id int16) (*model.Tag, err
     return &tag, nil
 }
 
+func (repo *TagRepository) FindBySlugs(ctx *gin.Context, tagSlugs []string) ([]*model.Tag, error) {
+    if len(tagSlugs) == 0 {
+        return []*model.Tag{}, nil
+    }
+
+    var tags []*model.Tag
+    if err := repo.db.WithContext(ctx).Where("slug IN ?", tagSlugs).Find(&tags).Error; err != nil {
+        return nil, err
+    }
+
+    return tags, nil
+}
+
 func (repo *TagRepository) List(ctx *gin.Context, req *dto.ReadTagsRequest) ([]*model.Tag, error) {
     var tags []*model.Tag
 

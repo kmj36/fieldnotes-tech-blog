@@ -61,7 +61,7 @@ func JWTAuthMiddleware(jwtmanager *cryption.JWTManager) gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set("account_id", claims["sub"])  // "admin"
+		ctx.Set("accountId", claims["sub"])  // "admin"
 		ctx.Set("role", claims["role"])  // "ADMIN"
 
 		ctx.Next()

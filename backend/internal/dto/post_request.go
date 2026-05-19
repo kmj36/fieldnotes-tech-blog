@@ -3,14 +3,13 @@ package dto
 // 요청 DTO (Client -> API)
 
 type CreatePostRequest struct {
-	Slug			string		`json:"slug" binding:"required,max=150"`
-	Title			string		`json:"title" binding:"required,max=100"`
-	Content			string		`json:"content" binding:"required,max=100000"`
-	Thumbnail		string		`json:"thumbnail" binding:"max=2048"`
-	CategoryID		string		`json:"category_id"`
-	TagsID			[]string	`json:"tags_id"`
-	IsPublish		string		`json:"is_publish"`
-	IsPrivate		string		`json:"is_private"`
+    Slug        string    	`json:"slug" binding:"required,min=1,max=150"`
+    Title       string    	`json:"title" binding:"required,min=1,max=100"`
+    Content     string    	`json:"content" binding:"required,min=1,max=100000"`
+    Thumbnail   *string    	`json:"thumbnail" binding:"omitempty,max=2048"`
+    CategoryID  *int16     	`json:"categoryId" binding:"omitempty,min=0"`
+	TagSlugs	[]string	`json:"tagSlugs" binding:"omitempty,max=50"`
+    IsPrivate   *bool      	`json:"isPrivate" binding:"omitempty"`
 }
 
 type ReadPostRequest struct {
