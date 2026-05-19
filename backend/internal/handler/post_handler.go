@@ -62,7 +62,7 @@ func (h *PostHandler) List(ctx *gin.Context) {
 	}
 
 	// 게시물 조회
-	list, err := h.service.List(ctx, &req)
+	list, err := h.service.List(ctx, &req, isAuthenticated)
 	if err != nil {
 		h.respondProcessError(ctx, err)
 		return
@@ -100,9 +100,45 @@ func (h *PostHandler) Read(ctx *gin.Context) {
 		Status: dto.ErrOK.Status,
 		Code: dto.ErrOK.Code,
 		Message: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully retrieved id:%d '%s' post.", post.ID, post.Title),
+		Detail: fmt.Sprintf("Successfully retrieved id:%d '%s' post.", post.ID, post.Slug),
 		Timestamp: time.Now().UTC(),
 		Path: ctx.Request.URL.Path,
 		Result: post,
+	})
+}
+
+func (h *PostHandler) Update(ctx *gin.Context) {
+	var req dto.UpdatePostRequest
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		h.respondBindError(ctx, err)
+		return
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		h.respondBindError(ctx, err)
+		return
+	}
+
+	if err := req.Validate(); err != nil {
+		h.respondBindError(ctx, err)
+		return
+	}
+
+	// 게시물 수정
+	res, err := h.service.Update(ctx, &req)
+	if err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.UpdatePostResponse]{
+		Status: dto.ErrOK.Status,
+		Code: dto.ErrOK.Code,
+		Message: dto.ErrOK.Message,
+		Detail: fmt.Sprintf("Successfully changed id:%d '%s' post fields.", res.Data.ID, res.Data.Slug),
+		Timestamp: time.Now().UTC(),
+		Path: ctx.Request.URL.Path,
+		Result: res,
 	})
 }

@@ -62,13 +62,29 @@ func (r *ListPostsRequest) SetDefaults() {
 type ReadPostRequest struct {
 	Slug		string		`uri:"postSlug" binding:"required,min=1,max=150"`
 }
+
 type UpdatePostRequest struct {
-	Slug			string		`json:"slug" binding:"max=150"`
-	Title			string		`json:"title" binding:"max=100"`
-	Content			string		`json:"content" binding:"max=100000"`
-	Thumbnail		string		`json:"thumbnail" binding:"max=2048"`
-	CategoryID		string		`json:"category_id"`
-	TagsID			[]string	`json:"tags_id"`
-	IsPublish		string		`json:"is_publish"`
-	IsPrivate		string		`json:"is_private"`
+	ID			int			`uri:"postId" binding:"min=1"`
+
+	Slug        *string    	`json:"slug" binding:"omitempty,min=1,max=150"`
+    Title       *string    	`json:"title" binding:"omitempty,min=1,max=100"`
+    Content     *string    	`json:"content" binding:"omitempty,min=1,max=100000"`
+    Thumbnail   *string    	`json:"thumbnail" binding:"omitempty,max=2048"`
+
+    CategoryID  *int16     	`json:"categoryId" binding:"omitempty,min=0"`
+	TagSlugs	*[]string	`json:"tagSlugs" binding:"omitempty,max=50"`
+    
+	IsPrivate   *bool      	`json:"isPrivate" binding:"omitempty"`
+}
+func (r *UpdatePostRequest) Validate() error {
+	if r.Slug == nil &&
+		r.Title == nil &&
+		r.Content == nil &&
+		r.Thumbnail == nil &&
+		r.CategoryID == nil &&
+		r.TagSlugs == nil &&
+		r.IsPrivate == nil {
+			return CErrUpdateEmptyParam
+	}
+	return nil
 }

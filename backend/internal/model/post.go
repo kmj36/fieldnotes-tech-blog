@@ -7,7 +7,6 @@ type Post struct {
 	ID				int			`db:"id"`
 
 	AccountID 		string		`db:"account_id"`
-	Nickname		string		`db:"nickname"`
 
 	Slug			string		`db:"slug"`
 	Title			string		`db:"title"`

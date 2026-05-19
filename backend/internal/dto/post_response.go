@@ -84,7 +84,7 @@ type ReadPostResponse struct {
 	PostDetail
 }
 
-type UpdatedPostResponse struct {
-	Data		CreatePostResponse	`json:"data"`
+type UpdatePostResponse struct {
+	Data		PostDetail			`json:"data"`
 	Diff		CommonUpdateDiff	`json:"diff"`
 }

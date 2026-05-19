@@ -17,14 +17,27 @@ func NewPostRepository(db *gorm.DB) *PostRepository {
 	return &PostRepository{db: db}
 }
 
+func (repo *PostRepository) FindByID(ctx *gin.Context, postId int) (*model.Post, error) {
+	var post model.Post
+
+    query := repo.db.WithContext(ctx)
+
+    result := query.Where("id = ?", postId).First(&post)
+    if result.Error != nil {
+        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            return nil, nil
+        }
+        return nil, result.Error
+    }
+    return &post, nil
+}
+
 func (repo *PostRepository) FindBySlug(ctx *gin.Context, postSlug string) (*model.Post, error) {
 	var post model.Post
 
-    query := repo.db.WithContext(ctx).Model(&model.Post{}).
-            Select("posts.*, accounts.nickname AS nickname").
-            Joins("LEFT JOIN accounts ON posts.account_id = accounts.account_id")
+      query := repo.db.WithContext(ctx)
 
-    result := query.Where("posts.slug = ?", postSlug).First(&post)
+    result := query.Where("slug = ?", postSlug).First(&post)
     if result.Error != nil {
         if errors.Is(result.Error, gorm.ErrRecordNotFound) {
             return nil, nil
@@ -35,8 +48,17 @@ func (repo *PostRepository) FindBySlug(ctx *gin.Context, postSlug string) (*mode
 }
 
 func (repo *PostRepository) Create(ctx *gin.Context, newPost *model.Post, tags []*model.Tag) (*model.Post, error) {
-	tx := repo.db.WithContext(ctx).Begin()
-	
+    tx := repo.db.WithContext(ctx).Begin()
+    if tx.Error != nil {
+        return nil, tx.Error
+    }
+
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
+
     if err := tx.Create(newPost).Error; err != nil {
         tx.Rollback()
         return nil, err
@@ -47,7 +69,7 @@ func (repo *PostRepository) Create(ctx *gin.Context, newPost *model.Post, tags [
         for i, tag := range tags {
             postTags[i] = model.PostTag{
                 PostID: newPost.ID,
-                TagID: tag.ID,
+                TagID:  tag.ID,
             }
         }
 
@@ -61,7 +83,7 @@ func (repo *PostRepository) Create(ctx *gin.Context, newPost *model.Post, tags [
         return nil, err
     }
 
-	return newPost, nil
+    return newPost, nil
 }
 
 func (repo *PostRepository) buildLikeQuery(filter, keyword string) string {
@@ -200,4 +222,61 @@ func (repo *PostRepository) List(ctx *gin.Context, req *dto.ListPostsRequest) ([
     }
 
     return posts, int(total), nil
+}
+
+func (repo *PostRepository) Update(ctx *gin.Context, req *dto.UpdatePostRequest, updates map[string]any, tags []*model.Tag) (*model.Post, error) {
+	var postData model.Post
+    
+    tx := repo.db.WithContext(ctx).Begin()
+    if tx.Error != nil {
+        return nil, tx.Error
+    }
+
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
+
+    if err := tx.Where("id = ?", req.ID).First(&postData).Error; err != nil {
+        tx.Rollback()
+        return nil, err
+    }
+
+    // 조회 후 업데이트
+    if err := tx.Model(&postData).Updates(updates).Error; err != nil {
+        tx.Rollback()
+        return nil, err
+    }
+
+    // 태그 작업
+    if req.TagSlugs != nil {
+        // 기존 태그 전체 삭제
+        if err := tx.Where("post_id = ?", req.ID).Delete(&model.PostTag{}).Error ; err != nil {
+            tx.Rollback()
+            return nil, err
+        }
+
+        // 태그 삽입 갱신
+        if len(*req.TagSlugs) > 0 {
+            postTags := make([]model.PostTag, len(tags))
+            for i, tag := range tags {
+                postTags[i] = model.PostTag{
+                    PostID: req.ID,
+                    TagID: tag.ID,
+                }
+            }
+
+            if err := tx.Create(&postTags).Error; err != nil {
+                tx.Rollback()
+                return nil, err
+            }
+        }
+    }
+
+    if err := tx.Commit().Error; err != nil {
+        return nil, err
+    }
+
+	return &postData, nil
 }
