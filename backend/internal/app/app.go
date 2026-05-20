@@ -106,6 +106,7 @@ func (app *App) setupRoutes() {
 	api := app.router.Group("/api/v1")
 	{
         api.GET("/health", app.healthHandler.HealthCheck)
+		api.Static("/static", "./static")
 		api.GET("/post", app.postHandler.List)
 		api.GET("/post/:postSlug", app.postHandler.Read)
 		api.GET("/category", app.categoryHandler.List)
