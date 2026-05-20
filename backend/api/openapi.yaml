@@ -1,3 +1,5 @@
+# TODO 각 엔드포인트 요청, 응답 Example 최신화
+
 openapi: 3.0.3
 info:
   title: Fieldnotes Blog API
@@ -311,9 +313,9 @@ components:
 
     Diff:
       type: object
-      required: [changed_fields]
+      required: [changedFields]
       properties:
-        changed_fields:
+        changedFields:
           type: array
           items:
             type: string
@@ -404,7 +406,7 @@ components:
 
     PostPublic:
       type: object
-      required: [id, nickname, slug, title, excerpt, thumbnail, publishedAt, updatedAt, category, tags]
+      required: [id, nickname, slug, title, excerpt, thumbnail, isPrivate, createdAt, updatedAt, publishedAt, category, tags]
       properties:
         id:
           type: integer
@@ -412,6 +414,10 @@ components:
         nickname:
           type: string
           example: "admin"
+        accountId:
+          type: string
+          example: "admin"
+          description: "관리자 응답에만 포함 (omitempty)"
         slug:
           type: string
           example: "go_learning_1"
@@ -425,13 +431,19 @@ components:
           type: string
           nullable: true
           example: "https://example.com/thumbnail.png"
+        isPrivate:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
         publishedAt:
           type: string
           format: date-time
           nullable: true
-        updatedAt:
-          type: string
-          format: date-time
         category:
           nullable: true
           allOf:
@@ -445,146 +457,14 @@ components:
       allOf:
         - $ref: '#/components/schemas/PostPublic'
         - type: object
+          required: [content]
           properties:
             content:
               type: string
-            createdAt:
-              type: string
-              format: date-time
-              nullable: true
-            isPrivate:
-              type: boolean
-              nullable: true
-
-    PostSummaryPublic:
-      type: object
-      required: [id, nickname, slug, title, excerpt, thumbnail, updatedAt, category, tags]
-      properties:
-        id:
-          type: integer
-          example: 1
-        nickname:
-          type: string
-          example: "admin"
-        slug:
-          type: string
-          example: "example-my-blog-1"
-        title:
-          type: string
-          example: "제목1"
-        excerpt:
-          type: string
-          example: "내용 요약 1"
-        thumbnail:
-          type: string
-          nullable: true
-          example: "https://img.example.com/test.png"
-        publishedAt:
-          type: string
-          format: date-time
-          nullable: true
-        updatedAt:
-          type: string
-          format: date-time
-        category:
-          nullable: true
-          allOf:
-            - $ref: '#/components/schemas/CategoryPublic'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/TagPublic'
-
-    PostDetailPublic:
-      type: object
-      required: [id, nickname, slug, title, content, thumbnail, updatedAt, category, tags]
-      properties:
-        id:
-          type: integer
-        nickname:
-          type: string
-        slug:
-          type: string
-        title:
-          type: string
-        content:
-          type: string
-        thumbnail:
-          type: string
-          nullable: true
-        publishedAt:
-          type: string
-          format: date-time
-          nullable: true
-        updatedAt:
-          type: string
-          format: date-time
-        category:
-          nullable: true
-          allOf:
-            - $ref: '#/components/schemas/CategoryPublic'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/TagPublic'
-
-    PostSummaryAdmin:
-      allOf:
-        - $ref: '#/components/schemas/PostSummaryPublic'
-        - type: object
-          required: [isPrivate]
-          properties:
-            accountId:
-              type: string
-              example: "admin"
-            createdAt:
-              type: string
-              format: date-time
-            category:
-              nullable: true
-              allOf:
-                - $ref: '#/components/schemas/CategoryDetail'
-            isPrivate:
-              type: boolean
-
-    PostDetailAdmin:
-      type: object
-      required: [id, nickname, slug, title, content, thumbnail, updatedAt, isPrivate, category, tags]
-      properties:
-        id:
-          type: integer
-        nickname:
-          type: string
-        slug:
-          type: string
-        title:
-          type: string
-        content:
-          type: string
-        thumbnail:
-          type: string
-          nullable: true
-        publishedAt:
-          type: string
-          format: date-time
-          nullable: true
-        updatedAt:
-          type: string
-          format: date-time
-        isPrivate:
-          type: boolean
-        category:
-          nullable: true
-          allOf:
-            - $ref: '#/components/schemas/CategoryDetail'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/TagPublic'
 
     AccountDetail:
       type: object
-      required: [id, accountId, nickname, avatarUrl, role, status, createdAt, updatedAt]
+      required: [id, accountId, nickname, role, status, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -597,12 +477,15 @@ components:
           example: "admin"
         avatarUrl:
           type: string
+          nullable: true
           example: "https://www.svgrepo.com/show/345423/admin.svg"
         role:
           type: string
+          enum: [USER, ADMIN]
           example: "ADMIN"
         status:
           type: string
+          enum: [ACTIVE, SUSPENDED]
           example: "ACTIVE"
         createdAt:
           type: string
@@ -613,7 +496,7 @@ components:
 
     AccountPublic:
       type: object
-      required: [id, accountId, role]
+      required: [id, accountId, role, status]
       properties:
         id:
           type: integer
@@ -626,12 +509,15 @@ components:
           example: "관리자"
         avatarUrl:
           type: string
+          nullable: true
           example: "https://example.com/avatar.png"
         role:
           type: string
+          enum: [USER, ADMIN]
           example: "ADMIN"
         status:
           type: string
+          enum: [ACTIVE, SUSPENDED]
           example: "ACTIVE"
 
 paths:
@@ -738,20 +624,20 @@ paths:
                           data:
                             type: array
                             items:
-                              $ref: '#/components/schemas/PostSummaryPublic'
+                              $ref: '#/components/schemas/PostPublic'
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully retrieved 2 posts."
+                detail: "Successfully retrieved 3 posts."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-16T11:39:20.222697942Z"
+                timestamp: "2026-05-20T03:19:37.62046324Z"
                 path: "/api/v1/post"
                 result:
                   meta:
                     pagination:
                       page: 1
                       pageLimit: 8
-                      total: 2
+                      total: 3
                       totalPages: 1
                       hasNextPage: false
                       hasPrevPage: false
@@ -760,62 +646,80 @@ paths:
                       dir: "desc"
                     filter:
                       match:
-                        matchType: null
+                        matchType: "prefix"
                         id: null
                         nickname: null
-                        slug: null
+                        slug: "japan"
                         title: null
                         categoryId: null
                         tagSlugs: null
                         isPrivate: false
                       date:
                         dateFilter: "between"
-                        dateTarget: "published_at"
-                        dateFrom: "2026-05-14"
-                        dateTo: "2026-05-16"
+                        dateTarget: "created_at"
+                        dateFrom: "2026-05-19"
+                        dateTo: "2026-05-20"
                   data:
-                    - id: 65
-                      nickname: "개발자1"
-                      accountId: "devuser1"
-                      slug: "linux-shell-tips"
-                      title: "개발자를 위한 Linux 쉘 명령어 모음"
-                      excerpt: "## 자주 쓰는 명령어 50선\\n생산성을 높여주는 쉘 명령어와 별칭 설정..."
-                      thumbnail: null
+                    - id: 69
+                      nickname: "Editor"
+                      slug: "japan-hokkaido-trip"
+                      title: "홋카이도 겨울 여행"
+                      excerpt: "## 삿포로 눈 축제\\n홋카이도의 설경과 해산물, 온천을 즐기는 여행기입니다."
+                      thumbnail: "https://img.example.com/hokkaido.png"
                       isPrivate: false
-                      createdAt: "2026-05-16T19:56:26.886227+09:00"
-                      updatedAt: "2026-05-16T19:56:26.886227+09:00"
-                      publishedAt: "2026-05-15T19:56:26.886227+09:00"
+                      createdAt: "2026-05-19T16:46:58.119426+09:00"
+                      updatedAt: "2026-05-19T16:46:58.119426+09:00"
+                      publishedAt: "2026-04-05T16:46:58.119426+09:00"
                       category:
-                        id: 6
-                        parentId: 1
-                        path: "/tech/devops"
-                        name: "DevOps"
-                        slug: "devops"
+                        id: 29
+                        parentId: 19
+                        path: "/life/travel/overseas/japan"
+                        name: "일본"
+                        slug: "japan"
                       tags:
-                        - id: 20
-                          name: "Linux"
-                          slug: "linux"
-                    - id: 15
-                      nickname: "admin"
-                      accountId: "admin"
-                      slug: "go_learning_102"
-                      title: "GORM 이란?"
-                      excerpt: "GORM은 Go 언어에서 사용하는 ORM(Object Relational Mapping) 라이브러리입니다. SQL 쿼리를 직접 작성하지 않고도 Go 구조체를 통해 데이터베이스를 조작할 수 있습니다. GORM은 MySQL, PostgreSQL, SQLite, SQL Se"
-                      thumbnail: "https://example.com/thumbnail.png"
+                        - id: 10
+                          name: "여행기"
+                          slug: "travel-log"
+                    - id: 62
+                      nickname: "Editor"
+                      slug: "japan-osaka-kyoto"
+                      title: "오사카·교토 5박 6일 여행기"
+                      excerpt: "## 오사카 성과 도톤보리\\n오사카의 먹거리와 관광지를 탐방했습니다. 교토의 후시미이나리와 아라시야마 대나무숲도 압권이었습니다."
+                      thumbnail: "https://img.example.com/osaka.png"
                       isPrivate: false
-                      createdAt: "2026-05-15T13:39:17.099659+09:00"
-                      updatedAt: "2026-05-15T13:39:17.099659+09:00"
-                      publishedAt: "2026-05-15T13:39:17.098501+09:00"
+                      createdAt: "2026-05-19T16:46:58.119426+09:00"
+                      updatedAt: "2026-05-19T16:46:58.119426+09:00"
+                      publishedAt: "2026-03-22T16:46:58.119426+09:00"
                       category:
-                        id: 13
-                        parentId: 5
-                        path: "/tech/backend/go"
-                        name: "Go"
-                        slug: "go"
+                        id: 29
+                        parentId: 19
+                        path: "/life/travel/overseas/japan"
+                        name: "일본"
+                        slug: "japan"
                       tags:
-                        - id: 9
-                          name: "독서"
-                          slug: "reading"
+                        - id: 10
+                          name: "여행기"
+                          slug: "travel-log"
+                    - id: 61
+                      nickname: "Editor"
+                      slug: "japan-travel-log"
+                      title: "일본 여행 후기 - 도쿄 3박 4일"
+                      excerpt: "## 도쿄 3박 4일\\n처음 방문한 일본은 정말 인상적이었습니다. 아사쿠사, 시부야, 신주쿠를 돌아보며 일본의 매력을 느꼈습니다."
+                      thumbnail: "https://img.example.com/japan.png"
+                      isPrivate: false
+                      createdAt: "2026-05-19T16:46:58.119426+09:00"
+                      updatedAt: "2026-05-19T16:46:58.119426+09:00"
+                      publishedAt: "2026-03-20T16:46:58.119426+09:00"
+                      category:
+                        id: 29
+                        parentId: 19
+                        path: "/life/travel/overseas/japan"
+                        name: "일본"
+                        slug: "japan"
+                      tags:
+                        - id: 10
+                          name: "여행기"
+                          slug: "travel-log"
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -886,19 +790,22 @@ paths:
               example:
                 status: 201
                 code: "E201_001"
-                detail: "Successfully added columns to 'go_learning_1' post."
+                detail: "Successfully added columns to 'post' post."
                 message: "리소스가 성공적으로 생성되었습니다."
-                timestamp: "2026-05-13T05:37:24.728783333Z"
+                timestamp: "2026-05-20T04:36:50.135738518Z"
                 path: "/api/v1/post"
                 result:
                   id: 7
                   nickname: "admin"
-                  slug: "go_learning_1"
-                  title: "GORM 이란?"
-                  excerpt: "GORM은 Go 언어에서 사용하는 ORM(Object Relational Mapping) 라이브러리입니다."
+                  accountId: "admin"
+                  slug: "post"
+                  title: "게시물 만들기"
+                  excerpt: "게시물 만들기 테스트 이다."
                   thumbnail: "https://example.com/thumbnail.png"
-                  publishedAt: "2026-05-13T05:37:24.71177312Z"
-                  updatedAt: "2026-05-13T14:37:24.712436929+09:00"
+                  isPrivate: false
+                  createdAt: "2026-05-20T13:36:50.120752971+09:00"
+                  updatedAt: "2026-05-20T13:36:50.120752971+09:00"
+                  publishedAt: "2026-05-20T04:36:50.120078202Z"
                   category:
                     id: 13
                     parentId: 5
@@ -945,7 +852,33 @@ paths:
                   - type: object
                     properties:
                       result:
-                        $ref: '#/components/schemas/PostDetailPublic'
+                        $ref: '#/components/schemas/PostDetail'
+              example:
+                status: 200
+                code: "E200_001"
+                detail: "Successfully retrieved id:59 'css-grid-layout' post."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-20T03:38:57.867474447Z"
+                path: "/api/v1/post/css-grid-layout"
+                result:
+                  id: 59
+                  nickname: "Editor"
+                  slug: "css-grid-layout"
+                  title: "CSS Grid 레이아웃 완전 가이드"
+                  excerpt: "## grid-template-areas\\n직관적인 네이밍으로 복잡한 레이아웃을 구성합니다.\\n\\n```css\\n.container {\\n    display: grid;\\n    grid-template-areas:\\n        \"header header\"\\n  "
+                  thumbnail: null
+                  isPrivate: false
+                  createdAt: "2026-05-19T16:46:58.029826+09:00"
+                  updatedAt: "2026-05-19T16:46:58.029826+09:00"
+                  publishedAt: "2026-03-16T16:46:58.029826+09:00"
+                  category:
+                    id: 4
+                    parentId: 1
+                    path: "/tech/frontend"
+                    name: "프론트엔드"
+                    slug: "frontend"
+                  tags: []
+                  content: "## grid-template-areas\\n직관적인 네이밍으로 복잡한 레이아웃을 구성합니다.\\n\\n```css\\n.container {\\n    display: grid;\\n    grid-template-areas:\\n        \"header header\"\\n        \"sidebar main\";\\n}\\n```"
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -1055,25 +988,25 @@ paths:
                           data:
                             type: array
                             items:
-                              $ref: '#/components/schemas/PostSummaryAdmin'
+                              $ref: '#/components/schemas/PostPublic'
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully retrieved 8 posts."
+                detail: "Successfully retrieved 7 posts."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-16T11:16:15.758947767Z"
+                timestamp: "2026-05-20T04:37:43.976870537Z"
                 path: "/api/v1/post/admin"
                 result:
                   meta:
                     pagination:
                       page: 1
                       pageLimit: 8
-                      total: 9
-                      totalPages: 2
-                      hasNextPage: true
+                      total: 7
+                      totalPages: 1
+                      hasNextPage: false
                       hasPrevPage: false
                     sort:
-                      by: "published_at"
+                      by: "created_at"
                       dir: "desc"
                     filter:
                       match:
@@ -1084,13 +1017,130 @@ paths:
                         title: null
                         categoryId: null
                         tagSlugs: null
-                        isPrivate: true
+                        isPrivate: null
                       date:
                         dateFilter: null
                         dateTarget: null
                         dateFrom: null
                         dateTo: null
                   data:
+                    - id: 7
+                      nickname: "admin"
+                      accountId: "admin"
+                      slug: "post"
+                      title: "게시물 만들기"
+                      excerpt: "게시물 만들기 테스트 이다."
+                      thumbnail: "https://example.com/thumbnail.png"
+                      isPrivate: false
+                      createdAt: "2026-05-20T13:36:50.120752+09:00"
+                      updatedAt: "2026-05-20T13:36:50.120752+09:00"
+                      publishedAt: "2026-05-20T13:36:50.120078+09:00"
+                      category:
+                        id: 13
+                        parentId: 5
+                        path: "/tech/backend/go"
+                        name: "Go"
+                        slug: "go"
+                      tags:
+                        - id: 9
+                          name: "독서"
+                          slug: "reading"
+                        - id: 11
+                          name: "GORM"
+                          slug: "gorm"
+                    - id: 2
+                      nickname: "테스트계정1"
+                      accountId: "testaccount1"
+                      slug: "docker-compose-guide"
+                      title: "Docker Compose 실전 가이드"
+                      excerpt: "## Docker Compose\\n여러 컨테이너를 한 번에 관리하는 방법..."
+                      thumbnail: "https://img.example.com/docker.png"
+                      isPrivate: false
+                      createdAt: "2026-05-20T13:32:15.610818+09:00"
+                      updatedAt: "2026-05-20T13:32:15.610818+09:00"
+                      publishedAt: "2026-05-12T13:32:15.610818+09:00"
+                      category:
+                        id: 28
+                        parentId: 16
+                        path: "/tech/devops/docker/compose"
+                        name: "Docker Compose"
+                        slug: "compose"
+                      tags:
+                        - id: 7
+                          name: "Docker"
+                          slug: "docker"
+                        - id: 8
+                          name: "Kubernetes"
+                          slug: "kubernetes"
+                    - id: 3
+                      nickname: "테스트계정1"
+                      accountId: "testaccount1"
+                      slug: "react-hooks-deep-dive"
+                      title: "React Hooks 완벽 정리"
+                      excerpt: "## useState, useEffect\\nReact Hooks는 함수형 컴포넌트에서..."
+                      thumbnail: null
+                      isPrivate: false
+                      createdAt: "2026-05-20T13:32:15.610818+09:00"
+                      updatedAt: "2026-05-20T13:32:15.610818+09:00"
+                      publishedAt: "2026-05-14T13:32:15.610818+09:00"
+                      category:
+                        id: 22
+                        parentId: 10
+                        path: "/tech/frontend/react/hooks"
+                        name: "React Hooks"
+                        slug: "hooks"
+                      tags:
+                        - id: 4
+                          name: "React"
+                          slug: "react"
+                    - id: 1
+                      nickname: "테스트계정1"
+                      accountId: "testaccount1"
+                      slug: "getting-started-with-go"
+                      title: "Go 시작하기"
+                      excerpt: "## Go란?\\nGo는 구글이 만든 정적 타입 컴파일 언어입니다..."
+                      thumbnail: "https://img.example.com/go.png"
+                      isPrivate: false
+                      createdAt: "2026-05-20T13:32:15.610818+09:00"
+                      updatedAt: "2026-05-20T13:32:15.610818+09:00"
+                      publishedAt: "2026-05-10T13:32:15.610818+09:00"
+                      category:
+                        id: 13
+                        parentId: 5
+                        path: "/tech/backend/go"
+                        name: "Go"
+                        slug: "go"
+                      tags:
+                        - id: 1
+                          name: "Go"
+                          slug: "go"
+                        - id: 11
+                          name: "GORM"
+                          slug: "gorm"
+                    - id: 5
+                      nickname: "Editor"
+                      accountId: "editor"
+                      slug: "gorm-with-gin"
+                      title: "Gin + GORM으로 REST API 만들기"
+                      excerpt: "## 프로젝트 설정\\nGin과 GORM을 활용한 REST API 구축 방법..."
+                      thumbnail: null
+                      isPrivate: false
+                      createdAt: "2026-05-20T13:32:15.610818+09:00"
+                      updatedAt: "2026-05-20T13:32:15.610818+09:00"
+                      publishedAt: "2026-05-18T13:32:15.610818+09:00"
+                      category:
+                        id: 25
+                        parentId: 13
+                        path: "/tech/backend/go/gorm"
+                        name: "GORM"
+                        slug: "gorm"
+                      tags:
+                        - id: 1
+                          name: "Go"
+                          slug: "go"
+                        - id: 11
+                          name: "GORM"
+                          slug: "gorm"
                     - id: 6
                       nickname: "테스트계정1"
                       accountId: "testaccount1"
@@ -1099,102 +1149,32 @@ paths:
                       excerpt: "아직 작성 중인 글입니다..."
                       thumbnail: null
                       isPrivate: true
-                      createdAt: "2026-05-13T14:34:06.425355+09:00"
-                      updatedAt: "2026-05-13T14:34:06.425355+09:00"
+                      createdAt: "2026-05-20T13:32:15.610818+09:00"
+                      updatedAt: "2026-05-20T13:32:15.610818+09:00"
                       publishedAt: null
                       category: null
                       tags: []
-                    - id: 58
-                      nickname: "일반유저1"
-                      accountId: "user1"
-                      slug: "draft-go-generics"
-                      title: "Go 제네릭 정리 초안"
-                      excerpt: "아직 정리 중인 Go 제네릭 관련 글..."
-                      thumbnail: null
-                      isPrivate: true
-                      createdAt: "2026-05-16T19:56:26.886227+09:00"
-                      updatedAt: "2026-05-16T19:56:26.886227+09:00"
-                      publishedAt: null
-                      category: null
-                      tags: []
-                    - id: 59
-                      nickname: "일반유저2"
-                      accountId: "user2"
-                      slug: "draft-travel-plan"
-                      title: "다음 여행 계획 메모"
-                      excerpt: "베트남 다낭 여행 계획 정리 중..."
-                      thumbnail: null
-                      isPrivate: true
-                      createdAt: "2026-05-16T19:56:26.886227+09:00"
-                      updatedAt: "2026-05-16T19:56:26.886227+09:00"
-                      publishedAt: null
-                      category: null
-                      tags: []
-                    - id: 60
-                      nickname: "블로거1"
-                      accountId: "blogger1"
-                      slug: "draft-book-notes"
-                      title: "독서 노트 임시 저장"
-                      excerpt: "읽고 있는 책들의 메모들..."
-                      thumbnail: null
-                      isPrivate: true
-                      createdAt: "2026-05-16T19:56:26.886227+09:00"
-                      updatedAt: "2026-05-16T19:56:26.886227+09:00"
-                      publishedAt: null
-                      category: null
-                      tags: []
-                    - id: 148
-                      nickname: "테스트계정1"
-                      accountId: "testaccount1"
-                      slug: "draft-kubernetes-advanced"
-                      title: "쿠버네티스 심화 초안"
-                      excerpt: "쿠버네티스 오퍼레이터 패턴 정리 중..."
-                      thumbnail: null
-                      isPrivate: true
-                      createdAt: "2026-05-16T19:59:57.233224+09:00"
-                      updatedAt: "2026-05-16T19:59:57.233224+09:00"
-                      publishedAt: null
-                      category: null
-                      tags: []
-                    - id: 149
+                    - id: 4
                       nickname: "Editor"
                       accountId: "editor"
-                      slug: "draft-go-stdlib-tour"
-                      title: "Go 표준 라이브러리 투어 초안"
-                      excerpt: "아직 정리되지 않은 내용들..."
-                      thumbnail: null
-                      isPrivate: true
-                      createdAt: "2026-05-16T19:59:57.233224+09:00"
-                      updatedAt: "2026-05-16T19:59:57.233224+09:00"
-                      publishedAt: null
-                      category: null
-                      tags: []
-                    - id: 150
-                      nickname: "개발자1"
-                      accountId: "devuser1"
-                      slug: "draft-system-design-notes"
-                      title: "시스템 설계 면접 메모"
-                      excerpt: "학습 중인 내용을 임시로 저장..."
-                      thumbnail: null
-                      isPrivate: true
-                      createdAt: "2026-05-16T19:59:57.233224+09:00"
-                      updatedAt: "2026-05-16T19:59:57.233224+09:00"
-                      publishedAt: null
-                      category: null
-                      tags: []
-                    - id: 151
-                      nickname: "블로거1"
-                      accountId: "blogger1"
-                      slug: "draft-europe-plan"
-                      title: "내년 유럽 여행 계획"
-                      excerpt: "이탈리아 루트 조사 중..."
-                      thumbnail: null
-                      isPrivate: true
-                      createdAt: "2026-05-16T19:59:57.233224+09:00"
-                      updatedAt: "2026-05-16T19:59:57.233224+09:00"
-                      publishedAt: null
-                      category: null
-                      tags: []
+                      slug: "japan-travel-log"
+                      title: "일본 여행 후기"
+                      excerpt: "## 도쿄 3박 4일\\n처음 방문한 일본은 정말 인상적이었습니다..."
+                      thumbnail: "https://img.example.com/japan.png"
+                      isPrivate: false
+                      createdAt: "2026-05-20T13:32:15.610818+09:00"
+                      updatedAt: "2026-05-20T13:32:15.610818+09:00"
+                      publishedAt: "2026-05-16T13:32:15.610818+09:00"
+                      category:
+                        id: 29
+                        parentId: 19
+                        path: "/life/travel/overseas/japan"
+                        name: "일본"
+                        slug: "japan"
+                      tags:
+                        - id: 10
+                          name: "여행기"
+                          slug: "travel-log"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1257,9 +1237,46 @@ paths:
                         type: object
                         properties:
                           data:
-                            $ref: '#/components/schemas/PostDetailAdmin'
+                            $ref: '#/components/schemas/PostDetail'
                           diff:
                             $ref: '#/components/schemas/Diff'
+              example:
+                status: 200
+                code: "E200_001"
+                detail: "Successfully changed id:7 'post' post fields."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-20T04:42:59.099706173Z"
+                path: "/api/v1/post/7"
+                result:
+                  data:
+                    id: 7
+                    nickname: "admin"
+                    accountId: "admin"
+                    slug: "post"
+                    title: "게시물 만들기"
+                    excerpt: "게시물 만들기 테스트 이다."
+                    thumbnail: "https://example.com/thumbnail.png"
+                    isPrivate: false
+                    createdAt: "2026-05-20T13:36:50.120752+09:00"
+                    updatedAt: "2026-05-20T13:42:59.090961105+09:00"
+                    publishedAt: "2026-05-20T13:36:50.120078+09:00"
+                    category:
+                      id: 13
+                      parentId: 5
+                      path: "/tech/backend/go"
+                      name: "Go"
+                      slug: "go"
+                    tags:
+                      - id: 9
+                        name: "독서"
+                        slug: "reading"
+                      - id: 11
+                        name: "GORM"
+                        slug: "gorm"
+                    content: "게시물 만들기 테스트 이다."
+                  diff:
+                    changedFields:
+                      - "tags"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1281,7 +1298,18 @@ paths:
         - $ref: '#/components/parameters/PathId'
       responses:
         '200':
-          $ref: '#/components/responses/OK'
+          description: 게시물 삭제 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+              example:
+                status: 200
+                code: "E200_001"
+                detail: "Successfully deleted id:'7' post."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-20T05:10:59.987703503Z"
+                path: "/api/v1/post/7"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1335,27 +1363,47 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully retrieved categories."
+                detail: "Successfully retrieved 5 categories."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-05T08:22:08.148673804Z"
+                timestamp: "2026-05-20T03:57:52.080376765Z"
                 path: "/api/v1/category"
                 result:
                   meta:
                     sort:
                       by: "id"
                       dir: "desc"
-                    limit: 10
+                    limit: 5
                     filters:
                       id: null
                       parentId: null
                       name: null
-                      slug: "europe"
+                      slug: null
                   data:
                     - id: 30
                       parentId: 19
+                      path: "/life/travel/overseas/europe"
                       name: "유럽"
                       slug: "europe"
-                      path: "/life/travel/overseas/europe"
+                    - id: 29
+                      parentId: 19
+                      path: "/life/travel/overseas/japan"
+                      name: "일본"
+                      slug: "japan"
+                    - id: 28
+                      parentId: 16
+                      path: "/tech/devops/docker/compose"
+                      name: "Docker Compose"
+                      slug: "compose"
+                    - id: 27
+                      parentId: 14
+                      path: "/tech/backend/python/fastapi"
+                      name: "FastAPI"
+                      slug: "fastapi"
+                    - id: 26
+                      parentId: 13
+                      path: "/tech/backend/go/gin"
+                      name: "Gin"
+                      slug: "gin"
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -1402,18 +1450,18 @@ paths:
               example:
                 status: 201
                 code: "E201_001"
-                detail: "Category '테스트2' created Successfully."
+                detail: "Successfully added columns to 'string' category."
                 message: "리소스가 성공적으로 생성되었습니다."
-                timestamp: "2026-05-07T08:26:02.045722981Z"
+                timestamp: "2026-05-20T05:23:18.183414564Z"
                 path: "/api/v1/category"
                 result:
-                  id: 33
-                  parentId: 1
-                  path: "/tech/test2"
-                  name: "테스트2"
-                  slug: "test2"
-                  createdAt: "2026-05-07T17:26:02.038725893+09:00"
-                  updatedAt: "2026-05-07T17:26:02.038725893+09:00"
+                  id: 31
+                  parentId: 3
+                  path: "/review/string"
+                  name: "string"
+                  slug: "string"
+                  createdAt: "2026-05-20T14:23:18.173697926+09:00"
+                  updatedAt: "2026-05-20T14:23:18.173697926+09:00"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1470,24 +1518,23 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully changed category data."
+                detail: "Successfully changed 'string' category fields."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-06T02:23:19.20868238Z"
-                path: "/api/v1/category/32"
+                timestamp: "2026-05-20T05:24:56.168733581Z"
+                path: "/api/v1/category/31"
                 result:
                   data:
-                    id: 32
+                    id: 31
                     parentId: null
-                    name: "str"
-                    slug: "str"
-                    path: "/str"
-                    createdAt: "2026-05-06T11:18:25.123544+09:00"
-                    updatedAt: "2026-05-06T11:23:19.198746982+09:00"
+                    path: "/string"
+                    name: "string"
+                    slug: "string"
+                    createdAt: "2026-05-20T14:23:18.173697+09:00"
+                    updatedAt: "2026-05-20T14:24:56.157027493+09:00"
                   diff:
                     changedFields:
-                      - "name"
-                      - "slug"
                       - "path"
+                      - "parentId"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1507,7 +1554,18 @@ paths:
         - $ref: '#/components/parameters/PathId'
       responses:
         '200':
-          $ref: '#/components/responses/OK'
+          description: 카테고리 삭제 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+              example:
+                status: 200
+                code: "E200_001"
+                detail: "Successfully deleted 'string' category."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-20T05:52:47.088180069Z"
+                path: "/api/v1/category/31"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1557,9 +1615,9 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully retrieved tags."
+                detail: "Successfully retrieved 10 tags."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-05T08:37:02.770263057Z"
+                timestamp: "2026-05-20T04:05:29.786066617Z"
                 path: "/api/v1/tag"
                 result:
                   meta:
@@ -1568,11 +1626,38 @@ paths:
                       dir: "desc"
                     limit: 10
                     filters:
-                      id: 0
-                      name: ""
-                      slug: ""
+                      id: null
+                      name: null
+                      slug: null
                   data:
+                    - id: 20
+                      name: "알고리즘"
+                      slug: "algorithm"
+                    - id: 19
+                      name: "Linux"
+                      slug: "linux"
+                    - id: 18
+                      name: "CI/CD"
+                      slug: "cicd"
+                    - id: 17
+                      name: "JWT"
+                      slug: "jwt"
+                    - id: 16
+                      name: "Redis"
+                      slug: "redis"
                     - id: 15
+                      name: "Gin"
+                      slug: "gin"
+                    - id: 14
+                      name: "Next.js"
+                      slug: "nextjs"
+                    - id: 13
+                      name: "TypeScript"
+                      slug: "typescript"
+                    - id: 12
+                      name: "FastAPI"
+                      slug: "fastapi"
+                    - id: 11
                       name: "GORM"
                       slug: "gorm"
         '400':
@@ -1614,6 +1699,19 @@ paths:
                     properties:
                       result:
                         $ref: '#/components/schemas/TagDetail'
+              example:
+                status: 201
+                code: "E201_001"
+                detail: "Successfully created '일상' tag fields."
+                message: "리소스가 성공적으로 생성되었습니다."
+                timestamp: "2026-05-20T06:00:29.596936776Z"
+                path: "/api/v1/tag"
+                result:
+                  id: 13
+                  name: "일상"
+                  slug: "life"
+                  createdAt: "2026-05-20T15:00:29.591991723+09:00"
+                  updatedAt: "2026-05-20T15:00:29.591991723+09:00"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1667,17 +1765,17 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully changed tag data."
+                detail: "Successfully changed 'string' tag fields."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-06T03:35:20.188673008Z"
+                timestamp: "2026-05-20T06:04:59.207711346Z"
                 path: "/api/v1/tag/13"
                 result:
                   data:
                     id: 13
-                    name: "ㅁㄴㅇㄹ"
-                    slug: "asdf"
-                    createdAt: "2026-05-05T20:35:54.052013+09:00"
-                    updatedAt: "2026-05-06T12:35:20.176124591+09:00"
+                    name: "string"
+                    slug: "string"
+                    createdAt: "2026-05-20T15:00:29.591991+09:00"
+                    updatedAt: "2026-05-20T15:04:59.203566616+09:00"
                   diff:
                     changedFields:
                       - "name"
@@ -1701,7 +1799,18 @@ paths:
         - $ref: '#/components/parameters/PathId'
       responses:
         '200':
-          $ref: '#/components/responses/OK'
+          description: 태그 삭제 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+              example:
+                status: 200
+                code: "E200_001"
+                detail: "Successfully deleted 'string' tag."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-20T06:05:50.935522183Z"
+                path: "/api/v1/tag/13"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1759,19 +1868,19 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully retrieved 'admin' account."
+                detail: "Successfully retrieved 'testaccount1' account."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-12T04:30:26.826058992Z"
-                path: "/api/v1/auth/admin"
+                timestamp: "2026-05-20T06:13:37.844226875Z"
+                path: "/api/v1/auth/testaccount1"
                 result:
-                  id: 4
-                  accountId: "admin"
-                  nickname: "admin"
+                  id: 1
+                  accountId: "testaccount1"
+                  nickname: "테스트계정1"
                   avatarUrl: "https://www.svgrepo.com/show/345423/admin.svg"
                   role: "ADMIN"
                   status: "ACTIVE"
-                  createdAt: "2026-05-12T13:27:51.404057+09:00"
-                  updatedAt: "2026-05-12T13:27:51.404057+09:00"
+                  createdAt: "2026-05-20T13:32:15.610818+09:00"
+                  updatedAt: "2026-05-20T13:32:15.610818+09:00"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1878,27 +1987,27 @@ paths:
                 code: "E200_001"
                 detail: "Successfully retrieved 1 accounts."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-12T04:42:32.204823929Z"
+                timestamp: "2026-05-20T06:25:02.838121281Z"
                 path: "/api/v1/auth/list"
                 result:
                   meta:
                     sort:
                       by: "id"
                       dir: "desc"
-                    limit: 2
+                    limit: 10
                     filters:
                       id: null
                       accountId: null
-                      nickname: "2번_관리자"
+                      nickname: "일반유저1"
                       avatarUrl: null
                       role: null
                       status: null
                   data:
-                    - id: 5
-                      accountId: "admin2"
-                      nickname: "2번_관리자"
-                      avatarUrl: "https://example.com/avatar.png"
-                      role: "ADMIN"
+                    - id: 3
+                      accountId: "user1"
+                      nickname: "일반유저1"
+                      avatarUrl: null
+                      role: "USER"
                       status: "ACTIVE"
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -1939,8 +2048,10 @@ paths:
                     properties:
                       result:
                         type: object
-                        required: [token]
+                        required: [AccountID, token]
                         properties:
+                          AccountID:
+                            type: string
                           token:
                             type: string
               example:
@@ -1948,10 +2059,11 @@ paths:
                 code: "E200_001"
                 detail: "Successfully login 'admin' account."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-12T04:44:03.867780601Z"
+                timestamp: "2026-05-20T04:35:36.372237539Z"
                 path: "/api/v1/auth/login"
                 result:
-                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  AccountID: "admin"
+                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey..."
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1978,7 +2090,7 @@ paths:
                   type: string
                   default: testAccount1
                   minLength: 3
-                  maxLength: 31
+                  maxLength: 32
                 password:
                   type: string
                   format: password
@@ -1996,9 +2108,11 @@ paths:
                   maxLength: 2048
                 role:
                   type: string
+                  enum: [USER, ADMIN]
                   default: ADMIN
                 status:
                   type: string
+                  enum: [ACTIVE, SUSPENDED]
                   default: ACTIVE
       responses:
         '201':
@@ -2015,19 +2129,19 @@ paths:
               example:
                 status: 201
                 code: "E201_001"
-                detail: "Successfully added columns to 'testAccount2' account."
+                detail: "Successfully added columns to 'testAccount1' account."
                 message: "리소스가 성공적으로 생성되었습니다."
-                timestamp: "2026-05-12T04:46:24.661956113Z"
+                timestamp: "2026-05-20T06:29:27.245039532Z"
                 path: "/api/v1/auth/register"
                 result:
-                  id: 6
-                  accountId: "testAccount2"
-                  nickname: "테스트_계정2"
+                  id: 5
+                  accountId: "testAccount1"
+                  nickname: "테스트_계정1"
                   avatarUrl: "https://example.com/avatar.png"
                   role: "ADMIN"
                   status: "ACTIVE"
-                  createdAt: "2026-05-12T13:46:24.658372556+09:00"
-                  updatedAt: "2026-05-12T13:46:24.658372556+09:00"
+                  createdAt: "2026-05-20T15:29:27.240597029+09:00"
+                  updatedAt: "2026-05-20T15:29:27.240597029+09:00"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2072,9 +2186,11 @@ paths:
                   maxLength: 2048
                 role:
                   type: string
+                  enum: [USER, ADMIN]
                   default: ADMIN
                 status:
                   type: string
+                  enum: [ACTIVE, SUSPENDED]
                   default: ACTIVE
       responses:
         '200':
@@ -2099,7 +2215,7 @@ paths:
                           diff:
                             type: object
                             properties:
-                              changed_fields:
+                              changedFields:
                                 type: array
                                 items:
                                   type: string
@@ -2107,24 +2223,24 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully changed 'testAccount1' account fields."
+                detail: "Successfully changed 'testaccount1' account fields."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-12T04:48:00.653716296Z"
-                path: "/api/v1/auth/update/testAccount1"
+                timestamp: "2026-05-20T06:38:27.253204031Z"
+                path: "/api/v1/auth/update/testaccount1"
                 result:
                   data:
-                    isPasswordChanged: true
-                    id: 7
-                    accountId: "testAccount1"
-                    nickname: "테스트_계정1"
+                    isPasswordChanged: false
+                    id: 1
+                    accountId: "testaccount1"
+                    nickname: "테스트_계정2"
                     avatarUrl: "https://example.com/avatar.png"
                     role: "ADMIN"
                     status: "ACTIVE"
-                    createdAt: "2026-05-12T13:47:13.524613+09:00"
-                    updatedAt: "2026-05-12T13:48:00.648882621+09:00"
+                    createdAt: "2026-05-20T13:32:15.610818+09:00"
+                    updatedAt: "2026-05-20T15:38:27.249705883+09:00"
                   diff:
-                    changed_fields:
-                      - "passwordHash"
+                    changedFields:
+                      - "nickname"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2155,10 +2271,10 @@ paths:
               example:
                 status: 200
                 code: "E200_001"
-                detail: "Successfully deleted 'testAccount1' account."
+                detail: "Successfully deleted 'testaccount1' account."
                 message: "정상적으로 처리되었습니다."
-                timestamp: "2026-05-12T04:49:31.576551915Z"
-                path: "/api/v1/auth/delete/testAccount1"
+                timestamp: "2026-05-20T06:40:18.6259265Z"
+                path: "/api/v1/auth/delete/testaccount1"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
