@@ -1184,6 +1184,67 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/v1/post/admin/{postSlug}:
+    get:
+      tags: [Admin]
+      summary: 관리자용 개별 게시물 조회
+      operationId: getPostBySlugAdmin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 게시물 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/PostDetail'
+              example:
+                status: 200
+                code: "E200_001"
+                detail: "Successfully retrieved id:59 'css-grid-layout' post."
+                message: "정상적으로 처리되었습니다."
+                timestamp: "2026-05-20T03:38:57.867474447Z"
+                path: "/api/v1/post/admin/css-grid-layout"
+                result:
+                  id: 59
+                  nickname: "Editor"
+                  accountId: "editor"
+                  slug: "css-grid-layout"
+                  title: "CSS Grid 레이아웃 완전 가이드"
+                  excerpt: "## grid-template-areas\\n직관적인 네이밍으로 복잡한 레이아웃을 구성합니다.\\n\\n```css\\n.container {\\n    display: grid;\\n    grid-template-areas:\\n        \"header header\"\\n  "
+                  thumbnail: null
+                  isPrivate: false
+                  createdAt: "2026-05-19T16:46:58.029826+09:00"
+                  updatedAt: "2026-05-19T16:46:58.029826+09:00"
+                  publishedAt: "2026-03-16T16:46:58.029826+09:00"
+                  category:
+                    id: 4
+                    parentId: 1
+                    path: "/tech/frontend"
+                    name: "프론트엔드"
+                    slug: "frontend"
+                  tags: []
+                  content: "## grid-template-areas\\n직관적인 네이밍으로 복잡한 레이아웃을 구성합니다.\\n\\n```css\\n.container {\\n    display: grid;\\n    grid-template-areas:\\n        \"header header\"\\n        \"sidebar main\";\\n}\\n```"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/v1/post/{id}:
     patch:
       tags: [Admin]
