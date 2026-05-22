@@ -1,5 +1,7 @@
 import { useState, useEffect, useReducer } from "react";
 import type { CSSProperties, ReactNode, JSX } from "react";
+import { Btn, Badge, Chip, Alert, Spinner, Pager, Input, Field, Modal, Sel } from "@/shared/components";
+import type { SelectOption } from "@/shared/components";
 
 /* ═══════════════════════════════════════════════════════════════
    DESIGN TOKENS  — Refined Editorial · Ink on Cream
@@ -33,9 +35,6 @@ const FM = "'JetBrains Mono', 'Courier New', monospace";
 type AccountRole = "USER" | "ADMIN";
 type AccountStatus = "ACTIVE" | "SUSPENDED";
 type SortDir = "asc" | "desc";
-type AlertType = "error" | "success" | "warning";
-type BtnVariant = "primary" | "outline" | "ghost" | "danger" | "success" | "teal";
-type BtnSize = "sm" | "md" | "lg";
 
 // ── OpenAPI schema shapes ──────────────────────────────────────
 interface TagPublic { id: number; name: string; slug: string; }
@@ -266,188 +265,6 @@ function useAsync<T>(fn: () => Promise<T>, deps: unknown[]): AsyncState<T> {
   }, deps);
 
   return state;
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   PRIMITIVE UI COMPONENTS
-═══════════════════════════════════════════════════════════════ */
-const variantStyles: Record<BtnVariant, CSSProperties> = {
-  primary: { background: C.accent, color: "#fff", border: `1.5px solid ${C.accent}` },
-  outline: { background: "transparent", color: C.accent, border: `1.5px solid ${C.accent}` },
-  ghost: { background: "transparent", color: C.muted, border: "1.5px solid transparent" },
-  danger: { background: C.danger, color: "#fff", border: `1.5px solid ${C.danger}` },
-  success: { background: C.success, color: "#fff", border: `1.5px solid ${C.success}` },
-  teal: { background: C.teal, color: "#fff", border: `1.5px solid ${C.teal}` },
-};
-const sizeStyles: Record<BtnSize, CSSProperties> = {
-  sm: { padding: "4px 12px", fontSize: ".78rem" },
-  md: { padding: "8px 16px", fontSize: ".875rem" },
-  lg: { padding: "11px 24px", fontSize: "1rem" },
-};
-
-interface BtnProps {
-  children: ReactNode; variant?: BtnVariant; size?: BtnSize;
-  onClick?: () => void; disabled?: boolean; full?: boolean; style?: CSSProperties;
-}
-function Btn({ children, variant = "primary", size = "md", onClick, disabled, full, style }: BtnProps) {
-  return (
-    <button onClick={onClick} disabled={disabled} style={{
-      ...sizeStyles[size], ...variantStyles[variant],
-      cursor: disabled ? "not-allowed" : "pointer",
-      borderRadius: "5px", fontFamily: FM, fontWeight: "600",
-      display: "inline-flex", alignItems: "center", gap: "6px",
-      opacity: disabled ? .6 : 1, transition: "all .15s",
-      width: full ? "100%" : undefined, justifyContent: full ? "center" : undefined,
-      ...style,
-    }}>
-      {children}
-    </button>
-  );
-}
-
-interface FieldProps { label?: string; children: ReactNode; style?: CSSProperties; }
-function Field({ label, children, style }: FieldProps) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "5px", ...style }}>
-      {label && <label style={{ fontFamily: FM, fontSize: ".7rem", color: C.muted, fontWeight: "700", textTransform: "uppercase", letterSpacing: ".06em" }}>{label}</label>}
-      {children}
-    </div>
-  );
-}
-
-const inputBase: CSSProperties = {
-  padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: "5px",
-  fontFamily: FB, fontSize: ".95rem", color: C.ink, background: "#fff",
-  outline: "none", width: "100%", boxSizing: "border-box", transition: "border-color .15s",
-};
-
-interface InputProps {
-  label?: string; value: string; onChange: (v: string) => void;
-  type?: string; placeholder?: string; style?: CSSProperties; rows?: number;
-}
-function Input({ label, value, onChange, type = "text", placeholder, style, rows }: InputProps) {
-  const baseStyle: CSSProperties = {
-    ...inputBase,
-    fontFamily: rows ? FM : FB, fontSize: rows ? ".875rem" : ".95rem",
-    lineHeight: rows ? "1.6" : undefined, resize: rows ? "vertical" : undefined,
-  };
-  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { (e.target as HTMLElement).style.borderColor = C.accent; };
-  const blur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { (e.target as HTMLElement).style.borderColor = C.border; };
-  return (
-    <Field label={label} style={style}>
-      {rows
-        ? <textarea value={value} placeholder={placeholder} rows={rows}
-          onChange={e => onChange(e.target.value)} style={baseStyle} onFocus={focus} onBlur={blur} />
-        : <input type={type} value={value} placeholder={placeholder}
-          onChange={e => onChange(e.target.value)} style={baseStyle} onFocus={focus} onBlur={blur} />
-      }
-    </Field>
-  );
-}
-
-interface SelectOption { value: string; label: string; }
-interface SelProps { label?: string; value: string; onChange: (v: string) => void; options: SelectOption[]; style?: CSSProperties; }
-function Sel({ label, value, onChange, options, style }: SelProps) {
-  return (
-    <Field label={label} style={style}>
-      <select value={value} onChange={e => onChange(e.target.value)} style={{ ...inputBase, cursor: "pointer" }}>
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </Field>
-  );
-}
-
-interface ChipProps { label: string; active?: boolean; onClick?: () => void; }
-function Chip({ label, active, onClick }: ChipProps) {
-  return (
-    <span onClick={onClick} style={{
-      display: "inline-flex", alignItems: "center",
-      padding: "3px 10px", borderRadius: "100px", fontSize: ".73rem", fontFamily: FM,
-      cursor: onClick ? "pointer" : "default", transition: "all .15s", whiteSpace: "nowrap",
-      background: active ? C.accent : C.accentBg,
-      color: active ? "#fff" : C.accent,
-      border: `1px solid ${active ? C.accent : "#FDD8CC"}`,
-    }}>
-      {label}
-    </span>
-  );
-}
-
-interface BadgeProps { children: ReactNode; color?: string; }
-function Badge({ children, color = C.muted }: BadgeProps) {
-  return (
-    <span style={{
-      display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-      fontSize: ".68rem", fontFamily: FM, fontWeight: "700", letterSpacing: ".05em", textTransform: "uppercase",
-      background: `${color}22`, color,
-    }}>
-      {children}
-    </span>
-  );
-}
-
-function Spinner({ size = 32 }: { size?: number }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-      <div style={{
-        width: size, height: size, border: `3px solid ${C.faint}`,
-        borderTopColor: C.accent, borderRadius: "50%", animation: "spin .65s linear infinite",
-      }} />
-    </div>
-  );
-}
-
-interface AlertProps { type?: AlertType; msg: string | null; onClose?: () => void; }
-function Alert({ type = "error", msg, onClose }: AlertProps) {
-  if (!msg) return null;
-  const col = ({ error: C.danger, success: C.success, warning: C.warning } as Record<AlertType, string>)[type];
-  return (
-    <div style={{ padding: "10px 14px", background: `${col}18`, border: `1px solid ${col}44`, borderRadius: "6px", color: col, fontFamily: FM, fontSize: ".85rem", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-      <span>{msg}</span>
-      {onClose && <button onClick={onClose} style={{ background: "none", border: "none", color: col, cursor: "pointer", fontWeight: "700", fontSize: "1.1rem", lineHeight: 1, flexShrink: 0 }}>×</button>}
-    </div>
-  );
-}
-
-interface ModalProps { title: string; children: ReactNode; onClose: () => void; width?: string; }
-function Modal({ title, children, onClose, width = "520px" }: ModalProps) {
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}
-      onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: "10px", width: "100%", maxWidth: width, maxHeight: "92vh", overflow: "auto", boxShadow: "0 24px 64px rgba(0,0,0,.35)" }}
-        onClick={e => e.stopPropagation()}>
-        <div style={{ padding: "1.1rem 1.5rem", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
-          <h3 style={{ margin: 0, fontFamily: FH, fontSize: "1.15rem", color: C.ink }}>{title}</h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.5rem", color: C.muted, lineHeight: 1 }}>×</button>
-        </div>
-        <div style={{ padding: "1.5rem" }}>{children}</div>
-      </div>
-    </div>
-  );
-}
-
-interface PagerProps { meta: Pagination | undefined; onChange: (p: number) => void; }
-function Pager({ meta, onChange }: PagerProps) {
-  if (!meta || meta.totalPages <= 1) return null;
-  const { page, totalPages, hasPrevPage, hasNextPage } = meta;
-  const pages = [];
-  const lo = Math.max(1, page - 2), hi = Math.min(totalPages, page + 2);
-  for (let i = lo; i <= hi; i++) pages.push(i);
-  return (
-    <div style={{ display: "flex", gap: "4px", justifyContent: "center", padding: "1.5rem 0", alignItems: "center" }}>
-      <Btn size="sm" variant="ghost" disabled={!hasPrevPage} onClick={() => onChange(page - 1)}>← Prev</Btn>
-      {lo > 1 && <><span style={{ fontFamily: FM, fontSize: ".8rem", padding: "4px 8px", cursor: "pointer" }} onClick={() => onChange(1)}>1</span><span style={{ color: C.muted }}>…</span></>}
-      {pages.map(p => (
-        <button key={p} onClick={() => onChange(p)} style={{
-          width: "32px", height: "32px", border: "none", borderRadius: "5px",
-          background: p === page ? C.accent : "transparent", color: p === page ? "#fff" : C.muted,
-          cursor: "pointer", fontFamily: FM, fontSize: ".82rem", fontWeight: "700",
-        }}>{p}</button>
-      ))}
-      {hi < totalPages && <><span style={{ color: C.muted }}>…</span><span style={{ fontFamily: FM, fontSize: ".8rem", padding: "4px 8px", cursor: "pointer" }} onClick={() => onChange(totalPages)}>{totalPages}</span></>}
-      <Btn size="sm" variant="ghost" disabled={!hasNextPage} onClick={() => onChange(page + 1)}>Next →</Btn>
-    </div>
-  );
 }
 
 /* ═══════════════════════════════════════════════════════════════
