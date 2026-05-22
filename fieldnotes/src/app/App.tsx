@@ -1,25 +1,26 @@
-import { useState, useEffect, CSSProperties, ReactNode, JSX } from "react";
+import { useState, useEffect, useReducer } from "react";
+import type { CSSProperties, ReactNode, JSX } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
    DESIGN TOKENS  — Refined Editorial · Ink on Cream
 ═══════════════════════════════════════════════════════════════ */
 const C = {
-  bg:       "#F5F0E8",
-  surface:  "#FFFFFF",
-  sidebar:  "#FAF7F2",
-  ink:      "#1C1917",
-  muted:    "#78716C",
-  faint:    "#D6D3D1",
-  accent:   "#C2410C",
+  bg: "#F5F0E8",
+  surface: "#FFFFFF",
+  sidebar: "#FAF7F2",
+  ink: "#1C1917",
+  muted: "#78716C",
+  faint: "#D6D3D1",
+  accent: "#C2410C",
   accentBg: "#FFF7F5",
   accentHover: "#9A3412",
-  teal:     "#0F766E",
-  border:   "#E7E5E4",
-  success:  "#15803D",
-  danger:   "#B91C1C",
-  warning:  "#B45309",
-  codeInk:  "#1E293B",
-  codeBg:   "#0F172A",
+  teal: "#0F766E",
+  border: "#E7E5E4",
+  success: "#15803D",
+  danger: "#B91C1C",
+  warning: "#B45309",
+  codeInk: "#1E293B",
+  codeBg: "#0F172A",
 };
 const FH = "'Playfair Display', Georgia, serif";
 const FB = "'Lora', Georgia, serif";
@@ -29,15 +30,15 @@ const FM = "'JetBrains Mono', 'Courier New', monospace";
 /* ═══════════════════════════════════════════════════════════════
    DOMAIN TYPES  (derived from OpenAPI spec + DB schema)
 ═══════════════════════════════════════════════════════════════ */
-type AccountRole   = "USER" | "ADMIN";
+type AccountRole = "USER" | "ADMIN";
 type AccountStatus = "ACTIVE" | "SUSPENDED";
-type SortDir       = "asc" | "desc";
-type AlertType     = "error" | "success" | "warning";
-type BtnVariant    = "primary" | "outline" | "ghost" | "danger" | "success" | "teal";
-type BtnSize       = "sm" | "md" | "lg";
+type SortDir = "asc" | "desc";
+type AlertType = "error" | "success" | "warning";
+type BtnVariant = "primary" | "outline" | "ghost" | "danger" | "success" | "teal";
+type BtnSize = "sm" | "md" | "lg";
 
 // ── OpenAPI schema shapes ──────────────────────────────────────
-interface TagPublic  { id: number; name: string; slug: string; }
+interface TagPublic { id: number; name: string; slug: string; }
 interface TagDetail extends TagPublic { createdAt: string; updatedAt: string; }
 
 interface CategoryPublic {
@@ -45,7 +46,7 @@ interface CategoryPublic {
   name: string; slug: string; path: string;
 }
 interface CategoryDetail extends CategoryPublic { createdAt: string; updatedAt: string; }
-interface CategoryNode   extends CategoryPublic { children: CategoryNode[]; }
+interface CategoryNode extends CategoryPublic { children: CategoryNode[]; }
 
 interface PostPublic {
   id: number; nickname: string; accountId?: string; slug: string;
@@ -70,11 +71,11 @@ interface ApiResponse<T = unknown> {
   status: number; code: string; detail: string; message: string;
   timestamp: string; path: string; result?: T;
 }
-interface PostListResult     { meta: { pagination: Pagination }; data: PostPublic[]; }
-interface CategoryListResult { meta: { limit: number };          data: CategoryPublic[]; }
-interface TagListResult      { meta: { limit: number };          data: TagPublic[]; }
-interface AccountListResult  { meta: object;                     data: AccountPublic[]; }
-interface LoginResult        { AccountID: string; token: string; }
+interface PostListResult { meta: { pagination: Pagination }; data: PostPublic[]; }
+interface CategoryListResult { meta: { limit: number }; data: CategoryPublic[]; }
+interface TagListResult { meta: { limit: number }; data: TagPublic[]; }
+interface AccountListResult { meta: object; data: AccountPublic[]; }
+interface LoginResult { AccountID: string; token: string; }
 
 // ── Router / Auth ──────────────────────────────────────────────
 type PageKey =
@@ -82,7 +83,7 @@ type PageKey =
   | "admin" | "admin-posts" | "admin-post-edit"
   | "admin-categories" | "admin-tags" | "admin-accounts";
 
-interface NavState  { page: PageKey; slug?: string; postSlug?: string; }
+interface NavState { page: PageKey; slug?: string; postSlug?: string; }
 interface AuthState { token: string | null; user: AccountDetail | null; accountId: string; }
 
 // ── API param shapes ───────────────────────────────────────────
@@ -108,7 +109,7 @@ interface PostBody {
   thumbnail?: string | null; categoryId?: number | null; tagSlugs?: string[]; isPrivate?: boolean;
 }
 interface CategoryBody { name: string; slug: string; parentId?: number | null; }
-interface TagBody      { name: string; slug: string; }
+interface TagBody { name: string; slug: string; }
 interface AccountRegisterBody {
   accountId: string; password: string; nickname: string;
   avatarUrl?: string; role: AccountRole; status: AccountStatus;
@@ -122,10 +123,10 @@ type QSParams = Record<string, string | number | boolean | undefined | null>;
 /* ═══════════════════════════════════════════════════════════════
    API CLIENT  (fully typed to OpenAPI spec)
 ═══════════════════════════════════════════════════════════════ */
-let _BASE: string  = "";
+let _BASE: string = "";
 let _TOKEN: string = "";
 
-const setBase  = (u: string): void => { _BASE  = u.replace(/\/$/, ""); };
+const setBase = (u: string): void => { _BASE = u.replace(/\/$/, ""); };
 const setToken = (t: string | null): void => { _TOKEN = t ?? ""; };
 
 async function req<T = unknown>(
@@ -155,29 +156,29 @@ const buildQS = (p: QSParams = {}): string => {
 
 const api = {
   /* Posts – Public */
-  getPosts:      (p?: PostQueryParams) => req<PostListResult>(`/api/v1/post?${buildQS(p as QSParams)}`),
-  getPost:       (slug: string) => req<PostDetail>(`/api/v1/post/${slug}`),
+  getPosts: (p?: PostQueryParams) => req<PostListResult>(`/api/v1/post?${buildQS(p as QSParams)}`),
+  getPost: (slug: string) => req<PostDetail>(`/api/v1/post/${slug}`),
   /* Posts – Admin */
   getPostsAdmin: (p?: PostQueryParams) => req<PostListResult>(`/api/v1/post/admin?${buildQS(p as QSParams)}`),
-  getPostAdmin:  (slug: string) => req<PostDetail>(`/api/v1/post/admin/${slug}`),
-  createPost:    (b: PostBody) => req<PostPublic>("/api/v1/post", { method: "POST", body: b }),
-  updatePost:    (id: number, b: Partial<PostBody>) => req<PostDetail>(`/api/v1/post/${id}`, { method: "PATCH", body: b }),
-  deletePost:    (id: number) => req(`/api/v1/post/${id}`, { method: "DELETE" }),
+  getPostAdmin: (slug: string) => req<PostDetail>(`/api/v1/post/admin/${slug}`),
+  createPost: (b: PostBody) => req<PostPublic>("/api/v1/post", { method: "POST", body: b }),
+  updatePost: (id: number, b: Partial<PostBody>) => req<PostDetail>(`/api/v1/post/${id}`, { method: "PATCH", body: b }),
+  deletePost: (id: number) => req(`/api/v1/post/${id}`, { method: "DELETE" }),
   /* Categories */
-  getCategories:    (p?: CategoryQueryParams) => req<CategoryListResult>(`/api/v1/category?${buildQS(p as QSParams)}`),
-  createCategory:   (b: CategoryBody) => req<CategoryDetail>("/api/v1/category", { method: "POST", body: b }),
-  updateCategory:   (id: number, b: Partial<CategoryBody>) => req<CategoryDetail>(`/api/v1/category/${id}`, { method: "PATCH", body: b }),
-  deleteCategory:   (id: number) => req(`/api/v1/category/${id}`, { method: "DELETE" }),
+  getCategories: (p?: CategoryQueryParams) => req<CategoryListResult>(`/api/v1/category?${buildQS(p as QSParams)}`),
+  createCategory: (b: CategoryBody) => req<CategoryDetail>("/api/v1/category", { method: "POST", body: b }),
+  updateCategory: (id: number, b: Partial<CategoryBody>) => req<CategoryDetail>(`/api/v1/category/${id}`, { method: "PATCH", body: b }),
+  deleteCategory: (id: number) => req(`/api/v1/category/${id}`, { method: "DELETE" }),
   /* Tags */
-  getTags:    (p?: TagQueryParams) => req<TagListResult>(`/api/v1/tag?${buildQS(p as QSParams)}`),
-  createTag:  (b: TagBody) => req<TagDetail>("/api/v1/tag", { method: "POST", body: b }),
-  updateTag:  (id: number, b: Partial<TagBody>) => req<TagDetail>(`/api/v1/tag/${id}`, { method: "PATCH", body: b }),
-  deleteTag:  (id: number) => req(`/api/v1/tag/${id}`, { method: "DELETE" }),
+  getTags: (p?: TagQueryParams) => req<TagListResult>(`/api/v1/tag?${buildQS(p as QSParams)}`),
+  createTag: (b: TagBody) => req<TagDetail>("/api/v1/tag", { method: "POST", body: b }),
+  updateTag: (id: number, b: Partial<TagBody>) => req<TagDetail>(`/api/v1/tag/${id}`, { method: "PATCH", body: b }),
+  deleteTag: (id: number) => req(`/api/v1/tag/${id}`, { method: "DELETE" }),
   /* Auth */
-  login:         (b: { accountId: string; password: string }) => req<LoginResult>("/api/v1/auth/login", { method: "POST", body: b }),
-  register:      (b: AccountRegisterBody) => req<AccountDetail>("/api/v1/auth/register", { method: "POST", body: b }),
-  getAccount:    (aid: string) => req<AccountDetail>(`/api/v1/auth/${aid}`),
-  listAccounts:  (p?: AccountQueryParams) => req<AccountListResult>(`/api/v1/auth/list?${buildQS(p as QSParams)}`),
+  login: (b: { accountId: string; password: string }) => req<LoginResult>("/api/v1/auth/login", { method: "POST", body: b }),
+  register: (b: AccountRegisterBody) => req<AccountDetail>("/api/v1/auth/register", { method: "POST", body: b }),
+  getAccount: (aid: string) => req<AccountDetail>(`/api/v1/auth/${aid}`),
+  listAccounts: (p?: AccountQueryParams) => req<AccountListResult>(`/api/v1/auth/list?${buildQS(p as QSParams)}`),
   updateAccount: (aid: string, b: AccountUpdateBody) => req<AccountDetail>(`/api/v1/auth/update/${aid}`, { method: "PATCH", body: b }),
   deleteAccount: (aid: string) => req(`/api/v1/auth/delete/${aid}`, { method: "DELETE" }),
 };
@@ -190,7 +191,7 @@ function renderMd(text: string): string {
   let s = text
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     // Fenced code
-    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, _lang, code) =>
       `<pre style="background:${C.codeBg};color:#E2E8F0;padding:1.25rem;border-radius:8px;overflow-x:auto;font-family:${FM};font-size:.85rem;margin:1.25rem 0;line-height:1.6"><code>${code.trim()}</code></pre>`)
     // Inline code
     .replace(/`([^`]+)`/g, `<code style="background:#F1F5F9;color:${C.codeInk};padding:2px 6px;border-radius:4px;font-family:${FM};font-size:.9em">$1</code>`)
@@ -198,8 +199,8 @@ function renderMd(text: string): string {
     .replace(/^---$/gm, `<hr style="border:none;border-top:2px solid ${C.border};margin:2rem 0"/>`)
     // Headings
     .replace(/^### (.+)$/gm, `<h3 style="font-family:${FH};font-size:1.35rem;color:${C.ink};margin:1.75rem 0 .6rem">${'$1'}</h3>`)
-    .replace(/^## (.+)$/gm,  `<h2 style="font-family:${FH};font-size:1.75rem;color:${C.ink};margin:2rem 0 .75rem">${'$1'}</h2>`)
-    .replace(/^# (.+)$/gm,   `<h1 style="font-family:${FH};font-size:2.2rem;color:${C.ink};margin:2rem 0 1rem">${'$1'}</h1>`)
+    .replace(/^## (.+)$/gm, `<h2 style="font-family:${FH};font-size:1.75rem;color:${C.ink};margin:2rem 0 .75rem">${'$1'}</h2>`)
+    .replace(/^# (.+)$/gm, `<h1 style="font-family:${FH};font-size:2.2rem;color:${C.ink};margin:2rem 0 1rem">${'$1'}</h1>`)
     // Bold / Italic
     .replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
@@ -229,33 +230,58 @@ function renderMd(text: string): string {
 ═══════════════════════════════════════════════════════════════ */
 interface AsyncState<T> { data: T | null; loading: boolean; error: string | null; }
 
+// useReducer 패턴: dispatch는 set-state-in-effect 규칙 적용 대상이 아님
+type AsyncAction<T> =
+  | { type: "LOADING" }
+  | { type: "SUCCESS"; payload: T }
+  | { type: "ERROR"; error: string };
+
+function asyncReducer<T>(
+  _state: AsyncState<T>,
+  action: AsyncAction<T>
+): AsyncState<T> {
+  switch (action.type) {
+    case "LOADING": return { data: null, loading: true, error: null };
+    case "SUCCESS": return { data: action.payload, loading: false, error: null };
+    case "ERROR": return { data: null, loading: false, error: action.error };
+  }
+}
+
 function useAsync<T>(fn: () => Promise<T>, deps: unknown[]): AsyncState<T> {
-  const [s, setS] = useState<AsyncState<T>>({ data: null, loading: true, error: null });
+  const [state, dispatch] = useReducer(
+    asyncReducer as (s: AsyncState<T>, a: AsyncAction<T>) => AsyncState<T>,
+    { data: null, loading: true, error: null }
+  );
+
   useEffect(() => {
-    let dead = false;
-    setS(p => ({ ...p, loading: true, error: null }));
-    fn().then(d  => { if (!dead) setS({ data: d, loading: false, error: null }); })
-        .catch((e: unknown) => { if (!dead) setS({ data: null, loading: false, error: (e as Error).message }); });
-    return () => { dead = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+    dispatch({ type: "LOADING" });
+    fn()
+      .then(payload => { if (!cancelled) dispatch({ type: "SUCCESS", payload }); })
+      .catch((e: unknown) => {
+        if (!cancelled) dispatch({ type: "ERROR", error: (e as Error).message });
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
-  return s;
+
+  return state;
 }
 
 /* ═══════════════════════════════════════════════════════════════
    PRIMITIVE UI COMPONENTS
 ═══════════════════════════════════════════════════════════════ */
 const variantStyles: Record<BtnVariant, CSSProperties> = {
-  primary: { background: C.accent,   color: "#fff", border: `1.5px solid ${C.accent}` },
+  primary: { background: C.accent, color: "#fff", border: `1.5px solid ${C.accent}` },
   outline: { background: "transparent", color: C.accent, border: `1.5px solid ${C.accent}` },
-  ghost:   { background: "transparent", color: C.muted,  border: "1.5px solid transparent" },
-  danger:  { background: C.danger,   color: "#fff", border: `1.5px solid ${C.danger}` },
-  success: { background: C.success,  color: "#fff", border: `1.5px solid ${C.success}` },
-  teal:    { background: C.teal,     color: "#fff", border: `1.5px solid ${C.teal}` },
+  ghost: { background: "transparent", color: C.muted, border: "1.5px solid transparent" },
+  danger: { background: C.danger, color: "#fff", border: `1.5px solid ${C.danger}` },
+  success: { background: C.success, color: "#fff", border: `1.5px solid ${C.success}` },
+  teal: { background: C.teal, color: "#fff", border: `1.5px solid ${C.teal}` },
 };
 const sizeStyles: Record<BtnSize, CSSProperties> = {
-  sm: { padding: "4px 12px",  fontSize: ".78rem" },
-  md: { padding: "8px 16px",  fontSize: ".875rem" },
+  sm: { padding: "4px 12px", fontSize: ".78rem" },
+  md: { padding: "8px 16px", fontSize: ".875rem" },
   lg: { padding: "11px 24px", fontSize: "1rem" },
 };
 
@@ -305,17 +331,15 @@ function Input({ label, value, onChange, type = "text", placeholder, style, rows
     fontFamily: rows ? FM : FB, fontSize: rows ? ".875rem" : ".95rem",
     lineHeight: rows ? "1.6" : undefined, resize: rows ? "vertical" : undefined,
   };
-  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    { (e.target as HTMLElement).style.borderColor = C.accent; };
-  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    { (e.target as HTMLElement).style.borderColor = C.border; };
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { (e.target as HTMLElement).style.borderColor = C.accent; };
+  const blur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { (e.target as HTMLElement).style.borderColor = C.border; };
   return (
     <Field label={label} style={style}>
       {rows
         ? <textarea value={value} placeholder={placeholder} rows={rows}
-            onChange={e => onChange(e.target.value)} style={baseStyle} onFocus={focus} onBlur={blur} />
+          onChange={e => onChange(e.target.value)} style={baseStyle} onFocus={focus} onBlur={blur} />
         : <input type={type} value={value} placeholder={placeholder}
-            onChange={e => onChange(e.target.value)} style={baseStyle} onFocus={focus} onBlur={blur} />
+          onChange={e => onChange(e.target.value)} style={baseStyle} onFocus={focus} onBlur={blur} />
       }
     </Field>
   );
@@ -451,7 +475,8 @@ function GlobalStyles() {
 /* ═══════════════════════════════════════════════════════════════
    SERVER CONFIG BAR
 ═══════════════════════════════════════════════════════════════ */
-function ConfigBar({ base, onSave }) {
+interface ConfigBarProps { base: string; onSave: (url: string) => void; }
+function ConfigBar({ base, onSave }: ConfigBarProps) {
   const [val, setVal] = useState<string>(base);
   const [open, setOpen] = useState<boolean>(!base);
 
@@ -498,9 +523,7 @@ function Header({ nav, setNav, auth, onLogout }: HeaderProps) {
 
         {/* Nav */}
         <nav style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          {[
-            { key: "home", label: "Blog" },
-          ].map(({ key, label }) => (
+          {([{ key: "home" as PageKey, label: "Blog" }] as Array<{ key: PageKey; label: string }>).map(({ key, label }) => (
             <span key={key} className="fn-navlink" onClick={() => setNav({ page: key })} style={{ cursor: "pointer", fontFamily: FM, fontSize: ".82rem", fontWeight: "600", color: nav.page === key ? C.accent : C.muted }}>
               {label}
             </span>
@@ -625,22 +648,26 @@ function PostCard({ post, onClick }: PostCardProps) {
 ═══════════════════════════════════════════════════════════════ */
 function HomePage({ setNav }: { setNav: (n: NavState) => void }) {
   const [page, setPage] = useState<number>(1);
-  const [catId, setCatId] = useState(null);
-  const [tagSlug, setTagSlug] = useState(null);
+  const [catId, setCatId] = useState<number | null>(null);
+  const [tagSlug, setTagSlug] = useState<string | null>(null);
   const [titleQ, setTitleQ] = useState<string>("");
   const [titleInput, setTitleInput] = useState<string>("");
 
-  useEffect(() => { setPage(1); }, [catId, tagSlug, titleQ]);
+  // 필터가 바뀔 때 page를 직접 1로 리셋 — useEffect 없이 이벤트 핸들러에서 처리
+  const handleCatSelect = (id: number | null) => { setCatId(id); setPage(1); };
+  const handleTagSelect = (slug: string | null) => { setTagSlug(slug); setPage(1); };
+  const handleSearch = () => { setTitleQ(titleInput); setPage(1); };
+  const handleClearSearch = () => { setTitleQ(""); setTitleInput(""); setPage(1); };
 
   const params: PostQueryParams = { page, pageLimit: 9, categoryId: catId ?? undefined, tagSlugs: tagSlug ?? undefined, title: titleQ || undefined };
   const { data: postsRes, loading: postsLoading, error: postsErr } = useAsync(() => api.getPosts(params), [page, catId, tagSlug, titleQ]);
-  const { data: catRes  } = useAsync(() => api.getCategories({ limit: 200, sortBy: "id", sortDir: "asc" }), []);
-  const { data: tagRes  } = useAsync(() => api.getTags({ limit: 100, sortBy: "id", sortDir: "asc" }), []);
+  const { data: catRes } = useAsync(() => api.getCategories({ limit: 200, sortBy: "id", sortDir: "asc" }), []);
+  const { data: tagRes } = useAsync(() => api.getTags({ limit: 100, sortBy: "id", sortDir: "asc" }), []);
 
   const posts = postsRes?.result?.data ?? [];
-  const meta  = postsRes?.result?.meta?.pagination;
-  const cats  = catRes?.result?.data ?? [];
-  const tags  = tagRes?.result?.data ?? [];
+  const meta = postsRes?.result?.meta?.pagination;
+  const cats = catRes?.result?.data ?? [];
+  const tags = tagRes?.result?.data ?? [];
 
   return (
     <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "2rem 1.5rem", display: "flex", gap: "2rem", alignItems: "flex-start" }}>
@@ -651,16 +678,16 @@ function HomePage({ setNav }: { setNav: (n: NavState) => void }) {
           <div style={{ display: "flex", gap: "6px" }}>
             <input
               value={titleInput} onChange={e => setTitleInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && setTitleQ(titleInput)}
+              onKeyDown={e => e.key === "Enter" && handleSearch()}
               placeholder="제목 검색…"
               style={{ flex: 1, padding: "7px 10px", border: `1px solid ${C.border}`, borderRadius: "5px", fontFamily: FB, fontSize: ".875rem", color: C.ink, outline: "none" }}
               onFocus={e => e.target.style.borderColor = C.accent}
               onBlur={e => e.target.style.borderColor = C.border}
             />
-            <button onClick={() => setTitleQ(titleInput)} style={{ padding: "7px 10px", background: C.accent, border: "none", borderRadius: "5px", color: "#fff", cursor: "pointer", fontSize: ".9rem" }}>⌕</button>
+            <button onClick={handleSearch} style={{ padding: "7px 10px", background: C.accent, border: "none", borderRadius: "5px", color: "#fff", cursor: "pointer", fontSize: ".9rem" }}>⌕</button>
           </div>
           {titleQ && (
-            <div onClick={() => { setTitleQ(""); setTitleInput(""); }} style={{ marginTop: "6px", fontSize: ".72rem", color: C.accent, cursor: "pointer", fontFamily: FM }}>
+            <div onClick={handleClearSearch} style={{ marginTop: "6px", fontSize: ".72rem", color: C.accent, cursor: "pointer", fontFamily: FM }}>
               ✕ &ldquo;{titleQ}&rdquo; 지우기
             </div>
           )}
@@ -669,7 +696,7 @@ function HomePage({ setNav }: { setNav: (n: NavState) => void }) {
         {/* Categories */}
         <div style={{ marginBottom: "1.75rem" }}>
           <p style={{ margin: "0 0 .6rem", fontFamily: FM, fontSize: ".68rem", color: C.muted, fontWeight: "700", textTransform: "uppercase", letterSpacing: ".08em" }}>카테고리</p>
-          <CategoryTree cats={cats} selectedId={catId} onSelect={setCatId} />
+          <CategoryTree cats={cats} selectedId={catId} onSelect={handleCatSelect} />
         </div>
 
         {/* Tags */}
@@ -679,7 +706,7 @@ function HomePage({ setNav }: { setNav: (n: NavState) => void }) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
               {tags.map(t => (
                 <Chip key={t.id} label={t.name} active={tagSlug === t.slug}
-                  onClick={() => setTagSlug(tagSlug === t.slug ? null : t.slug)} />
+                  onClick={() => handleTagSelect(tagSlug === t.slug ? null : t.slug)} />
               ))}
             </div>
           </div>
@@ -704,8 +731,8 @@ function HomePage({ setNav }: { setNav: (n: NavState) => void }) {
             {posts.length === 0
               ? <div style={{ textAlign: "center", padding: "5rem 1rem", color: C.muted, fontFamily: FB, fontSize: "1.05rem" }}>게시글이 없습니다.</div>
               : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(270px, 1fr))", gap: "1.1rem" }}>
-                  {posts.map(p => <PostCard key={p.id} post={p} onClick={slug => setNav({ page: "post", slug })} />)}
-                </div>
+                {posts.map(p => <PostCard key={p.id} post={p} onClick={slug => setNav({ page: "post", slug })} />)}
+              </div>
             }
             <Pager meta={meta} onChange={setPage} />
           </>
@@ -727,7 +754,7 @@ function PostDetailPage({ slug, setNav, auth }: PostDetailPageProps) {
   const post = data?.result;
 
   if (loading) return <div style={{ maxWidth: "800px", margin: "2rem auto", padding: "0 1.5rem" }}><Spinner /></div>;
-  if (error)   return (
+  if (error) return (
     <div style={{ maxWidth: "800px", margin: "2rem auto", padding: "0 1.5rem" }}>
       <Alert msg={`오류: ${error}`} /><br />
       <Btn variant="ghost" onClick={() => setNav({ page: "home" })}>← 목록으로</Btn>
@@ -788,7 +815,11 @@ function PostDetailPage({ slug, setNav, auth }: PostDetailPageProps) {
 /* ═══════════════════════════════════════════════════════════════
    LOGIN PAGE
 ═══════════════════════════════════════════════════════════════ */
-function LoginPage({ setNav, onLogin }) {
+interface LoginPageProps {
+  setNav: (n: NavState) => void;
+  onLogin: (data: { token: string; user: AccountDetail | undefined; accountId: string }) => void;
+}
+function LoginPage({ setNav, onLogin }: LoginPageProps) {
   const [accountId, setAccountId] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -800,7 +831,7 @@ function LoginPage({ setNav, onLogin }) {
     try {
       const d = await api.login({ accountId, password });
       const token = d.result?.token;
-      const aid   = d.result?.AccountID ?? "";
+      const aid = d.result?.AccountID ?? "";
       if (!token) throw new Error("토큰을 받지 못했습니다.");
       setToken(token);
       const acc = await api.getAccount(aid);
@@ -838,11 +869,11 @@ function LoginPage({ setNav, onLogin }) {
 interface AdminLayoutProps { nav: NavState; setNav: (n: NavState) => void; children: ReactNode; }
 function AdminLayout({ nav, setNav, children }: AdminLayoutProps) {
   const tabs: Array<{ key: PageKey; icon: string; label: string }> = [
-    { key: "admin",            icon: "📊", label: "대시보드" },
-    { key: "admin-posts",      icon: "📝", label: "게시물" },
+    { key: "admin", icon: "📊", label: "대시보드" },
+    { key: "admin-posts", icon: "📝", label: "게시물" },
     { key: "admin-categories", icon: "📂", label: "카테고리" },
-    { key: "admin-tags",       icon: "🏷", label: "태그" },
-    { key: "admin-accounts",   icon: "👤", label: "계정" },
+    { key: "admin-tags", icon: "🏷", label: "태그" },
+    { key: "admin-accounts", icon: "👤", label: "계정" },
   ];
   return (
     <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "1.5rem", display: "flex", gap: "1.5rem", alignItems: "flex-start" }}>
@@ -879,13 +910,13 @@ function AdminLayout({ nav, setNav, children }: AdminLayoutProps) {
 interface AdminDashboardProps { auth: AuthState; setNav: (n: NavState) => void; }
 function AdminDashboard({ setNav }: AdminDashboardProps) {
   const { data: postsRes } = useAsync(() => api.getPostsAdmin({ pageLimit: 1 }), []);
-  const { data: catRes   } = useAsync(() => api.getCategories({ limit: 200 }),   []);
-  const { data: tagRes   } = useAsync(() => api.getTags({ limit: 200 }),          []);
+  const { data: catRes } = useAsync(() => api.getCategories({ limit: 200 }), []);
+  const { data: tagRes } = useAsync(() => api.getTags({ limit: 200 }), []);
 
   const stats = [
     { icon: "📝", label: "전체 게시물", value: postsRes?.result?.meta?.pagination?.total },
-    { icon: "📂", label: "카테고리",    value: catRes?.result?.data?.length },
-    { icon: "🏷",  label: "태그",       value: tagRes?.result?.data?.length },
+    { icon: "📂", label: "카테고리", value: catRes?.result?.data?.length },
+    { icon: "🏷", label: "태그", value: tagRes?.result?.data?.length },
   ];
 
   return (
@@ -942,7 +973,7 @@ function RecentTable({ setNav }: { setNav: (n: NavState) => void }) {
 /* ═══════════════════════════════════════════════════════════════
    ADMIN POSTS
 ═══════════════════════════════════════════════════════════════ */
-function AdminPosts({ setNav }) {
+function AdminPosts({ setNav }: { setNav: (n: NavState) => void }) {
   const [page, setPage] = useState<number>(1);
   const [rev, setRev] = useState<number>(0);
   const [showCreate, setShowCreate] = useState<boolean>(false);
@@ -954,7 +985,7 @@ function AdminPosts({ setNav }) {
   const { data: tagRes } = useAsync(() => api.getTags({ limit: 100 }), []);
 
   const posts = data?.result?.data ?? [];
-  const meta  = data?.result?.meta?.pagination;
+  const meta = data?.result?.meta?.pagination;
 
   async function doDelete(id: number): Promise<void> {
     try { await api.deletePost(id); setDelId(null); setRev(v => v + 1); }
@@ -967,7 +998,7 @@ function AdminPosts({ setNav }) {
         <h2 style={{ margin: 0, fontFamily: FH, fontSize: "1.75rem", color: C.ink }}>게시물 관리</h2>
         <Btn onClick={() => setShowCreate(true)}>+ 새 게시물</Btn>
       </div>
-      {error && <Alert msg={error} style={{ marginBottom: "1rem" }} />}
+      {error && <div style={{ marginBottom: "1rem" }}><Alert msg={error} /></div>}
       <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: "8px", overflow: "hidden" }}>
         {loading ? <Spinner /> : (
           <div style={{ overflowX: "auto" }}>
@@ -994,7 +1025,7 @@ function AdminPosts({ setNav }) {
                     <td style={{ padding: "10px 12px" }}>
                       <div style={{ display: "flex", gap: "5px" }}>
                         <Btn size="sm" variant="outline" onClick={() => setNav({ page: "admin-post-edit", postSlug: p.slug })}>수정</Btn>
-                        <Btn size="sm" variant="danger"  onClick={() => { setDelId(p.id); setDelErr(null); }}>삭제</Btn>
+                        <Btn size="sm" variant="danger" onClick={() => { setDelId(p.id); setDelErr(null); }}>삭제</Btn>
                       </div>
                     </td>
                   </tr>
@@ -1029,43 +1060,54 @@ function AdminPosts({ setNav }) {
 }
 
 /* ─── Post Form (create / edit modal) ──────────────────────── */
-function PostForm({ post, cats, tags, onClose, onSave }) {
+interface PostFormState {
+  slug: string; title: string; content: string; thumbnail: string;
+  categoryId: string; tagSlugs: string[]; isPrivate: boolean;
+}
+interface PostFormProps {
+  post?: PostDetail; cats: CategoryPublic[]; tags: TagPublic[];
+  onClose: () => void; onSave: () => void;
+}
+function PostForm({ post, cats, tags, onClose, onSave }: PostFormProps) {
   const isEdit = !!post;
-  const [f, setF] = useState({
-    slug:       post?.slug || "",
-    title:      post?.title || "",
-    content:    post?.content || "",
-    thumbnail:  post?.thumbnail || "",
-    categoryId: post?.category?.id?.toString() || "",
-    tagSlugs:   post?.tags?.map(t => t.slug) || [],
-    isPrivate:  post?.isPrivate || false,
+  const [f, setF] = useState<PostFormState>({
+    slug: post?.slug ?? "",
+    title: post?.title ?? "",
+    content: post?.content ?? "",
+    thumbnail: post?.thumbnail ?? "",
+    categoryId: post?.category?.id?.toString() ?? "",
+    tagSlugs: post?.tags?.map((t: TagPublic) => t.slug) ?? [],
+    isPrivate: post?.isPrivate ?? false,
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
 
   const catOpts: SelectOption[] = [
     { value: "", label: "카테고리 없음" },
-    ...cats.slice().sort((a, b) => a.path.localeCompare(b.path)).map(c => ({
+    ...cats.slice().sort((a: CategoryPublic, b: CategoryPublic) => a.path.localeCompare(b.path)).map((c: CategoryPublic) => ({
       value: c.id.toString(),
       label: `${"  ".repeat(c.path.split("/").length - 2)}${c.name}  (${c.path})`,
     })),
   ];
 
-  const up = (k) => (v) => setF(p => ({ ...p, [k]: v }));
-  const toggleTag = (slug) => setF(p => ({
+  const up = <K extends keyof PostFormState>(k: K) => (v: PostFormState[K]) =>
+    setF((p: PostFormState) => ({ ...p, [k]: v }));
+  const toggleTag = (slug: string) => setF((p: PostFormState) => ({
     ...p,
-    tagSlugs: p.tagSlugs.includes(slug) ? p.tagSlugs.filter(s => s !== slug) : [...p.tagSlugs, slug],
+    tagSlugs: p.tagSlugs.includes(slug) ? p.tagSlugs.filter((s: string) => s !== slug) : [...p.tagSlugs, slug],
   }));
 
   async function save(): Promise<void> {
     if (!f.title || !f.slug || !f.content) return setErr("슬러그, 제목, 내용은 필수입니다.");
     setLoading(true); setErr(null);
     try {
-      const body: PostBody = { slug: f.slug, title: f.title, content: f.content,
+      const body: PostBody = {
+        slug: f.slug, title: f.title, content: f.content,
         thumbnail: f.thumbnail || null, categoryId: f.categoryId ? parseInt(f.categoryId) : null,
-        tagSlugs: f.tagSlugs, isPrivate: f.isPrivate };
+        tagSlugs: f.tagSlugs, isPrivate: f.isPrivate
+      };
       if (isEdit && post) await api.updatePost(post.id, body);
-      else                await api.createPost(body);
+      else await api.createPost(body);
       onSave();
     } catch (e) { setErr((e as Error).message); }
     finally { setLoading(false); }
@@ -1092,7 +1134,7 @@ function PostForm({ post, cats, tags, onClose, onSave }) {
         </div>
         <Field label="태그 선택">
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "4px 0" }}>
-            {tags.map(t => <Chip key={t.id} label={t.name} active={f.tagSlugs.includes(t.slug)} onClick={() => toggleTag(t.slug)} />)}
+            {tags.map((t: TagPublic) => <Chip key={t.id} label={t.name} active={f.tagSlugs.includes(t.slug)} onClick={() => toggleTag(t.slug)} />)}
           </div>
         </Field>
         <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", paddingTop: "8px", borderTop: `1px solid ${C.border}` }}>
@@ -1109,13 +1151,13 @@ interface AdminPostEditPageProps { postSlug: string; setNav: (n: NavState) => vo
 function AdminPostEditPage({ postSlug, setNav }: AdminPostEditPageProps) {
   const { data, loading, error } = useAsync(() => api.getPostAdmin(postSlug), [postSlug]);
   const { data: catRes } = useAsync(() => api.getCategories({ limit: 200 }), []);
-  const { data: tagRes } = useAsync(() => api.getTags({ limit: 100 }),        []);
+  const { data: tagRes } = useAsync(() => api.getTags({ limit: 100 }), []);
   const [saved, setSaved] = useState<boolean>(false);
 
   if (loading) return <Spinner />;
-  if (error)   return <Alert msg={error} />;
+  if (error) return <Alert msg={error} />;
   const post = data?.result;
-  if (!post)   return null;
+  if (!post) return null;
 
   return (
     <div>
@@ -1140,9 +1182,10 @@ function AdminPostEditPage({ postSlug, setNav }: AdminPostEditPageProps) {
 /* ═══════════════════════════════════════════════════════════════
    ADMIN CATEGORIES
 ═══════════════════════════════════════════════════════════════ */
+interface CatModalState { mode: "create" | "edit"; item?: CategoryPublic; }
 function AdminCategories() {
   const [rev, setRev] = useState<number>(0);
-  const [modal, setModal] = useState(null); // null | { mode: "create"|"edit", item? }
+  const [modal, setModal] = useState<CatModalState | null>(null);
   const [delId, setDelId] = useState<number | null>(null);
   const [delErr, setDelErr] = useState<string | null>(null);
 
@@ -1151,7 +1194,7 @@ function AdminCategories() {
 
   async function doDelete(id: number): Promise<void> {
     try { await api.deleteCategory(id); setDelId(null); setRev(v => v + 1); }
-    catch (e) { setDelErr(e.message); }
+    catch (e) { setDelErr((e as Error).message); }
   }
 
   return (
@@ -1184,7 +1227,7 @@ function AdminCategories() {
                     <td style={{ padding: "9px 12px" }}>
                       <div style={{ display: "flex", gap: "5px" }}>
                         <Btn size="sm" variant="outline" onClick={() => setModal({ mode: "edit", item: c })}>수정</Btn>
-                        <Btn size="sm" variant="danger"  onClick={() => { setDelId(c.id); setDelErr(null); }}>삭제</Btn>
+                        <Btn size="sm" variant="danger" onClick={() => { setDelId(c.id); setDelErr(null); }}>삭제</Btn>
                       </div>
                     </td>
                   </tr>
@@ -1214,17 +1257,18 @@ function AdminCategories() {
   );
 }
 
-function CatForm({ item, cats, onClose, onSave }) {
+interface CatFormProps { item?: CategoryPublic; cats: CategoryPublic[]; onClose: () => void; onSave: () => void; }
+function CatForm({ item, cats, onClose, onSave }: CatFormProps) {
   const isEdit = !!item;
-  const [name, setName] = useState<string>(item?.name || "");
-  const [slug, setSlug] = useState<string>(item?.slug || "");
-  const [parentId, setParentId] = useState<string>(item?.parentId?.toString() || "");
+  const [name, setName] = useState<string>(item?.name ?? "");
+  const [slug, setSlug] = useState<string>(item?.slug ?? "");
+  const [parentId, setParentId] = useState<string>(item?.parentId?.toString() ?? "");
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
 
   const parentOpts: SelectOption[] = [
     { value: "", label: "최상위 (부모 없음)" },
-    ...cats.filter(c => c.id !== item?.id).sort((a, b) => a.path.localeCompare(b.path)).map(c => ({
+    ...cats.filter((c: CategoryPublic) => c.id !== item?.id).sort((a: CategoryPublic, b: CategoryPublic) => a.path.localeCompare(b.path)).map((c: CategoryPublic) => ({
       value: c.id.toString(),
       label: `${"—".repeat(c.path.split("/").length - 2)} ${c.name}`,
     })),
@@ -1236,9 +1280,9 @@ function CatForm({ item, cats, onClose, onSave }) {
     try {
       const body = { name, slug, parentId: parentId ? parseInt(parentId) : null };
       if (isEdit) await api.updateCategory(item.id, body);
-      else        await api.createCategory(body);
+      else await api.createCategory(body);
       onSave();
-    } catch (e) { setErr(e.message); }
+    } catch (e) { setErr((e as Error).message); }
     finally { setLoading(false); }
   }
 
@@ -1261,9 +1305,10 @@ function CatForm({ item, cats, onClose, onSave }) {
 /* ═══════════════════════════════════════════════════════════════
    ADMIN TAGS
 ═══════════════════════════════════════════════════════════════ */
+interface TagModalState { item?: TagDetail; }
 function AdminTags() {
   const [rev, setRev] = useState<number>(0);
-  const [modal, setModal] = useState(null);
+  const [modal, setModal] = useState<TagModalState | null>(null);
 
   const { data, loading } = useAsync(() => api.getTags({ limit: 200, sortBy: "id", sortDir: "asc" }), [rev]);
   const tags = data?.result?.data || [];
@@ -1302,10 +1347,11 @@ function AdminTags() {
   );
 }
 
-function TagForm({ item, onClose, onSave }) {
+interface TagFormProps { item?: TagDetail; onClose: () => void; onSave: () => void; }
+function TagForm({ item, onClose, onSave }: TagFormProps) {
   const isEdit = !!item;
-  const [name, setName] = useState<string>(item?.name || "");
-  const [slug, setSlug] = useState<string>(item?.slug || "");
+  const [name, setName] = useState<string>(item?.name ?? "");
+  const [slug, setSlug] = useState<string>(item?.slug ?? "");
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -1314,9 +1360,9 @@ function TagForm({ item, onClose, onSave }) {
     setLoading(true); setErr(null);
     try {
       if (isEdit) await api.updateTag(item.id, { name, slug });
-      else        await api.createTag({ name, slug });
+      else await api.createTag({ name, slug });
       onSave();
-    } catch (e) { setErr(e.message); }
+    } catch (e) { setErr((e as Error).message); }
     finally { setLoading(false); }
   }
 
@@ -1338,9 +1384,10 @@ function TagForm({ item, onClose, onSave }) {
 /* ═══════════════════════════════════════════════════════════════
    ADMIN ACCOUNTS
 ═══════════════════════════════════════════════════════════════ */
+interface AccountModalState { item?: AccountPublic; }
 function AdminAccounts() {
   const [rev, setRev] = useState<number>(0);
-  const [modal, setModal] = useState(null);
+  const [modal, setModal] = useState<AccountModalState | null>(null);
 
   const { data, loading } = useAsync(() => api.listAccounts({ limit: 100 }), [rev]);
   const accounts = data?.result?.data ?? [];
@@ -1373,7 +1420,7 @@ function AdminAccounts() {
                   <td style={{ padding: "10px 12px", fontFamily: FM, fontSize: ".72rem", color: C.faint }}>#{a.id}</td>
                   <td style={{ padding: "10px 12px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      {a.avatarUrl && <img src={a.avatarUrl} alt="" style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} />}
+                      {a.avatarUrl && <img src={a.avatarUrl} alt="" style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                       <span style={{ fontFamily: FM, fontSize: ".85rem", color: C.ink }}>{a.accountId}</span>
                     </div>
                   </td>
@@ -1383,7 +1430,7 @@ function AdminAccounts() {
                   <td style={{ padding: "10px 12px" }}>
                     <div style={{ display: "flex", gap: "5px" }}>
                       <Btn size="sm" variant="outline" onClick={() => setModal({ item: a })}>수정</Btn>
-                      <Btn size="sm" variant="danger"  onClick={() => doDelete(a.accountId)}>삭제</Btn>
+                      <Btn size="sm" variant="danger" onClick={() => doDelete(a.accountId)}>삭제</Btn>
                     </div>
                   </td>
                 </tr>
@@ -1400,19 +1447,25 @@ function AdminAccounts() {
   );
 }
 
-function AccountForm({ item, onClose, onSave }) {
+interface AccountFormState {
+  accountId: string; password: string; nickname: string;
+  avatarUrl: string; role: AccountRole; status: AccountStatus;
+}
+interface AccountFormProps { item?: AccountPublic; onClose: () => void; onSave: () => void; }
+function AccountForm({ item, onClose, onSave }: AccountFormProps) {
   const isEdit = !!item;
-  const [f, setF] = useState({
-    accountId: item?.accountId || "",
-    password:  "",
-    nickname:  item?.nickname  || "",
-    avatarUrl: item?.avatarUrl || "",
-    role:      item?.role      || "ADMIN",
-    status:    item?.status    || "ACTIVE",
+  const [f, setF] = useState<AccountFormState>({
+    accountId: item?.accountId ?? "",
+    password: "",
+    nickname: item?.nickname ?? "",
+    avatarUrl: item?.avatarUrl ?? "",
+    role: item?.role ?? "ADMIN",
+    status: item?.status ?? "ACTIVE",
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
-  const up = k => v => setF(p => ({ ...p, [k]: v }));
+  const up = <K extends keyof AccountFormState>(k: K) => (v: AccountFormState[K]) =>
+    setF((p: AccountFormState) => ({ ...p, [k]: v }));
 
   async function save(): Promise<void> {
     setLoading(true); setErr(null);
@@ -1439,8 +1492,8 @@ function AccountForm({ item, onClose, onSave }) {
         <Input label="닉네임 * (2-20자)" value={f.nickname} onChange={up("nickname")} placeholder="닉네임" />
         <Input label="아바타 URL" value={f.avatarUrl} onChange={up("avatarUrl")} placeholder="https://…" />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Sel label="역할" value={f.role} onChange={up("role")} options={[{ value: "ADMIN", label: "ADMIN" }, { value: "USER", label: "USER" }]} />
-          <Sel label="상태" value={f.status} onChange={up("status")} options={[{ value: "ACTIVE", label: "ACTIVE" }, { value: "SUSPENDED", label: "SUSPENDED" }]} />
+          <Sel label="역할" value={f.role} onChange={v => up("role")(v as AccountRole)} options={[{ value: "ADMIN", label: "ADMIN" }, { value: "USER", label: "USER" }]} />
+          <Sel label="상태" value={f.status} onChange={v => up("status")(v as AccountStatus)} options={[{ value: "ACTIVE", label: "ACTIVE" }, { value: "SUSPENDED", label: "SUSPENDED" }]} />
         </div>
         <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
           <Btn variant="ghost" onClick={onClose}>취소</Btn>
@@ -1461,8 +1514,8 @@ const ADMIN_PAGES: PageKey[] = [
 
 export default function App() {
   const [apiBase, setApiBase] = useState<string>("");
-  const [nav,     setNav]     = useState<NavState>({ page: "home" });
-  const [auth,    setAuth]    = useState<AuthState>({ token: null, user: null, accountId: "" });
+  const [nav, setNav] = useState<NavState>({ page: "home" });
+  const [auth, setAuth] = useState<AuthState>({ token: null, user: null, accountId: "" });
 
   const handleSaveBase = (url: string): void => { setBase(url); setApiBase(url); };
 
