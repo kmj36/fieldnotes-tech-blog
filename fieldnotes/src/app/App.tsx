@@ -1,186 +1,27 @@
 import { useState, useEffect, useReducer } from "react";
-import type { CSSProperties, ReactNode, JSX } from "react";
+import type { ReactNode, JSX } from "react";
 import { Btn, Badge, Chip, Alert, Spinner, Pager, Input, Field, Modal, Sel } from "@/shared/components";
 import type { SelectOption } from "@/shared/components";
-
-/* ═══════════════════════════════════════════════════════════════
-   DESIGN TOKENS  — Refined Editorial · Ink on Cream
-═══════════════════════════════════════════════════════════════ */
-const C = {
-  bg: "#F5F0E8",
-  surface: "#FFFFFF",
-  sidebar: "#FAF7F2",
-  ink: "#1C1917",
-  muted: "#78716C",
-  faint: "#D6D3D1",
-  accent: "#C2410C",
-  accentBg: "#FFF7F5",
-  accentHover: "#9A3412",
-  teal: "#0F766E",
-  border: "#E7E5E4",
-  success: "#15803D",
-  danger: "#B91C1C",
-  warning: "#B45309",
-  codeInk: "#1E293B",
-  codeBg: "#0F172A",
-};
-const FH = "'Playfair Display', Georgia, serif";
-const FB = "'Lora', Georgia, serif";
-const FM = "'JetBrains Mono', 'Courier New', monospace";
-
-
-/* ═══════════════════════════════════════════════════════════════
-   DOMAIN TYPES  (derived from OpenAPI spec + DB schema)
-═══════════════════════════════════════════════════════════════ */
-type AccountRole = "USER" | "ADMIN";
-type AccountStatus = "ACTIVE" | "SUSPENDED";
-type SortDir = "asc" | "desc";
-
-// ── OpenAPI schema shapes ──────────────────────────────────────
-interface TagPublic { id: number; name: string; slug: string; }
-interface TagDetail extends TagPublic { createdAt: string; updatedAt: string; }
-
-interface CategoryPublic {
-  id: number; parentId: number | null;
-  name: string; slug: string; path: string;
-}
-interface CategoryDetail extends CategoryPublic { createdAt: string; updatedAt: string; }
-interface CategoryNode extends CategoryPublic { children: CategoryNode[]; }
-
-interface PostPublic {
-  id: number; nickname: string; accountId?: string; slug: string;
-  title: string; excerpt: string; thumbnail: string | null;
-  isPrivate: boolean; createdAt: string; updatedAt: string;
-  publishedAt: string | null; category: CategoryPublic | null; tags: TagPublic[];
-}
-interface PostDetail extends PostPublic { content: string; }
-
-interface AccountPublic {
-  id: number; accountId: string; nickname: string;
-  avatarUrl: string | null; role: AccountRole; status: AccountStatus;
-}
-interface AccountDetail extends AccountPublic { createdAt: string; updatedAt: string; }
-
-// ── API wrappers ───────────────────────────────────────────────
-interface Pagination {
-  page: number; pageLimit: number; total: number; totalPages: number;
-  hasNextPage: boolean; hasPrevPage: boolean;
-}
-interface ApiResponse<T = unknown> {
-  status: number; code: string; detail: string; message: string;
-  timestamp: string; path: string; result?: T;
-}
-interface PostListResult { meta: { pagination: Pagination }; data: PostPublic[]; }
-interface CategoryListResult { meta: { limit: number }; data: CategoryPublic[]; }
-interface TagListResult { meta: { limit: number }; data: TagPublic[]; }
-interface AccountListResult { meta: object; data: AccountPublic[]; }
-interface LoginResult { AccountID: string; token: string; }
-
-// ── Router / Auth ──────────────────────────────────────────────
-type PageKey =
-  | "home" | "post" | "login"
-  | "admin" | "admin-posts" | "admin-post-edit"
-  | "admin-categories" | "admin-tags" | "admin-accounts";
-
-interface NavState { page: PageKey; slug?: string; postSlug?: string; }
-interface AuthState { token: string | null; user: AccountDetail | null; accountId: string; }
-
-// ── API param shapes ───────────────────────────────────────────
-interface PostQueryParams {
-  page?: number; pageLimit?: number; sortBy?: string; sortDir?: SortDir;
-  id?: number; nickname?: string; matchType?: string; slug?: string; title?: string;
-  categoryId?: number; tagSlugs?: string; dateFilter?: string; dateTarget?: string;
-  dateFrom?: string; dateTo?: string; isPrivate?: boolean;
-}
-interface CategoryQueryParams {
-  limit?: number; sortBy?: string; sortDir?: SortDir;
-  id?: number; parentId?: number; name?: string; slug?: string;
-}
-interface TagQueryParams {
-  limit?: number; sortBy?: string; sortDir?: SortDir; id?: number; name?: string; slug?: string;
-}
-interface AccountQueryParams {
-  limit?: number; sortBy?: string; sortDir?: SortDir; id?: number;
-  accountId?: string; nickname?: string; role?: AccountRole; status?: AccountStatus;
-}
-interface PostBody {
-  slug: string; title: string; content: string;
-  thumbnail?: string | null; categoryId?: number | null; tagSlugs?: string[]; isPrivate?: boolean;
-}
-interface CategoryBody { name: string; slug: string; parentId?: number | null; }
-interface TagBody { name: string; slug: string; }
-interface AccountRegisterBody {
-  accountId: string; password: string; nickname: string;
-  avatarUrl?: string; role: AccountRole; status: AccountStatus;
-}
-interface AccountUpdateBody {
-  password?: string; nickname?: string; avatarUrl?: string | null;
-  role?: AccountRole; status?: AccountStatus;
-}
-type QSParams = Record<string, string | number | boolean | undefined | null>;
-
-/* ═══════════════════════════════════════════════════════════════
-   API CLIENT  (fully typed to OpenAPI spec)
-═══════════════════════════════════════════════════════════════ */
-let _BASE: string = "";
-let _TOKEN: string = "";
-
-const setBase = (u: string): void => { _BASE = u.replace(/\/$/, ""); };
-const setToken = (t: string | null): void => { _TOKEN = t ?? ""; };
-
-async function req<T = unknown>(
-  path: string,
-  opts: Omit<RequestInit, "body"> & { body?: unknown } = {}
-): Promise<ApiResponse<T>> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (_TOKEN) headers["Authorization"] = `Bearer ${_TOKEN}`;
-  const { body, ...rest } = opts;
-  const res = await fetch(`${_BASE}${path}`, {
-    ...rest,
-    headers: { ...headers, ...(rest.headers as Record<string, string> ?? {}) },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({})) as ApiResponse<T> & { message?: string; detail?: string };
-  if (!res.ok) throw new Error(data.message ?? data.detail ?? `HTTP ${res.status}`);
-  return data;
-}
-
-const buildQS = (p: QSParams = {}): string => {
-  const q = new URLSearchParams();
-  Object.entries(p).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== "") q.append(k, String(v));
-  });
-  return q.toString();
-};
-
-const api = {
-  /* Posts – Public */
-  getPosts: (p?: PostQueryParams) => req<PostListResult>(`/api/v1/post?${buildQS(p as QSParams)}`),
-  getPost: (slug: string) => req<PostDetail>(`/api/v1/post/${slug}`),
-  /* Posts – Admin */
-  getPostsAdmin: (p?: PostQueryParams) => req<PostListResult>(`/api/v1/post/admin?${buildQS(p as QSParams)}`),
-  getPostAdmin: (slug: string) => req<PostDetail>(`/api/v1/post/admin/${slug}`),
-  createPost: (b: PostBody) => req<PostPublic>("/api/v1/post", { method: "POST", body: b }),
-  updatePost: (id: number, b: Partial<PostBody>) => req<PostDetail>(`/api/v1/post/${id}`, { method: "PATCH", body: b }),
-  deletePost: (id: number) => req(`/api/v1/post/${id}`, { method: "DELETE" }),
-  /* Categories */
-  getCategories: (p?: CategoryQueryParams) => req<CategoryListResult>(`/api/v1/category?${buildQS(p as QSParams)}`),
-  createCategory: (b: CategoryBody) => req<CategoryDetail>("/api/v1/category", { method: "POST", body: b }),
-  updateCategory: (id: number, b: Partial<CategoryBody>) => req<CategoryDetail>(`/api/v1/category/${id}`, { method: "PATCH", body: b }),
-  deleteCategory: (id: number) => req(`/api/v1/category/${id}`, { method: "DELETE" }),
-  /* Tags */
-  getTags: (p?: TagQueryParams) => req<TagListResult>(`/api/v1/tag?${buildQS(p as QSParams)}`),
-  createTag: (b: TagBody) => req<TagDetail>("/api/v1/tag", { method: "POST", body: b }),
-  updateTag: (id: number, b: Partial<TagBody>) => req<TagDetail>(`/api/v1/tag/${id}`, { method: "PATCH", body: b }),
-  deleteTag: (id: number) => req(`/api/v1/tag/${id}`, { method: "DELETE" }),
-  /* Auth */
-  login: (b: { accountId: string; password: string }) => req<LoginResult>("/api/v1/auth/login", { method: "POST", body: b }),
-  register: (b: AccountRegisterBody) => req<AccountDetail>("/api/v1/auth/register", { method: "POST", body: b }),
-  getAccount: (aid: string) => req<AccountDetail>(`/api/v1/auth/${aid}`),
-  listAccounts: (p?: AccountQueryParams) => req<AccountListResult>(`/api/v1/auth/list?${buildQS(p as QSParams)}`),
-  updateAccount: (aid: string, b: AccountUpdateBody) => req<AccountDetail>(`/api/v1/auth/update/${aid}`, { method: "PATCH", body: b }),
-  deleteAccount: (aid: string) => req(`/api/v1/auth/delete/${aid}`, { method: "DELETE" }),
-};
+import { api, setBase, setToken } from "@/shared/api"
+import { C, FH, FB, FM } from "@/shared/constants";
+import type {
+  NavState,
+  AuthState,
+  PageKey,
+  CategoryPublic,
+  CategoryNode,
+  PostQueryParams,
+  PostPublic,
+  AccountDetail,
+  PostDetail,
+  TagPublic,
+  PostBody,
+  TagDetail,
+  AccountPublic,
+  AccountRole,
+  AccountStatus,
+  AccountUpdateBody
+} from "@/shared/api";
 
 /* ═══════════════════════════════════════════════════════════════
    INLINE MARKDOWN RENDERER
