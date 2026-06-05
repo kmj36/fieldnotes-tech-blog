@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    DESIGN TOKENS  — Refined Editorial · Ink on Cream
 ═══════════════════════════════════════════════════════════════ */
-export const C = {
+const C = {
     bg: "#F5F0E8",
     surface: "#FFFFFF",
     sidebar: "#FAF7F2",
@@ -19,6 +19,8 @@ export const C = {
     codeInk: "#1E293B",
     codeBg: "#0F172A",
 };
-export const FH = "'Playfair Display', Georgia, serif";
-export const FB = "'Lora', Georgia, serif";
-export const FM = "'JetBrains Mono', 'Courier New', monospace";
+const FH = "'Playfair Display', Georgia, serif";
+const FB = "'Lora', Georgia, serif";
+const FM = "'JetBrains Mono', 'Courier New', monospace";
+
+export { C, FH, FB, FM };

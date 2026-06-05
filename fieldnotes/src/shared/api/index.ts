@@ -1,0 +1,35 @@
+// shared/components/index.ts
+export { api }     from "./api";
+export { req, buildQS, setBase, setToken }   from "./client";
+export type {
+  TagPublic,
+  TagDetail,
+  CategoryPublic,
+  CategoryDetail,
+  CategoryNode,
+  PostDetail,
+  ApiResponse,
+  PostListResult,
+  CategoryListResult,
+  TagListResult,
+  AccountRole,
+  AccountStatus,
+  AccountPublic,
+  AccountDetail,
+  AccountListResult,
+  LoginResult,
+  NavState,
+  AuthState,
+  PostQueryParams,
+  CategoryQueryParams,
+  TagQueryParams,
+  AccountQueryParams,
+  PostBody,
+  CategoryBody,
+  TagBody,
+  AccountRegisterBody,
+  AccountUpdateBody,
+  QSParams,
+  PostPublic,
+  PageKey
+} from "./types";
