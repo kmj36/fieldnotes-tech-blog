@@ -3,24 +3,20 @@ import type {
   TagDetail,
   CategoryDetail,
   AccountDetail,
-  PostDetail,
-  PostListResult,
   CategoryListResult,
   TagListResult,
   AccountListResult,
   LoginResult,
-  PostQueryParams,
   CategoryQueryParams,
   TagQueryParams,
   AccountQueryParams,
-  PostBody,
   CategoryBody,
   TagBody,
   AccountRegisterBody,
   AccountUpdateBody,
-  QSParams,
-  PostPublic
+  QSParams
 } from "./types";
+import type { PostDetail, PostQueryParams, PostListResult, PostBody, PostPublic } from "@/feature/post/types";
 
 export const api = {
   /* Posts – Public */
