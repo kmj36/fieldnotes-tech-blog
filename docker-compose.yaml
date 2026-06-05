@@ -55,6 +55,9 @@ services:
 networks:
   blog_net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.54.0/24
 
 volumes:
   postgres_data:
