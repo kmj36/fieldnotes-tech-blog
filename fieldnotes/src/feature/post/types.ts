@@ -1,6 +1,7 @@
-import type { CategoryPublic, TagPublic } from "@/shared/api";
+import type { TagPublic } from "@/shared/api";
 import type { NavState, AuthState } from "@/shared/api";
 import type { Pagination, SortDir } from "@/shared/api/types";
+import type { CategoryPublic } from "../categories/types";
 
 interface PostFormState {
     slug: string; title: string; content: string; thumbnail: string;

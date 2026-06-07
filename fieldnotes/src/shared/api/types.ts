@@ -9,13 +9,6 @@ type SortDir = "asc" | "desc";
 interface TagPublic { id: number; name: string; slug: string; }
 interface TagDetail extends TagPublic { createdAt: string; updatedAt: string; }
 
-interface CategoryPublic {
-  id: number; parentId: number | null;
-  name: string; slug: string; path: string;
-}
-interface CategoryDetail extends CategoryPublic { createdAt: string; updatedAt: string; }
-interface CategoryNode extends CategoryPublic { children: CategoryNode[]; }
-
 interface AccountPublic {
   id: number; accountId: string; nickname: string;
   avatarUrl: string | null; role: AccountRole; status: AccountStatus;
@@ -32,7 +25,7 @@ interface ApiResponse<T = unknown> {
   timestamp: string; path: string; result?: T;
 }
 
-interface CategoryListResult { meta: { limit: number }; data: CategoryPublic[]; }
+
 interface TagListResult { meta: { limit: number }; data: TagPublic[]; }
 interface AccountListResult { meta: object; data: AccountPublic[]; }
 interface LoginResult { AccountID: string; token: string; }
@@ -47,10 +40,7 @@ interface NavState { page: PageKey; slug?: string; postSlug?: string; }
 interface AuthState { token: string | null; user: AccountDetail | null; accountId: string; }
 
 // ── API param shapes ───────────────────────────────────────────
-interface CategoryQueryParams {
-  limit?: number; sortBy?: string; sortDir?: SortDir;
-  id?: number; parentId?: number; name?: string; slug?: string;
-}
+
 interface TagQueryParams {
   limit?: number; sortBy?: string; sortDir?: SortDir; id?: number; name?: string; slug?: string;
 }
@@ -59,7 +49,6 @@ interface AccountQueryParams {
   accountId?: string; nickname?: string; role?: AccountRole; status?: AccountStatus;
 }
 
-interface CategoryBody { name: string; slug: string; parentId?: number | null; }
 interface TagBody { name: string; slug: string; }
 interface AccountRegisterBody {
   accountId: string; password: string; nickname: string;
@@ -74,11 +63,7 @@ type QSParams = Record<string, string | number | boolean | undefined | null>;
 export type {
   TagPublic,
   TagDetail,
-  CategoryPublic,
-  CategoryDetail,
-  CategoryNode,
   ApiResponse,
-  CategoryListResult,
   TagListResult,
   AccountRole,
   AccountStatus,
@@ -88,10 +73,8 @@ export type {
   LoginResult,
   NavState,
   AuthState,
-  CategoryQueryParams,
   TagQueryParams,
   AccountQueryParams,
-  CategoryBody,
   TagBody,
   AccountRegisterBody,
   AccountUpdateBody,
