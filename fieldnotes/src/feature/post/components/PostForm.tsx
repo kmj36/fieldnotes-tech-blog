@@ -1,5 +1,6 @@
 import type { PostFormProps, PostFormState } from "../types";
-import type { TagPublic, CategoryPublic } from "@/shared/api";
+import type { TagPublic } from "@/shared/api";
+import type { CategoryPublic } from "@/feature/categories/types";
 import { api } from "@/shared/api";
 import type { SelectOption } from "@/shared/components";
 import { Modal, Alert, Input, Sel, Field, Btn, Chip } from '@/shared/components';

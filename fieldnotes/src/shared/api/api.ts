@@ -1,22 +1,19 @@
 import { req, buildQS } from "./client";
 import type {
   TagDetail,
-  CategoryDetail,
   AccountDetail,
-  CategoryListResult,
   TagListResult,
   AccountListResult,
   LoginResult,
-  CategoryQueryParams,
   TagQueryParams,
   AccountQueryParams,
-  CategoryBody,
   TagBody,
   AccountRegisterBody,
   AccountUpdateBody,
   QSParams
 } from "./types";
 import type { PostDetail, PostQueryParams, PostListResult, PostBody, PostPublic } from "@/feature/post/types";
+import type { CategoryQueryParams, CategoryListResult, CategoryBody, CategoryDetail } from "@/feature/categories/types";
 
 export const api = {
   /* Posts – Public */

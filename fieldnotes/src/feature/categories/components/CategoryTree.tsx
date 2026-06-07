@@ -1,5 +1,5 @@
 import type { CategoryTreeProps } from "../types";
-import type { CategoryNode } from "@/shared/api";
+import type { CategoryNode } from "../types";
 import { useState } from "react";
 import { C, FB } from "@/shared/constants";
 
