@@ -1,0 +1,1 @@
+export { default as AdminTags } from "./pages/AdminTags";

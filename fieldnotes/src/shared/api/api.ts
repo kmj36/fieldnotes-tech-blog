@@ -1,17 +1,10 @@
 import { req, buildQS } from "./client";
 import type {
-  TagDetail,
-  AccountDetail,
-  TagListResult,
-  AccountListResult,
   LoginResult,
-  TagQueryParams,
-  AccountQueryParams,
-  TagBody,
-  AccountRegisterBody,
-  AccountUpdateBody,
   QSParams
 } from "./types";
+import type { TagQueryParams, TagListResult, TagBody, TagDetail } from "@/feature/tags/types";
+import type { AccountDetail, AccountListResult, AccountQueryParams, AccountRegisterBody, AccountUpdateBody } from "@/feature/auth/types";
 import type { PostDetail, PostQueryParams, PostListResult, PostBody, PostPublic } from "@/feature/post/types";
 import type { CategoryQueryParams, CategoryListResult, CategoryBody, CategoryDetail } from "@/feature/categories/types";
 
