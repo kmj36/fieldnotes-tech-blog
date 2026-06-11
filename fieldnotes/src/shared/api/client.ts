@@ -3,7 +3,7 @@ import type { ApiResponse, QSParams } from "./types";
 /* ═══════════════════════════════════════════════════════════════
    API CLIENT  (fully typed to OpenAPI spec)
 ═══════════════════════════════════════════════════════════════ */
-let _BASE: string = "";
+let _BASE: string = import.meta.env.VITE_API_BASE_URL ?? "";
 let _TOKEN: string = "";
 
 const setBase = (u: string): void => { _BASE = u.replace(/\/$/, ""); };

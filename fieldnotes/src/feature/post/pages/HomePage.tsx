@@ -35,9 +35,9 @@ export default function HomePage({ setNav }: { setNav: (n: NavState) => void }) 
     const tags = tagRes?.result?.data ?? [];
 
     return (
-        <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "2rem 1.5rem", display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+        <div style={{ maxWidth: "1500px", margin: "0 auto", padding: "2rem 1.5rem", display: "flex", gap: "2rem", alignItems: "stretch", minHeight: "calc(100vh - 58px - 57px)" }}>
             {/* ── Sidebar ── */}
-            <aside style={{ width: "220px", flexShrink: 0, position: "sticky", top: "74px" }}>
+            <aside style={{ width: "300px", flexShrink: 0, position: "sticky", top: "74px", borderRight: `1px solid ${C.border}`, paddingRight: "1.5rem" }}>
                 {/* Search */}
                 <div style={{ marginBottom: "1.75rem" }}>
                     <div style={{ display: "flex", gap: "6px" }}>
@@ -49,7 +49,7 @@ export default function HomePage({ setNav }: { setNav: (n: NavState) => void }) 
                             onFocus={e => e.target.style.borderColor = C.accent}
                             onBlur={e => e.target.style.borderColor = C.border}
                         />
-                        <button onClick={handleSearch} style={{ padding: "7px 10px", background: C.accent, border: "none", borderRadius: "5px", color: "#fff", cursor: "pointer", fontSize: ".9rem" }}>⌕</button>
+                        {/*<button onClick={handleSearch} style={{ padding: "7px 10px", background: C.accent, border: "none", borderRadius: "5px", color: "#fff", cursor: "pointer", fontSize: ".9rem" }}>⌕</button>*/}
                     </div>
                     {titleQ && (
                         <div onClick={handleClearSearch} style={{ marginTop: "6px", fontSize: ".72rem", color: C.accent, cursor: "pointer", fontFamily: FM }}>
@@ -78,8 +78,8 @@ export default function HomePage({ setNav }: { setNav: (n: NavState) => void }) 
                 )}
             </aside>
 
-            {/* ── Main ── */}
-            <main style={{ flex: 1, minWidth: 0 }}>
+            {/* ── Main Div ── */}
+            <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.5rem" }}>
                     <h1 style={{ margin: 0, fontFamily: FH, fontSize: "1.8rem", color: C.ink }}>
                         {catId ? (cats.find(c => c.id === catId)?.name ?? "카테고리") : tagSlug ? `#${tagSlug}` : "모든 글"}
@@ -102,7 +102,7 @@ export default function HomePage({ setNav }: { setNav: (n: NavState) => void }) 
                         <Pager meta={meta} onChange={setPage} />
                     </>
                 )}
-            </main>
+            </div>
         </div>
     );
 }
