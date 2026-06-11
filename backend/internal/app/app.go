@@ -19,20 +19,20 @@ import (
 
 // gin app 패키지
 type App struct {
-	router 		*gin.Engine
-	logger		*zap.Logger
+	router *gin.Engine
+	logger *zap.Logger
 
-	cfg 		*config.Config
+	cfg *config.Config
 
-	healthHandler 	*handler.HealthCheckHandler
-	accountHandler 	*handler.AccountHandler
+	healthHandler   *handler.HealthCheckHandler
+	accountHandler  *handler.AccountHandler
 	categoryHandler *handler.CategoryHandler
-	tagHandler		*handler.TagHandler
-	postHandler		*handler.PostHandler
+	tagHandler      *handler.TagHandler
+	postHandler     *handler.PostHandler
 
-	jwtManager 	*cryption.JWTManager
+	jwtManager *cryption.JWTManager
 
-	db 			*gorm.DB
+	db *gorm.DB
 }
 
 // app 패키지 생성자
@@ -47,22 +47,22 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 	tagRepo := repository.NewTagRepository(db)
 	tagService := service.NewTagService(tagRepo, jwtManager)
 	postRepo := repository.NewPostRepository(db)
-	
+
 	postService := service.NewPostService(postRepo, tagRepo, categoryRepo, accountRepo, jwtManager)
 
 	return &App{
 		router: gin.New(),
 		logger: log,
-		cfg: cfg,
-		
-		healthHandler: handler.NewHealthCheckHandler(),
-		accountHandler: handler.NewAccountHandler(accountService),
+		cfg:    cfg,
+
+		healthHandler:   handler.NewHealthCheckHandler(),
+		accountHandler:  handler.NewAccountHandler(accountService),
 		categoryHandler: handler.NewCategoryHandler(categoryService),
-		tagHandler: handler.NewTagHandler(tagService),
-		postHandler: handler.NewPostHandler(postService),
+		tagHandler:      handler.NewTagHandler(tagService),
+		postHandler:     handler.NewPostHandler(postService),
 
 		jwtManager: jwtManager,
-		db: db,
+		db:         db,
 	}
 }
 
@@ -102,11 +102,17 @@ func (app *App) setupMiddleware() {
 // App 객체 메소드 - Gin 라우팅 설정
 func (app *App) setupRoutes() {
 
+	// 정적파일 라우트
+	static := app.router.Group("/api/v1")
+	{
+		static.Use(middleware.StaticCacheMiddleware())
+		static.Static("/static", "./static")
+	}
+
 	// 기본 라우트
 	api := app.router.Group("/api/v1")
 	{
-        api.GET("/health", app.healthHandler.HealthCheck)
-		api.Static("/static", "./static")
+		api.GET("/health", app.healthHandler.HealthCheck)
 		api.GET("/post", app.postHandler.List)
 		api.GET("/post/:postSlug", app.postHandler.Read)
 		api.GET("/category", app.categoryHandler.List)
@@ -138,8 +144,8 @@ func (app *App) setupRoutes() {
 }
 
 /*
-	최초 관리자 계정을 생성합니다.
-	생성이 완료되면 콘솔에 해시된 비밀번호가 출력됩니다.
+최초 관리자 계정을 생성합니다.
+생성이 완료되면 콘솔에 해시된 비밀번호가 출력됩니다.
 */
 func (app *App) seedAdminAccount() {
 
@@ -156,12 +162,12 @@ func (app *App) seedAdminAccount() {
 	avatarUrl := "https://www.svgrepo.com/show/345423/admin.svg"
 
 	newAdmin := &model.Account{
-		AccountID: "admin",
+		AccountID:    "admin",
 		PasswordHash: hash,
-		Nickname: "admin",
-		AvatarURL: &avatarUrl,
-		Role: "ADMIN",
-		Status: "ACTIVE",
+		Nickname:     "admin",
+		AvatarURL:    &avatarUrl,
+		Role:         "ADMIN",
+		Status:       "ACTIVE",
 	}
 
 	if err := app.db.Create(newAdmin).Error; err == nil {
