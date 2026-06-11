@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { JSX } from "react";
-import { Header, ConfigBar, GlobalStyles } from "./components";
-import { setBase, setToken } from "@/shared/api"
+import { Header, GlobalStyles } from "./components";
+import { setToken } from "@/shared/api"
 import { C, FM } from "@/shared/constants";
 import { AdminAccounts, AdminLayout, AdminDashboard, LoginPage } from "@/feature/auth";
 import { AdminTags } from "@/feature/tags";
@@ -16,11 +16,18 @@ import { ADMIN_PAGES } from "./constants/adminPages";
 ═══════════════════════════════════════════════════════════════ */
 
 export default function App() {
-  const [apiBase, setApiBase] = useState<string>("");
+  //const [apiBase, setApiBase] = useState<string>("");
   const [nav, setNav] = useState<NavState>({ page: "home" });
   const [auth, setAuth] = useState<AuthState>({ token: null, user: null, accountId: "" });
 
-  const handleSaveBase = (url: string): void => { setBase(url); setApiBase(url); };
+  useEffect(() => {
+    if (window.location.hash === "#login") {
+      setNav({ page: "login" });
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
+
+  //const handleSaveBase = (url: string): void => { setBase(url); setApiBase(url); };
 
   const handleLogin = (data: { token: string; user: AccountDetail | undefined; accountId: string }): void => {
     setToken(data.token);
@@ -32,8 +39,6 @@ export default function App() {
     setAuth({ token: null, user: null, accountId: "" });
     setNav({ page: "home" });
   };
-
-
 
   function renderPage(): JSX.Element {
     if (ADMIN_PAGES.includes(nav.page) && !auth.token) {
@@ -64,12 +69,12 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg }}>
       <GlobalStyles />
-      <ConfigBar base={apiBase} onSave={handleSaveBase} />
+      {/* <ConfigBar base={apiBase} onSave={handleSaveBase} /> */}
       <Header nav={nav} setNav={setNav} auth={auth} onLogout={handleLogout} />
-      <main style={{ minHeight: "calc(100vh - 120px)" }}>{renderPage()}</main>
-      <footer style={{ borderTop: `1px solid ${C.border}`, padding: "1.5rem", textAlign: "center", marginTop: "3rem" }}>
+      <main style={{ minHeight: "calc(100vh - 58px - 57px)" }}>{renderPage()}</main>
+      <footer style={{ borderTop: `1px solid ${C.border}`, padding: "1.5rem", textAlign: "center" }}>
         <p style={{ margin: 0, fontFamily: FM, fontSize: ".72rem", color: C.muted }}>
-          Fieldnotes Blog · React + TypeScript + OpenAPI v1 · {apiBase ? `🔌 ${apiBase}` : "⚠ API 미연결"}
+          Fieldnotes Blog · Copyright 2026. Kim Minje All rights reserved.
         </p>
       </footer>
     </div>

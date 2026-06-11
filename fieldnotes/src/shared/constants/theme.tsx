@@ -2,7 +2,7 @@
    DESIGN TOKENS  — Refined Editorial · Ink on Cream
 ═══════════════════════════════════════════════════════════════ */
 const C = {
-    bg: "#F5F0E8",
+    bg: "#FFFFFF",
     surface: "#FFFFFF",
     sidebar: "#FAF7F2",
     ink: "#1C1917",

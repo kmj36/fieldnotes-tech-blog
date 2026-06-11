@@ -37,7 +37,7 @@ export default function Header({ nav, setNav, auth, onLogout }: HeaderProps) {
               <span style={{ fontFamily: FM, fontSize: ".75rem", color: C.muted }}>{auth.user?.nickname || auth.accountId}</span>
               <Btn size="sm" variant="ghost" onClick={onLogout} style={{ padding: "4px 10px" }}>로그아웃</Btn>
             </div>
-          ) : (
+          ) : import.meta.env.VITE_MODE !== "production" && (
             <Btn size="sm" variant="outline" onClick={() => setNav({ page: "login" })}>Admin 로그인</Btn>
           )}
         </nav>
