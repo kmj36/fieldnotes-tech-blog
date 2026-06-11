@@ -3,7 +3,9 @@ import useAsync from "@/shared/hooks/useAsync";
 import { api } from "@/shared/api";
 import { Spinner, Alert, Btn, Badge, Chip } from "@/shared/components";
 import { C, FM, FH } from "@/shared/constants";
-import renderMd from "@/shared/utils/markdown";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 /* ═══════════════════════════════════════════════════════════════
    POST DETAIL PAGE
 ═══════════════════════════════════════════════════════════════ */
@@ -62,7 +64,26 @@ export default function PostDetailPage({ slug, setNav, auth }: PostDetailPagePro
                     onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
             )}
 
-            <div dangerouslySetInnerHTML={{ __html: renderMd(post.content ?? "") }} />
+            <ReactMarkdown
+             components={{code({ className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className ?? "");
+                return match ? (
+                    <SyntaxHighlighter
+                     style={oneDark}
+                     language={match[1]}
+                     PreTag="div"
+                    >
+                        {String(children).replace(/\n$/, "")}
+                    </SyntaxHighlighter>
+                ) : (
+                    <code className={className} {...props}>
+                        {children}
+                    </code>
+                );
+             },
+            }}>
+                {post.content ?? ("")}
+            </ReactMarkdown>
 
             {post.tags?.length > 0 && (
                 <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: `1px solid ${C.border}`, display: "flex", gap: "8px", flexWrap: "wrap" }}>
