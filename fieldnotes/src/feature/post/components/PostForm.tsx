@@ -7,6 +7,9 @@ import { Modal, Alert, Input, Sel, Field, Btn, Chip } from '@/shared/components'
 import { C, FB } from "@/shared/constants";
 import { useState } from "react";
 import type { PostBody } from "../types";
+import ReactMarkdown from "react-markdown";
+import MDEditor from "@uiw/react-md-editor";
+import { markdownComponents } from "@/shared/components/MarkdownCodeBlock";
 
 /* ─── Post Form (create / edit modal) ──────────────────────── */
 
@@ -64,7 +67,23 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: PostForm
                     <Input label="슬러그 *" value={f.slug} onChange={up("slug")} placeholder="my-post-slug" />
                 </div>
                 <Input label="썸네일 URL" value={f.thumbnail} onChange={up("thumbnail")} placeholder="https://…" />
-                <Input label="내용 * (Markdown 지원)" value={f.content} onChange={up("content")} rows={12} placeholder={"## 제목\n내용을 작성하세요…"} />
+                <Field label="내용 * (Markdown 지원)">
+                    <div data-color-mode="light">
+                        <MDEditor
+                            value={f.content}
+                            onChange={(v) => up("content")(v ?? "")}
+                            height={400}
+                            preview="live"
+                            components={{
+                                preview: (source) => (
+                                    <ReactMarkdown components={markdownComponents}>
+                                        {source}
+                                    </ReactMarkdown>
+                                ),
+                            }}
+                        />
+                    </div>
+                </Field>
                 <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1rem" }}>
                     <Sel label="카테고리" value={f.categoryId} onChange={up("categoryId")} options={catOpts} />
                     <Field label="공개 여부">

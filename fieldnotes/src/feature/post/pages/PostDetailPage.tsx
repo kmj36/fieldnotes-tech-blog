@@ -4,8 +4,7 @@ import { api } from "@/shared/api";
 import { Spinner, Alert, Btn, Badge, Chip } from "@/shared/components";
 import { C, FM, FH } from "@/shared/constants";
 import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { markdownComponents } from "@/shared/components/MarkdownCodeBlock";
 /* ═══════════════════════════════════════════════════════════════
    POST DETAIL PAGE
 ═══════════════════════════════════════════════════════════════ */
@@ -65,23 +64,7 @@ export default function PostDetailPage({ slug, setNav, auth }: PostDetailPagePro
             )}
 
             <ReactMarkdown
-             components={{code({ className, children, ...props }) {
-                const match = /language-(\w+)/.exec(className ?? "");
-                return match ? (
-                    <SyntaxHighlighter
-                     style={oneDark}
-                     language={match[1]}
-                     PreTag="div"
-                    >
-                        {String(children).replace(/\n$/, "")}
-                    </SyntaxHighlighter>
-                ) : (
-                    <code className={className} {...props}>
-                        {children}
-                    </code>
-                );
-             },
-            }}>
+             components={markdownComponents}>
                 {post.content ?? ("")}
             </ReactMarkdown>
 
