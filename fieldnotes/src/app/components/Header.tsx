@@ -2,7 +2,7 @@ import type { HeaderProps } from "../types";
 import { C, FM, FH } from "@/shared/constants";
 import type { PageKey } from "@/shared/api";
 import { Btn } from "@/shared/components";
-
+import { NotebookPen } from "lucide-react";
 
 export default function Header({ nav, setNav, auth, onLogout }: HeaderProps) {
   return (
@@ -11,7 +11,7 @@ export default function Header({ nav, setNav, auth, onLogout }: HeaderProps) {
         {/* Logo */}
         <div onClick={() => setNav({ page: "home" })} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "34px", height: "34px", background: C.accent, borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ color: "#fff", fontFamily: FM, fontSize: ".85rem", fontWeight: "700" }}>FN</span>
+            <NotebookPen size={18} color="#fff" />
           </div>
           <span style={{ fontFamily: FH, fontSize: "1.3rem", fontWeight: "700", color: C.ink, letterSpacing: "-.02em" }}>Fieldnotes</span>
         </div>

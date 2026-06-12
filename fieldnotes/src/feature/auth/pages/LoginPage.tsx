@@ -3,6 +3,7 @@ import type { LoginPageProps } from "../types";
 import { api, setToken } from "@/shared/api";
 import { C, FH, FM } from "@/shared/constants";
 import { Alert, Input, Btn } from "@/shared/components";
+import { NotebookPen } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════
    LOGIN PAGE
@@ -34,7 +35,7 @@ export default function LoginPage({ setNav, onLogin }: LoginPageProps) {
       <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: "10px", padding: "2.5rem", width: "100%", maxWidth: "400px", boxShadow: "0 8px 32px rgba(0,0,0,.1)", animation: "fadeIn .4s ease" }}>
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <div style={{ width: "50px", height: "50px", background: C.accent, borderRadius: "10px", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-            <span style={{ color: "#fff", fontFamily: FM, fontSize: "1.1rem", fontWeight: "700" }}>FN</span>
+            <NotebookPen size={24} color="#fff" />
           </div>
           <h2 style={{ margin: 0, fontFamily: FH, fontSize: "1.5rem", color: C.ink }}>관리자 로그인</h2>
           <p style={{ margin: "6px 0 0", fontFamily: FM, fontSize: ".78rem", color: C.muted }}>Fieldnotes Admin Panel</p>
