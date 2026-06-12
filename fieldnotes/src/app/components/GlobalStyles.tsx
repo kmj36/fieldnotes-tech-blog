@@ -3,7 +3,7 @@ import { C, FB } from "@/shared/constants";
 export default function GlobalStyles() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,700;1,400&family=Poppins:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap');
       *, *::before, *::after { box-sizing: border-box; }
       body { margin: 0; background: ${C.bg}; color: ${C.ink}; font-family: ${FB}; }
       @keyframes spin { to { transform: rotate(360deg); } }
