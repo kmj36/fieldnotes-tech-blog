@@ -19,8 +19,9 @@ const C = {
     codeInk: "#1E293B",
     codeBg: "#0F172A",
 };
-const FH = "'Playfair Display', Georgia, serif";
-const FB = "'Lora', Georgia, serif";
+
+const FH = "'Poppins', system-ui, sans-serif";   // 제목 — 약간 더 굵고 개성있는 폰트
+const FB = "'Inter', system-ui, sans-serif";     // 본문 — 가독성 좋은 폰트
 const FM = "'JetBrains Mono', 'Courier New', monospace";
 
 export { C, FH, FB, FM };
