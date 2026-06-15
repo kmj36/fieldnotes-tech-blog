@@ -22,7 +22,7 @@ func (repo *PostRepository) FindByID(ctx *gin.Context, postId int) (*model.Post,
 
 	query := repo.db.WithContext(ctx)
 
-	result := query.Where("id = ?", postId).First(&post)
+	result := query.Where(postWhereID, postId).First(&post)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -147,69 +147,10 @@ func (repo *PostRepository) List(ctx *gin.Context, req *dto.ListPostsRequest) ([
 		Select("posts.*, accounts.nickname AS nickname").
 		Joins("LEFT JOIN accounts ON posts.account_id = accounts.account_id")
 
-	if req.ID != nil {
-		query = query.Where("posts.id = ?", req.ID)
+	query, err := repo.applyListFilters(query, req)
+	if err != nil {
+		return nil, 0, err
 	}
-
-	if req.AccountID != nil {
-		query = query.Where("posts.account_id = ?", req.AccountID)
-	}
-
-	if req.Nickname != nil {
-		query = query.Where("nickname = ?", req.Nickname)
-	}
-
-	if req.Slug != nil && req.MatchType != nil {
-		pattern := repo.buildLikeQuery(*req.MatchType, *req.Slug)
-		query = query.Where("posts.slug LIKE ?", pattern)
-	}
-
-	if req.Title != nil && req.MatchType != nil {
-		pattern := repo.buildLikeQuery(*req.MatchType, *req.Title)
-		query = query.Where("posts.title LIKE ?", pattern)
-	}
-
-	if len(req.CategoryIDs) > 0 {
-		query = query.Where("posts.category_id IN ?", req.CategoryIDs)
-	} else if req.CategoryID != nil {
-		query = query.Where("posts.category_id = ?", req.CategoryID)
-	}
-
-	if len(req.TagSlugs) > 0 {
-		query = query.Where(`
-            posts.id IN (
-                SELECT post_id FROM post_tags
-                WHERE tag_id IN (
-                    SELECT id FROM tags WHERE slug IN ?
-                )
-            )
-        `, req.TagSlugs)
-	}
-
-	if req.DateFilter != nil && req.DateTarget != nil {
-		target := "posts." + *req.DateTarget
-
-		from, err := repo.parseDate(req.DateFrom)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		to, err := repo.parseDate(req.DateTo)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		pattern, args := repo.buildDateQuery(target, *req.DateFilter, from, to)
-		if pattern != "" {
-			query = query.Where(pattern, args...)
-		}
-	}
-
-	if req.IsPrivate != nil {
-		query = query.Where("posts.is_private = ?", req.IsPrivate)
-	}
-
-	// 필터 끝
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -227,8 +168,6 @@ func (repo *PostRepository) List(ctx *gin.Context, req *dto.ListPostsRequest) ([
 }
 
 func (repo *PostRepository) Update(ctx *gin.Context, req *dto.UpdatePostRequest, updates map[string]any, tags []*model.Tag) (*model.Post, error) {
-	var postData model.Post
-
 	tx := repo.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return nil, tx.Error
@@ -240,18 +179,45 @@ func (repo *PostRepository) Update(ctx *gin.Context, req *dto.UpdatePostRequest,
 		}
 	}()
 
-	if err := tx.Where("id = ?", req.ID).First(&postData).Error; err != nil {
-		tx.Rollback()
+	postData, tx, err := repo.applyUpdatePost(tx, req, updates)
+	if err != nil {
 		return nil, err
 	}
 
-	// 조회 후 업데이트
+	tx, err = repo.applyUpdateTags(tx, req, tags)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	return postData, nil
+}
+
+func (repo *PostRepository) applyUpdatePost(tx *gorm.DB, req *dto.UpdatePostRequest, updates map[string]any) (*model.Post, *gorm.DB, error) {
+	var postData model.Post
+
+	if tx == nil || req == nil || updates == nil {
+		return &postData, nil, nil
+	}
+
+	// 조회 후 업데이트 작업
+	if err := tx.Where(postWhereID, req.ID).First(&postData).Error; err != nil {
+		tx.Rollback()
+		return nil, nil, err
+	}
+
 	if err := tx.Model(&postData).Updates(updates).Error; err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, nil, err
 	}
 
-	// 태그 작업
+	return &postData, tx, nil
+}
+
+func (repo *PostRepository) applyUpdateTags(tx *gorm.DB, req *dto.UpdatePostRequest, tags []*model.Tag) (*gorm.DB, error) {
 	if req.TagSlugs != nil {
 		// 기존 태그 전체 삭제
 		if err := tx.Where("post_id = ?", req.ID).Delete(&model.PostTag{}).Error; err != nil {
@@ -276,11 +242,7 @@ func (repo *PostRepository) Update(ctx *gin.Context, req *dto.UpdatePostRequest,
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return nil, err
-	}
-
-	return &postData, nil
+	return tx, nil
 }
 
 func (repo *PostRepository) Delete(ctx *gin.Context, req *dto.DeletePostRequest) (*model.Post, error) {
@@ -300,7 +262,7 @@ func (repo *PostRepository) Delete(ctx *gin.Context, req *dto.DeletePostRequest)
 	}()
 
 	// 원본 게시물 정보 반환을 위해 선조회 진행
-	if err := tx.Where("id = ?", req.ID).First(&postData).Error; err != nil {
+	if err := tx.Where(postWhereID, req.ID).First(&postData).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -317,4 +279,102 @@ func (repo *PostRepository) Delete(ctx *gin.Context, req *dto.DeletePostRequest)
 	}
 
 	return &postData, nil
+}
+
+func (repo *PostRepository) applyListFilters(query *gorm.DB, req *dto.ListPostsRequest) (*gorm.DB, error) {
+	query = repo.applyMatchFilters(query, req)
+	query = repo.applyLikeFilters(query, req)
+	query = repo.applyCategoryFilter(query, req)
+	query = repo.applyTagFilter(query, req)
+
+	query, err := repo.applyDateFilter(query, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return query, nil
+}
+
+func (repo *PostRepository) applyMatchFilters(query *gorm.DB, req *dto.ListPostsRequest) *gorm.DB {
+	if req.ID != nil {
+		query = query.Where("posts.id = ?", req.ID)
+	}
+
+	if req.AccountID != nil {
+		query = query.Where("posts.account_id = ?", req.AccountID)
+	}
+
+	if req.Nickname != nil {
+		query = query.Where("nickname = ?", req.Nickname)
+	}
+
+	if req.IsPrivate != nil {
+		query = query.Where("posts.is_private = ?", req.IsPrivate)
+	}
+
+	return query
+}
+
+func (repo *PostRepository) applyLikeFilters(query *gorm.DB, req *dto.ListPostsRequest) *gorm.DB {
+	if req.Slug != nil && req.MatchType != nil {
+		pattern := repo.buildLikeQuery(*req.MatchType, *req.Slug)
+		query = query.Where("posts.slug LIKE ?", pattern)
+	}
+
+	if req.Title != nil && req.MatchType != nil {
+		pattern := repo.buildLikeQuery(*req.MatchType, *req.Title)
+		query = query.Where("posts.title LIKE ?", pattern)
+	}
+
+	return query
+}
+
+func (repo *PostRepository) applyCategoryFilter(query *gorm.DB, req *dto.ListPostsRequest) *gorm.DB {
+	if len(req.CategoryIDs) > 0 {
+		query = query.Where("posts.category_id IN ?", req.CategoryIDs)
+	} else if req.CategoryID != nil {
+		query = query.Where("posts.category_id = ?", req.CategoryID)
+	}
+
+	return query
+}
+
+func (repo *PostRepository) applyTagFilter(query *gorm.DB, req *dto.ListPostsRequest) *gorm.DB {
+	if len(req.TagSlugs) > 0 {
+		query = query.Where(`
+            posts.id IN (
+                SELECT post_id FROM post_tags
+                WHERE tag_id IN (
+                    SELECT id FROM tags WHERE slug IN ?
+                )
+            )
+        `, req.TagSlugs)
+	}
+
+	return query
+}
+
+func (repo *PostRepository) applyDateFilter(query *gorm.DB, req *dto.ListPostsRequest) (*gorm.DB, error) {
+	if req.DateFilter == nil || req.DateTarget == nil {
+		return query, nil
+	}
+
+	target := "posts." + *req.DateTarget
+
+	from, err := repo.parseDate(req.DateFrom)
+	if err != nil {
+		return nil, err
+	}
+
+	to, err := repo.parseDate(req.DateTo)
+	if err != nil {
+		return nil, err
+	}
+
+	pattern, args := repo.buildDateQuery(target, *req.DateFilter, from, to)
+	if pattern != "" {
+		query = query.Where(pattern, args...)
+	}
+
+	return query, nil
 }

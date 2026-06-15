@@ -102,15 +102,17 @@ func (app *App) setupMiddleware() {
 // App 객체 메소드 - Gin 라우팅 설정
 func (app *App) setupRoutes() {
 
+	const apiV1Prefix = "/api/v1"
+
 	// 정적파일 라우트
-	static := app.router.Group("/api/v1")
+	static := app.router.Group(apiV1Prefix)
 	{
 		static.Use(middleware.StaticCacheMiddleware())
 		static.Static("/static", "./static")
 	}
 
 	// 기본 라우트
-	api := app.router.Group("/api/v1")
+	api := app.router.Group(apiV1Prefix)
 	{
 		api.GET("/health", app.healthHandler.HealthCheck)
 		api.GET("/post", app.postHandler.List)
@@ -121,7 +123,7 @@ func (app *App) setupRoutes() {
 	}
 
 	// 인증 라우트
-	auth := app.router.Group("/api/v1")
+	auth := app.router.Group(apiV1Prefix)
 	{
 		auth.Use(middleware.JWTAuthMiddleware(app.jwtManager))
 		auth.POST("/auth/register", app.accountHandler.Create)

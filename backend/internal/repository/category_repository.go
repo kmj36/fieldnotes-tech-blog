@@ -37,7 +37,7 @@ func (repo *CategoryRepository) FindByID(ctx *gin.Context, id int16) (*model.Cat
 
 	query := repo.db.WithContext(ctx)
 
-	result := query.Where("id = ?", id).First(&category)
+	result := query.Where(categoryWhereID, id).First(&category)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil // 없으면 nil 반환
@@ -74,7 +74,7 @@ func (repo *CategoryRepository) FindByIDsPathPrefix(ctx *gin.Context, path strin
 
 	result := query.
 		Model(&model.Category{}).
-		Where("path LIKE ?", path+"%").
+		Where(categoryWherePathLike, path+"%").
 		Pluck("id", &ids)
 	return ids, result.Error
 }
@@ -94,7 +94,7 @@ func (repo *CategoryRepository) List(ctx *gin.Context, req *dto.ReadCategoriesRe
 	query := repo.db.WithContext(ctx)
 
 	if req.ID != nil {
-		query = query.Where("id = ?", *req.ID)
+		query = query.Where(categoryWhereID, *req.ID)
 	}
 
 	if req.ParentID != nil {
@@ -132,7 +132,7 @@ func (repo *CategoryRepository) Update(ctx *gin.Context, req *dto.UpdateCategory
 	var categoryData model.Category
 
 	err := repo.db.WithContext(ctx).
-		Where("id = ?", req.ID).
+		Where(categoryWhereID, req.ID).
 		First(&categoryData).Error
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (repo *CategoryRepository) Delete(ctx *gin.Context, req *dto.DeleteCategory
 	var categoryData model.Category
 
 	err := repo.db.WithContext(ctx).
-		Where("id = ?", req.ID).
+		Where(categoryWhereID, req.ID).
 		First(&categoryData).Error
 	if err != nil {
 		return nil, err
@@ -173,14 +173,14 @@ func (repo *CategoryRepository) UpdateDescendantPaths(ctx *gin.Context, oldPath 
 
 	return repo.db.WithContext(ctx).
 		Model(&categoryData).
-		Where("path LIKE ?", oldPath+"/%").
+		Where(categoryWherePathLike, oldPath+"/%").
 		Update("path", gorm.Expr("REPLACE(path, ?, ?)", oldPath, newPath)).Error
 }
 
 func (repo *CategoryRepository) ResetDescendantPaths(ctx *gin.Context, parentPath string) error {
 	return repo.db.WithContext(ctx).
 		Model(&model.Category{}).
-		Where("path LIKE ?", parentPath+"/%").
+		Where(categoryWherePathLike, parentPath+"/%").
 		Updates(map[string]interface{}{
 			"parent_id": nil,
 			"path":      gorm.Expr("'/' || split_part(path, '/', array_length(string_to_array(path, '/'), 1))"),

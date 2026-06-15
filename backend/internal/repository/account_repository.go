@@ -11,149 +11,148 @@ import (
 )
 
 // 관리자 계정 관련 DB 작업
-type AccountRepository struct {db *gorm.DB}
+type AccountRepository struct{ db *gorm.DB }
 
 func NewAccountRepository(db *gorm.DB) *AccountRepository {
 	return &AccountRepository{db: db}
 }
 
 func (repo *AccountRepository) Create(ctx *gin.Context, newAccount *model.Account) (*model.Account, error) {
-    query := repo.db.WithContext(ctx)
-    err := query.Create(newAccount).Error
-    if err != nil {
-        return nil, err
-    }
+	query := repo.db.WithContext(ctx)
+	err := query.Create(newAccount).Error
+	if err != nil {
+		return nil, err
+	}
 
 	return newAccount, nil
 }
 
 func (repo *AccountRepository) List(ctx *gin.Context, req *dto.ListAccountsRequest) ([]*model.Account, error) {
-    var accounts []*model.Account
+	var accounts []*model.Account
 
-    query := repo.db.WithContext(ctx)
+	query := repo.db.WithContext(ctx)
 
-    if req.ID != nil {
-        query = query.Where("id = ?", *req.ID)
-    }
-    
-    if req.AccountID != nil {
-        query = query.Where("account_id = ?", *req.AccountID)
-    }
+	if req.ID != nil {
+		query = query.Where("id = ?", *req.ID)
+	}
 
-    if req.Nickname != nil {
-        query = query.Where("nickname = ?", *req.Nickname)
-    }
+	if req.AccountID != nil {
+		query = query.Where(accountWhereAccountID, *req.AccountID)
+	}
 
-    if req.AvatarURL != nil {
-        query = query.Where("avatar_url LIKE ?", fmt.Sprintf("%%%s%%", *req.AvatarURL))
-    }
+	if req.Nickname != nil {
+		query = query.Where("nickname = ?", *req.Nickname)
+	}
 
-    if req.Role != nil {
-        query = query.Where("role = ?", *req.Role)
-    }
-    
-    if req.Status != nil {
-        query = query.Where("status = ?", *req.Status)
-    }
+	if req.AvatarURL != nil {
+		query = query.Where("avatar_url LIKE ?", fmt.Sprintf("%%%s%%", *req.AvatarURL))
+	}
 
-    query = query.Order(fmt.Sprintf("%s %s", req.SortBy, req.SortDir))
-    query = query.Limit(int(req.Limit))
+	if req.Role != nil {
+		query = query.Where("role = ?", *req.Role)
+	}
 
-    if err := query.Find(&accounts).Error ; err != nil {
-        return nil, err
-    }
+	if req.Status != nil {
+		query = query.Where("status = ?", *req.Status)
+	}
 
-    return accounts, nil
+	query = query.Order(fmt.Sprintf("%s %s", req.SortBy, req.SortDir))
+	query = query.Limit(int(req.Limit))
+
+	if err := query.Find(&accounts).Error; err != nil {
+		return nil, err
+	}
+
+	return accounts, nil
 }
 
-
 func (repo *AccountRepository) Update(ctx *gin.Context, req *dto.UpdateAccountRequest, updates map[string]any) (*model.Account, error) {
-    var accountData model.Account
+	var accountData model.Account
 
-    err := repo.db.WithContext(ctx).
-        Where("account_id = ?", req.AccountID).
-        First(&accountData).Error
-    if err != nil {
-        return nil, err
-    }
+	err := repo.db.WithContext(ctx).
+		Where(accountWhereAccountID, req.AccountID).
+		First(&accountData).Error
+	if err != nil {
+		return nil, err
+	}
 
-    // 조회 후 업데이트
-    err = repo.db.WithContext(ctx).
-        Model(&accountData).
-        Updates(updates).Error
-    if err != nil {
-        return nil, err
-    }
+	// 조회 후 업데이트
+	err = repo.db.WithContext(ctx).
+		Model(&accountData).
+		Updates(updates).Error
+	if err != nil {
+		return nil, err
+	}
 
-    return &accountData, nil
+	return &accountData, nil
 }
 
 func (repo *AccountRepository) Delete(ctx *gin.Context, req *dto.DeleteAccountRequest) (*model.Account, error) {
-    var accountData model.Account
+	var accountData model.Account
 
-    err := repo.db.WithContext(ctx).
-        Where("account_id = ?", req.AccountID).
-        First(&accountData).Error
-    if err != nil {
-        return nil, err
-    }
+	err := repo.db.WithContext(ctx).
+		Where(accountWhereAccountID, req.AccountID).
+		First(&accountData).Error
+	if err != nil {
+		return nil, err
+	}
 
-    err = repo.db.WithContext(ctx).
-        Delete(&accountData).Error
-    if err != nil {
-        return nil, err
-    }
+	err = repo.db.WithContext(ctx).
+		Delete(&accountData).Error
+	if err != nil {
+		return nil, err
+	}
 
-    return &accountData, nil
+	return &accountData, nil
 }
 
 func (repo *AccountRepository) FindByAccountID(ctx *gin.Context, accountID string) (*model.Account, error) {
-    var account model.Account
+	var account model.Account
 
-    query := repo.db.WithContext(ctx)
+	query := repo.db.WithContext(ctx)
 
-    result := query.Where("account_id = ?", accountID).First(&account)
-    if result.Error != nil {
-        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-            return nil, nil
-        }
-        return nil, result.Error
-    }
-    return &account, nil
+	result := query.Where(accountWhereAccountID, accountID).First(&account)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	return &account, nil
 }
 
 func (repo *AccountRepository) FindByAccountIDs(ctx *gin.Context, accountID []string) (map[string]*model.Account, error) {
-    var accounts []*model.Account
+	var accounts []*model.Account
 
-    query := repo.db.WithContext(ctx)
-    
-    if len(accountID) == 0 {
-        return map[string]*model.Account{}, nil
-    }
+	query := repo.db.WithContext(ctx)
 
-    if err := query.Where("account_id IN ?", accountID).Find(&accounts).Error; err != nil {
-        return nil, err
-    }
+	if len(accountID) == 0 {
+		return map[string]*model.Account{}, nil
+	}
 
-    result := make(map[string]*model.Account)
-    for _, item := range accounts {
-        result[item.AccountID] = item
-    }
+	if err := query.Where("account_id IN ?", accountID).Find(&accounts).Error; err != nil {
+		return nil, err
+	}
 
-    return result, nil
+	result := make(map[string]*model.Account)
+	for _, item := range accounts {
+		result[item.AccountID] = item
+	}
+
+	return result, nil
 }
 
 func (repo *AccountRepository) FindByNickname(ctx *gin.Context, accountNickname string) (*model.Account, error) {
-    var account model.Account
+	var account model.Account
 
-    query := repo.db.WithContext(ctx)
-	
-    result := query.Where("nickname = ?", accountNickname).First(&account)
-    if result.Error != nil {
-        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-            return nil, nil // 없으면 nil 반환
-        }
-        return nil, result.Error
-    }
-    return &account, nil
+	query := repo.db.WithContext(ctx)
+
+	result := query.Where("nickname = ?", accountNickname).First(&account)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil // 없으면 nil 반환
+		}
+		return nil, result.Error
+	}
+	return &account, nil
 }
