@@ -22,7 +22,7 @@ func (repo *PostRepository) FindByID(ctx *gin.Context, postId int) (*model.Post,
 
 	query := repo.db.WithContext(ctx)
 
-	result := query.Where(postWhereID, postId).First(&post)
+	result := query.Where(whereID, postId).First(&post)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -204,7 +204,7 @@ func (repo *PostRepository) applyUpdatePost(tx *gorm.DB, req *dto.UpdatePostRequ
 	}
 
 	// 조회 후 업데이트 작업
-	if err := tx.Where(postWhereID, req.ID).First(&postData).Error; err != nil {
+	if err := tx.Where(whereID, req.ID).First(&postData).Error; err != nil {
 		tx.Rollback()
 		return nil, nil, err
 	}
@@ -262,7 +262,7 @@ func (repo *PostRepository) Delete(ctx *gin.Context, req *dto.DeletePostRequest)
 	}()
 
 	// 원본 게시물 정보 반환을 위해 선조회 진행
-	if err := tx.Where(postWhereID, req.ID).First(&postData).Error; err != nil {
+	if err := tx.Where(whereID, req.ID).First(&postData).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}

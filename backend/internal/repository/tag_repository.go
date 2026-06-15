@@ -37,7 +37,7 @@ func (repo *TagRepository) FindByID(ctx *gin.Context, id int16) (*model.Tag, err
 
 	query := repo.db.WithContext(ctx)
 
-	result := query.Where(tagWhereID, id).First(&tag)
+	result := query.Where(whereID, id).First(&tag)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil // 없으면 nil 반환
@@ -96,7 +96,7 @@ func (repo *TagRepository) List(ctx *gin.Context, req *dto.ReadTagsRequest) ([]*
 	query := repo.db.WithContext(ctx)
 
 	if req.ID != nil {
-		query = query.Where(tagWhereID, req.ID)
+		query = query.Where(whereID, req.ID)
 	}
 
 	if req.Name != nil {
@@ -130,7 +130,7 @@ func (repo *TagRepository) Update(ctx *gin.Context, req *dto.UpdateTagRequest, u
 	var tagData model.Tag
 
 	err := repo.db.WithContext(ctx).
-		Where(tagWhereID, req.ID).
+		Where(whereID, req.ID).
 		First(&tagData).Error
 	if err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func (repo *TagRepository) Delete(ctx *gin.Context, req *dto.DeleteTagRequest) (
 	var tagData model.Tag
 
 	err := repo.db.WithContext(ctx).
-		Where(tagWhereID, req.ID).
+		Where(whereID, req.ID).
 		First(&tagData).Error
 	if err != nil {
 		return nil, err

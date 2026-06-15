@@ -1,19 +1,13 @@
 package repository
 
 const (
+	whereID = "id = ?"
+
 	// Account
 	accountWhereAccountID = "account_id = ?"
 
 	// Category
-	categoryWhereID       = "id = ?"
 	categoryWherePathLike = "path LIKE ?"
-
-	// Post
-	postWhereID = "id = ?"
-
-	// Tag
-
-	tagWhereID = "id = ?"
 )
 
 /*
