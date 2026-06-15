@@ -37,7 +37,7 @@ func (repo *CategoryRepository) FindByID(ctx *gin.Context, id int16) (*model.Cat
 
 	query := repo.db.WithContext(ctx)
 
-	result := query.Where(categoryWhereID, id).First(&category)
+	result := query.Where(whereID, id).First(&category)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil // 없으면 nil 반환
@@ -94,7 +94,7 @@ func (repo *CategoryRepository) List(ctx *gin.Context, req *dto.ReadCategoriesRe
 	query := repo.db.WithContext(ctx)
 
 	if req.ID != nil {
-		query = query.Where(categoryWhereID, *req.ID)
+		query = query.Where(whereID, *req.ID)
 	}
 
 	if req.ParentID != nil {
@@ -132,7 +132,7 @@ func (repo *CategoryRepository) Update(ctx *gin.Context, req *dto.UpdateCategory
 	var categoryData model.Category
 
 	err := repo.db.WithContext(ctx).
-		Where(categoryWhereID, req.ID).
+		Where(whereID, req.ID).
 		First(&categoryData).Error
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (repo *CategoryRepository) Delete(ctx *gin.Context, req *dto.DeleteCategory
 	var categoryData model.Category
 
 	err := repo.db.WithContext(ctx).
-		Where(categoryWhereID, req.ID).
+		Where(whereID, req.ID).
 		First(&categoryData).Error
 	if err != nil {
 		return nil, err
