@@ -17,7 +17,7 @@ export default function AdminAccounts() {
   const accounts = data?.result?.data ?? [];
 
   async function doDelete(accountId: string): Promise<void> {
-    if (!window.confirm(`계정 "${accountId}"를 삭제하시겠습니까?`)) return;
+    if (!globalThis.confirm(`계정 "${accountId}"를 삭제하시겠습니까?`)) return;
     try { await api.deleteAccount(accountId); setRev(v => v + 1); }
     catch (e) { alert((e as Error).message); }
   }

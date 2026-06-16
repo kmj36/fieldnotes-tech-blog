@@ -6,18 +6,33 @@ import { Badge, Chip } from "@/shared/components";
    POST CARD
 ═══════════════════════════════════════════════════════════════ */
 
-export default function PostCard({ post, onClick }: PostCardProps) {
+export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
     const date = post.publishedAt
         ? new Date(post.publishedAt).toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric" })
         : "미발행";
     const excerpt = (post.excerpt || "")
-        .replace(/#+\s*/g, "").replace(/```[\s\S]*?```/g, "").replace(/`[^`]+`/g, "").trim();
+        .replaceAll(/#+\s*/g, "")
+        .replaceAll(/```[\s\S]*?```/g, "")
+        .replaceAll(/`[^`]+`/g, "")
+        .trim();
 
     return (
-        <article className="fn-card" onClick={() => onClick(post.slug)} style={{
-            background: "#fff", borderRadius: "8px", border: `1px solid ${C.border}`,
-            cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden",
-            boxShadow: "0 1px 4px rgba(0,0,0,.06)", animation: "fadeIn .4s ease both",
+        <article
+            className="fn-card"
+            role="button"
+            aria-label={`게시물 보기: ${post.title}`}
+            tabIndex={0}
+            onClick={() => onClick(post.slug)}
+            onKeyDown={e => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onClick(post.slug);
+                }
+            }}
+            style={{
+                background: "#fff", borderRadius: "8px", border: `1px solid ${C.border}`,
+                cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden",
+                boxShadow: "0 1px 4px rgba(0,0,0,.06)", animation: "fadeIn .4s ease both",
         }}>
             {post.thumbnail && (
                 <div style={{ height: "172px", background: C.faint, overflow: "hidden" }}>

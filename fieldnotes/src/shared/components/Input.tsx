@@ -11,7 +11,7 @@ interface InputProps {
     label?: string; value: string; onChange: (v: string) => void;
     type?: string; placeholder?: string; style?: CSSProperties; rows?: number;
 }
-export default function Input({ label, value, onChange, type = "text", placeholder, style, rows }: InputProps) {
+export default function Input({ label, value, onChange, type = "text", placeholder, style, rows }: Readonly<InputProps>) {
     const baseStyle: CSSProperties = {
         ...inputBase,
         fontFamily: rows ? FM : FB, fontSize: rows ? ".875rem" : ".95rem",

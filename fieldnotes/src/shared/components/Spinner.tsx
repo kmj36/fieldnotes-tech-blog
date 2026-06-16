@@ -1,6 +1,6 @@
 import { C } from "../constants/theme";
 
-export default function Spinner({ size = 32 }: { size?: number }) {
+export default function Spinner({ size = 32 }: Readonly<{ size?: number }>) {
     return (
         <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
             <div style={{

@@ -3,7 +3,7 @@ import type { TagFormProps } from "../types";
 import { api } from "@/shared/api";
 import { Alert, Btn, Input, Modal } from "@/shared/components";
 
-export default function TagForm({ item, onClose, onSave }: TagFormProps) {
+export default function TagForm({ item, onClose, onSave }: Readonly<TagFormProps>) {
   const isEdit = !!item;
   const [name, setName] = useState<string>(item?.name ?? "");
   const [slug, setSlug] = useState<string>(item?.slug ?? "");
@@ -21,6 +21,11 @@ export default function TagForm({ item, onClose, onSave }: TagFormProps) {
     finally { setLoading(false); }
   }
 
+  function getButtonLabel(loading: boolean, isEdit: boolean): string {
+    if (loading) return "저장 중...";
+    return isEdit ? "수정" : "계정 생성";
+  }
+
   return (
     <Modal title={isEdit ? "태그 수정" : "새 태그"} onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -29,7 +34,7 @@ export default function TagForm({ item, onClose, onSave }: TagFormProps) {
         <Input label="슬러그 *" value={slug} onChange={setSlug} placeholder="tag-slug" />
         <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
           <Btn variant="ghost" onClick={onClose}>취소</Btn>
-          <Btn disabled={loading} onClick={save}>{loading ? "저장 중…" : isEdit ? "수정" : "생성"}</Btn>
+          <Btn disabled={loading} onClick={save}>{getButtonLabel(loading, isEdit)}</Btn>
         </div>
       </div>
     </Modal>

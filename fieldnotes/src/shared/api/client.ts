@@ -18,8 +18,8 @@ async function req<T = unknown>(
   const { body, ...rest } = opts;
   const res = await fetch(`${_BASE}${path}`, {
     ...rest,
-    headers: { ...headers, ...(rest.headers as Record<string, string> ?? {}) },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    headers: { ...headers, ...(rest.headers as Record<string, string>) },
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({})) as ApiResponse<T> & { message?: string; detail?: string };
   if (!res.ok) throw new Error(data.message ?? data.detail ?? `HTTP ${res.status}`);

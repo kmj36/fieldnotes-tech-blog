@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { C, FM } from "../constants/theme";
 
 interface BadgeProps { children: ReactNode; color?: string; }
-export default function Badge({ children, color = C.muted }: BadgeProps) {
+export default function Badge({ children, color = C.muted }: Readonly<BadgeProps>) {
     return (
         <span style={{
             display: "inline-block", padding: "2px 8px", borderRadius: "4px",

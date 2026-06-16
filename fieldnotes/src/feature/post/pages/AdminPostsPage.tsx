@@ -9,7 +9,7 @@ import PostForm from "../components/PostForm";
 /* ═══════════════════════════════════════════════════════════════
    ADMIN POSTS
 ═══════════════════════════════════════════════════════════════ */
-export default function AdminPosts({ setNav }: { setNav: (n: NavState) => void }) {
+export default function AdminPosts({ setNav }: Readonly<{ setNav: (n: NavState) => void }>) {
     const [page, setPage] = useState<number>(1);
     const [rev, setRev] = useState<number>(0);
     const [showCreate, setShowCreate] = useState<boolean>(false);

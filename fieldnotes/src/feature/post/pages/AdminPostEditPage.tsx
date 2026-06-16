@@ -7,7 +7,7 @@ import { C, FH } from "@/shared/constants";
 import PostForm from "../components/PostForm";
 
 /* ─── Admin Post Edit Page ────────────────────────────────── */
-export default function AdminPostEditPage({ postSlug, setNav }: AdminPostEditPageProps) {
+export default function AdminPostEditPage({ postSlug, setNav }: Readonly<AdminPostEditPageProps>) {
     const { data, loading, error } = useAsync(() => api.getPostAdmin(postSlug), [postSlug]);
     const { data: catRes } = useAsync(() => api.getCategories({ limit: 200 }), []);
     const { data: tagRes } = useAsync(() => api.getTags({ limit: 100 }), []);

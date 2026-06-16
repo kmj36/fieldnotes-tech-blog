@@ -2,7 +2,7 @@ import { C, FM } from "../constants/theme";
 
 type AlertType = "error" | "success" | "warning";
 interface AlertProps { type?: AlertType; msg: string | null; onClose?: () => void; }
-export default function Alert({ type = "error", msg, onClose }: AlertProps) {
+export default function Alert({ type = "error", msg, onClose }: Readonly<AlertProps>) {
     if (!msg) return null;
     const col = ({ error: C.danger, success: C.success, warning: C.warning } as Record<AlertType, string>)[type];
     return (

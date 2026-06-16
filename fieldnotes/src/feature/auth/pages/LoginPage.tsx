@@ -8,7 +8,7 @@ import { NotebookPen } from "lucide-react";
 /* ═══════════════════════════════════════════════════════════════
    LOGIN PAGE
 ═══════════════════════════════════════════════════════════════ */
-export default function LoginPage({ setNav, onLogin }: LoginPageProps) {
+export default function LoginPage({ setNav, onLogin }: Readonly<LoginPageProps>) {
   const [accountId, setAccountId] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);

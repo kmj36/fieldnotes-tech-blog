@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import type { SortDir } from "@/shared/api/types";
-import type { NavState } from "@/shared/api/types";
+import type { SortDir, NavState } from "@/shared/api/types";
 
 export type AccountRole = "USER" | "ADMIN";
 export type AccountStatus = "ACTIVE" | "SUSPENDED";
