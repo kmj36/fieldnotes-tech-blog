@@ -1,33 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import type { JSX } from "react";
 import { Header, GlobalStyles } from "./components";
 import { setToken } from "@/shared/api"
 import { C, FM } from "@/shared/constants";
-import { AdminAccounts, AdminLayout, AdminDashboard, LoginPage } from "@/feature/auth";
-import { AdminTags } from "@/feature/tags";
+import LoginPage from "@/feature/auth/pages/LoginPage";
 import type { AuthState, AccountDetail } from "@/feature/auth/types";
-import { AdminPosts, HomePage, PostDetailPage, AdminPostEditPage } from "@/feature/post";
-import { AdminCategories } from "@/feature/categories";
+import HomePage from "@/feature/post/pages/HomePage";
 import type { NavState } from "@/shared/api";
 import { ADMIN_PAGES } from "./constants/adminPages";
+import { Spinner } from "@/shared/components";
+import { AdminTags } from "@/feature/tags";
+import { AdminCategories } from "@/feature/categories";
+
+const PostDetailPage = lazy(() => import("@/feature/post/pages/PostDetailPage"));
+const AdminLayout = lazy(() => import("@/feature/auth/components/AdminLayout"));
+const AdminDashboard = lazy(() => import("@/feature/auth/pages/AdminDashboard"));
+const AdminAccounts = lazy(() => import("@/feature/auth/pages/AdminAccounts"));
+const AdminPosts = lazy(() => import("@/feature/post/pages/AdminPostsPage"));
+const AdminPostEditPage = lazy(() => import("@/feature/post/pages/AdminPostEditPage"));
 
 /* ═══════════════════════════════════════════════════════════════
    APP ROOT  — State-based Router
 ═══════════════════════════════════════════════════════════════ */
 
 export default function App() {
-  //const [apiBase, setApiBase] = useState<string>("");
   const [nav, setNav] = useState<NavState>({ page: "home" });
   const [auth, setAuth] = useState<AuthState>({ token: null, user: null, accountId: "" });
 
   useEffect(() => {
-    if (window.location.hash === "#login") {
+    if (globalThis.location.hash === "#login") {
       setNav({ page: "login" });
-      window.history.replaceState(null, "", window.location.pathname);
+      globalThis.history.replaceState(null, "", globalThis.location.pathname);
     }
   }, []);
-
-  //const handleSaveBase = (url: string): void => { setBase(url); setApiBase(url); };
 
   const handleLogin = (data: { token: string; user: AccountDetail | undefined; accountId: string }): void => {
     setToken(data.token);
@@ -69,9 +74,12 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg }}>
       <GlobalStyles />
-      {/* <ConfigBar base={apiBase} onSave={handleSaveBase} /> */}
       <Header nav={nav} setNav={setNav} auth={auth} onLogout={handleLogout} />
-      <main style={{ minHeight: "calc(100vh - 58px - 57px)" }}>{renderPage()}</main>
+      <main style={{ minHeight: "calc(100vh - 58px - 57px)" }}>
+        <Suspense fallback={<Spinner />}>
+          {renderPage()}
+        </Suspense>
+      </main>
       <footer style={{ borderTop: `1px solid ${C.border}`, padding: "1.5rem", textAlign: "center" }}>
         <p style={{ margin: 0, fontFamily: FM, fontSize: ".72rem", color: C.muted }}>
           Fieldnotes Blog · Copyright 2026. Kim Minje All rights reserved.
