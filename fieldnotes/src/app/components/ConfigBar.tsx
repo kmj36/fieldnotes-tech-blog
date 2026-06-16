@@ -2,7 +2,7 @@ import type { ConfigBarProps } from "../types";
 import { useState } from "react";
 import { C, FM } from "@/shared/constants";
 
-export default function ConfigBar({ base, onSave }: ConfigBarProps) {
+export default function ConfigBar({ base, onSave }: Readonly<ConfigBarProps>) {
   const [val, setVal] = useState<string>(base);
   const [open, setOpen] = useState<boolean>(!base);
 

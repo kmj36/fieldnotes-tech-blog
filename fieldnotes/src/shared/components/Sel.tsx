@@ -10,7 +10,7 @@ const inputBase: CSSProperties = {
 
 export interface SelectOption { value: string; label: string; }
 interface SelProps { label?: string; value: string; onChange: (v: string) => void; options: SelectOption[]; style?: CSSProperties; }
-export function Sel({ label, value, onChange, options, style }: SelProps) {
+export function Sel({ label, value, onChange, options, style }: Readonly<SelProps>) {
     return (
         <Field label={label} style={style}>
             <select value={value} onChange={e => onChange(e.target.value)} style={{ ...inputBase, cursor: "pointer" }}>

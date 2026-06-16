@@ -8,7 +8,7 @@ import RecentTable from "../components/RecentTable";
 /* ═══════════════════════════════════════════════════════════════
    ADMIN DASHBOARD
 ═══════════════════════════════════════════════════════════════ */
-export default function AdminDashboard({ setNav }: AdminDashboardProps) {
+export default function AdminDashboard({ setNav }: Readonly<AdminDashboardProps>) {
   const { data: postsRes } = useAsync(() => api.getPostsAdmin({ pageLimit: 1 }), []);
   const { data: catRes } = useAsync(() => api.getCategories({ limit: 200 }), []);
   const { data: tagRes } = useAsync(() => api.getTags({ limit: 200 }), []);

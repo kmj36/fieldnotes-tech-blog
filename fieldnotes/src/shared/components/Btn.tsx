@@ -22,7 +22,7 @@ interface BtnProps {
     children: ReactNode; variant?: BtnVariant; size?: BtnSize;
     onClick?: () => void; disabled?: boolean; full?: boolean; style?: CSSProperties;
 }
-export default function Btn({ children, variant = "primary", size = "md", onClick, disabled, full, style }: BtnProps) {
+export default function Btn({ children, variant = "primary", size = "md", onClick, disabled, full, style }: Readonly<BtnProps>) {
     return (
         <button onClick={onClick} disabled={disabled} style={{
             ...sizeStyles[size], ...variantStyles[variant],
