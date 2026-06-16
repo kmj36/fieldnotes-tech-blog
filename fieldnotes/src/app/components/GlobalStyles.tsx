@@ -15,6 +15,7 @@ export default function GlobalStyles() {
       .fn-catitem { transition: all .15s; }
       .fn-catitem:hover { color: ${C.accent} !important; background: ${C.accentBg} !important; }
       .fn-row:hover { background: ${C.accentBg} !important; }
+      button { font-family: inherit; font-size: inherit; color: inherit; }
     `}</style>
   );
 }
