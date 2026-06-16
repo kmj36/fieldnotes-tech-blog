@@ -1,11 +1,10 @@
-import type { CatFormProps } from "../types";
+import type { CategoryPublic, CatFormProps } from "../types";
 import { useState } from "react";
 import type { SelectOption } from "@/shared/components";
-import type { CategoryPublic } from "../types";
 import { api } from "@/shared/api";
 import { Btn, Modal, Alert, Sel, Input } from "@/shared/components";
 
-export default function CatForm({ item, cats, onClose, onSave }: CatFormProps) {
+export default function CatForm({ item, cats, onClose, onSave }: Readonly<CatFormProps>) {
   const isEdit = !!item;
   const [name, setName] = useState<string>(item?.name ?? "");
   const [slug, setSlug] = useState<string>(item?.slug ?? "");
@@ -25,12 +24,17 @@ export default function CatForm({ item, cats, onClose, onSave }: CatFormProps) {
     if (!name || !slug) return setErr("이름과 슬러그는 필수입니다.");
     setLoading(true); setErr(null);
     try {
-      const body = { name, slug, parentId: parentId ? parseInt(parentId) : null };
+      const body = { name, slug, parentId: parentId ? Number.parseInt(parentId) : null };
       if (isEdit) await api.updateCategory(item.id, body);
       else await api.createCategory(body);
       onSave();
     } catch (e) { setErr((e as Error).message); }
     finally { setLoading(false); }
+  }
+
+  function getButtonLabel(loading: boolean, isEdit: boolean): string {
+    if (loading) return "저장 중...";
+    return isEdit ? "수정" : "계정 생성";
   }
 
   return (
@@ -42,7 +46,7 @@ export default function CatForm({ item, cats, onClose, onSave }: CatFormProps) {
         <Input label="슬러그 *" value={slug} onChange={setSlug} placeholder="category-slug" />
         <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
           <Btn variant="ghost" onClick={onClose}>취소</Btn>
-          <Btn disabled={loading} onClick={save}>{loading ? "저장 중…" : isEdit ? "수정" : "생성"}</Btn>
+          <Btn disabled={loading} onClick={save}>{getButtonLabel(loading, isEdit)}</Btn>
         </div>
       </div>
     </Modal>

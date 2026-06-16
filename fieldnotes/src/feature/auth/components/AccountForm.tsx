@@ -3,7 +3,7 @@ import { api } from "@/shared/api";
 import { useState } from "react";
 import { Modal, Alert, Input, Sel, Btn } from "@/shared/components";
 
-export default function AccountForm({ item, onClose, onSave }: AccountFormProps) {
+export default function AccountForm({ item, onClose, onSave }: Readonly<AccountFormProps>) {
   const isEdit = !!item;
   const [f, setF] = useState<AccountFormState>({
     accountId: item?.accountId ?? "",
@@ -34,6 +34,11 @@ export default function AccountForm({ item, onClose, onSave }: AccountFormProps)
     finally { setLoading(false); }
   }
 
+  function getButtonLabel(loading: boolean, isEdit: boolean): string {
+    if (loading) return "저장 중…";
+    return isEdit ? "수정" : "계정 생성";
+  }
+
   return (
     <Modal title={isEdit ? "계정 수정" : "새 계정 생성"} onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -48,7 +53,7 @@ export default function AccountForm({ item, onClose, onSave }: AccountFormProps)
         </div>
         <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
           <Btn variant="ghost" onClick={onClose}>취소</Btn>
-          <Btn disabled={loading} onClick={save}>{loading ? "저장 중…" : isEdit ? "수정" : "계정 생성"}</Btn>
+          <Btn disabled={loading} onClick={save}>{getButtonLabel(loading, isEdit)}</Btn>
         </div>
       </div>
     </Modal>

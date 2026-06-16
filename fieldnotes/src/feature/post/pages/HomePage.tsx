@@ -7,11 +7,12 @@ import { C, FB, FM, FH } from "@/shared/constants";
 import { Chip, Alert, Spinner, Pager } from "@/shared/components";
 import PostCard from "../components/PostCard";
 import CategoryTree from "@/feature/categories/components/CategoryTree";
+import type { CategoryPublic } from "@/feature/categories/types";
 
 /* ═══════════════════════════════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════════════════════════════ */
-export default function HomePage({ setNav }: { setNav: (n: NavState) => void }) {
+export default function HomePage({ setNav }: Readonly<{ setNav: (n: NavState) => void }>) {
     const [page, setPage] = useState<number>(1);
     const [catId, setCatId] = useState<number | null>(null);
     const [tagSlug, setTagSlug] = useState<string | null>(null);
@@ -34,6 +35,16 @@ export default function HomePage({ setNav }: { setNav: (n: NavState) => void }) 
     const cats = catRes?.result?.data ?? [];
     const tags = tagRes?.result?.data ?? [];
 
+    function getPageTitle(catId: number | null, tagSlug: string | null, cats: CategoryPublic[]): string {
+        if (catId) {
+            return cats.find(c => c.id === catId)?.name ?? "카테고리";
+        }
+        if (tagSlug) {
+            return `#${tagSlug}`;
+        }
+        return "모든 글";
+    }
+
     return (
         <div style={{ maxWidth: "1500px", margin: "0 auto", padding: "2rem 1.5rem", display: "flex", gap: "2rem", alignItems: "stretch", minHeight: "calc(100vh - 58px - 57px)" }}>
             {/* ── Sidebar ── */}
@@ -52,9 +63,19 @@ export default function HomePage({ setNav }: { setNav: (n: NavState) => void }) 
                         {/*<button onClick={handleSearch} style={{ padding: "7px 10px", background: C.accent, border: "none", borderRadius: "5px", color: "#fff", cursor: "pointer", fontSize: ".9rem" }}>⌕</button>*/}
                     </div>
                     {titleQ && (
-                        <div onClick={handleClearSearch} style={{ marginTop: "6px", fontSize: ".72rem", color: C.accent, cursor: "pointer", fontFamily: FM }}>
+                        <button
+                            onClick={handleClearSearch}
+                            style={{
+                                marginTop: "6px",
+                                fontSize: ".72rem",
+                                color: C.accent,
+                                cursor: "pointer",
+                                fontFamily: FM,
+                                background: "none",
+                                border: "none"
+                            }}>
                             ✕ &ldquo;{titleQ}&rdquo; 지우기
-                        </div>
+                        </button>
                     )}
                 </div>
 
@@ -82,7 +103,7 @@ export default function HomePage({ setNav }: { setNav: (n: NavState) => void }) 
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.5rem" }}>
                     <h1 style={{ margin: 0, fontFamily: FH, fontSize: "1.8rem", color: C.ink }}>
-                        {catId ? (cats.find(c => c.id === catId)?.name ?? "카테고리") : tagSlug ? `#${tagSlug}` : "모든 글"}
+                        {getPageTitle(catId, tagSlug, cats)}
                     </h1>
                     {meta && <span style={{ fontFamily: FM, fontSize: ".78rem", color: C.muted }}>{meta.total}편</span>}
                 </div>
