@@ -8,7 +8,7 @@ import { markdownComponents } from "@/shared/components/MarkdownCodeBlock";
 /* ═══════════════════════════════════════════════════════════════
    POST DETAIL PAGE
 ═══════════════════════════════════════════════════════════════ */
-export default function PostDetailPage({ slug, setNav, auth }: PostDetailPageProps) {
+export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDetailPageProps>) {
     const { data, loading, error } = useAsync(
         () => auth.token ? api.getPostAdmin(slug) : api.getPost(slug),
         [slug, auth.token]
@@ -31,7 +31,19 @@ export default function PostDetailPage({ slug, setNav, auth }: PostDetailPagePro
     return (
         <article style={{ maxWidth: "800px", margin: "0 auto", padding: "2.5rem 1.5rem", animation: "fadeIn .4s ease" }}>
             <div style={{ marginBottom: "1.5rem" }}>
-                <span onClick={() => setNav({ page: "home" })} style={{ fontFamily: FM, fontSize: ".78rem", color: C.muted, cursor: "pointer" }}>← 목록으로</span>
+                <button
+                    onClick={() => setNav({ page: "home" })}
+                    style={{
+                        fontFamily: FM,
+                        fontSize: ".78rem",
+                        color: C.muted,
+                        cursor: "pointer",
+                        background: "none",
+                        border: "none"
+                        }}
+                    >
+                        ← 목록으로
+                </button>
             </div>
 
             {/* Breadcrumb */}
@@ -50,7 +62,7 @@ export default function PostDetailPage({ slug, setNav, auth }: PostDetailPagePro
                 <span style={{ color: C.faint }}>·</span>
                 <span style={{ fontFamily: FM, fontSize: ".78rem", color: C.muted }}>{date}</span>
                 {post.isPrivate && <Badge color={C.muted}>Private</Badge>}
-                {auth.token && post.id && (
+                {Boolean(auth.token) && post.id !== undefined && (
                     <Btn size="sm" variant="outline" style={{ marginLeft: "auto" }}
                         onClick={() => setNav({ page: "admin-post-edit", postSlug: slug })}>
                         ✏ 수정

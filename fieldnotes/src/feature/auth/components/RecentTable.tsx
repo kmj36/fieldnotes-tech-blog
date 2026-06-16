@@ -1,11 +1,10 @@
 import useAsync from "@/shared/hooks/useAsync";
 import { api } from "@/shared/api";
 import type { NavState } from "@/shared/api";
-import { Spinner } from "@/shared/components";
+import { Spinner, Badge } from "@/shared/components";
 import { C, FB, FM } from "@/shared/constants";
-import { Badge } from "@/shared/components";
 
-export default function RecentTable({ setNav }: { setNav: (n: NavState) => void }) {
+export default function RecentTable({ setNav }: Readonly<{ setNav: (n: NavState) => void }>) {
   const { data, loading } = useAsync(() => api.getPostsAdmin({ pageLimit: 8, sortBy: "created_at", sortDir: "desc" }), []);
   if (loading) return <Spinner />;
   const posts = data?.result?.data ?? [];
