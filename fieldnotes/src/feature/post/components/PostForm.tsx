@@ -1,4 +1,4 @@
-import type { PostFormProps, PostFormState } from "../types";
+import type { PostBody, PostFormProps, PostFormState } from "../types";
 import type { TagPublic } from "@/feature/tags/types";
 import type { CategoryPublic } from "@/feature/categories/types";
 import { api } from "@/shared/api";
@@ -6,14 +6,12 @@ import type { SelectOption } from "@/shared/components";
 import { Modal, Alert, Input, Sel, Field, Btn, Chip } from '@/shared/components';
 import { C, FB } from "@/shared/constants";
 import { useState } from "react";
-import type { PostBody } from "../types";
-import ReactMarkdown from "react-markdown";
 import MDEditor from "@uiw/react-md-editor";
-import { markdownComponents } from "@/shared/components/MarkdownCodeBlock";
+import { MarkdownPreview } from "@/shared/components/MarkdownCodeBlock";
 
 /* ─── Post Form (create / edit modal) ──────────────────────── */
 
-export default function PostForm({ post, cats, tags, onClose, onSave }: PostFormProps) {
+export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly<PostFormProps>) {
     const isEdit = !!post;
     const [f, setF] = useState<PostFormState>({
         slug: post?.slug ?? "",
@@ -48,7 +46,7 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: PostForm
         try {
             const body: PostBody = {
                 slug: f.slug, title: f.title, content: f.content,
-                thumbnail: f.thumbnail || null, categoryId: f.categoryId ? parseInt(f.categoryId) : null,
+                thumbnail: f.thumbnail || null, categoryId: f.categoryId ? Number.parseInt(f.categoryId) : null,
                 tagSlugs: f.tagSlugs, isPrivate: f.isPrivate
             };
             if (isEdit && post) await api.updatePost(post.id, body);
@@ -56,6 +54,11 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: PostForm
             onSave();
         } catch (e) { setErr((e as Error).message); }
         finally { setLoading(false); }
+    }
+
+    function getButtonLabel(loading: boolean, isEdit: boolean): string {
+        if (loading) return "저장 중...";
+        return isEdit ? "수정" : "계정 생성";
     }
 
     return (
@@ -75,11 +78,7 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: PostForm
                             height={400}
                             preview="live"
                             components={{
-                                preview: (source) => (
-                                    <ReactMarkdown components={markdownComponents}>
-                                        {source}
-                                    </ReactMarkdown>
-                                ),
+                                preview: (source) => <MarkdownPreview source={source} />,
                             }}
                         />
                     </div>
@@ -88,8 +87,7 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: PostForm
                     <Sel label="카테고리" value={f.categoryId} onChange={up("categoryId")} options={catOpts} />
                     <Field label="공개 여부">
                         <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontFamily: FB, fontSize: ".9rem", padding: "9px 0" }}>
-                            <input type="checkbox" checked={f.isPrivate} onChange={e => up("isPrivate")(e.target.checked)} />
-                            비공개 설정
+                            <input type="checkbox" checked={f.isPrivate} onChange={e => up("isPrivate")(e.target.checked)} />비공개 설정
                         </label>
                     </Field>
                 </div>
@@ -100,7 +98,7 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: PostForm
                 </Field>
                 <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", paddingTop: "8px", borderTop: `1px solid ${C.border}` }}>
                     <Btn variant="ghost" onClick={onClose}>취소</Btn>
-                    <Btn disabled={loading} onClick={save}>{loading ? "저장 중…" : isEdit ? "수정 저장" : "게시물 생성"}</Btn>
+                    <Btn disabled={loading} onClick={save}>{getButtonLabel(loading, isEdit)}</Btn>
                 </div>
             </div>
         </Modal>

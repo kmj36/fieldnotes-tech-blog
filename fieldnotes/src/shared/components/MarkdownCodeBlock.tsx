@@ -2,6 +2,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import type { ReactNode } from "react";
 import { C } from "../constants";
+import ReactMarkdown from "react-markdown";
 
 interface CodeProps {
     className?: string;
@@ -33,3 +34,11 @@ export const markdownComponents = {
         );
     },
 };
+
+export function MarkdownPreview({ source }: { source: string }) {
+    return (
+        <ReactMarkdown components={markdownComponents}>
+            {source}
+        </ReactMarkdown>
+    )
+}
