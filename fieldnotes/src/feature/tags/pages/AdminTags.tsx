@@ -17,7 +17,7 @@ export default function AdminTags() {
   const tags = data?.result?.data || [];
 
   async function doDelete(id: number): Promise<void> {
-    if (!window.confirm("태그를 삭제하시겠습니까?")) return;
+    if (!globalThis.confirm("태그를 삭제하시겠습니까?")) return;
     try { await api.deleteTag(id); setRev(v => v + 1); }
     catch (e) { alert((e as Error).message); }
   }
