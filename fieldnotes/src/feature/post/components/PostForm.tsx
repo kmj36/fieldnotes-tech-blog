@@ -16,6 +16,10 @@ function getButtonLabel(loading: boolean, isEdit: boolean): string {
     return isEdit ? "수정" : "계정 생성";
 }
 
+const mdEditorComponents = {
+    preview: (source:string) => <MarkdownPreview source={source} />
+}
+
 export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly<PostFormProps>) {
     const isEdit = !!post;
     const [f, setF] = useState<PostFormState>({
@@ -44,9 +48,6 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
         ...p,
         tagSlugs: p.tagSlugs.includes(slug) ? p.tagSlugs.filter((s: string) => s !== slug) : [...p.tagSlugs, slug],
     }));
-    const mdEditorComponents = {
-        preview: (source:string) => <MarkdownPreview source={source} />
-    }
 
     async function save(): Promise<void> {
         if (!f.title || !f.slug || !f.content) return setErr("슬러그, 제목, 내용은 필수입니다.");

@@ -8,16 +8,25 @@ export default function Modal({ title, children, onClose, width = "520px" }: Rea
     const dialogRef = useRef<HTMLDialogElement>(null);
 
     useEffect(() => {
-        dialogRef.current?.showModal();
-    }, []);
+        const dialog = dialogRef.current;
+        dialog?.showModal();
+
+        const handleBackdropClick = (e: MouseEvent) => {
+            if (e.target === dialog) {
+                onClose();
+            }
+        };
+        dialog?.addEventListener("click", handleBackdropClick);
+
+        return () => {
+            dialog?.removeEventListener("click", handleBackdropClick);
+        };
+    }, [onClose]);
 
     return (
         <dialog
             ref={dialogRef}
             onClose={onClose}
-            onClick={e => {
-                if (e.target === dialogRef.current) onClose();
-            }}
             style={{
                 border: "none",
                 borderRadius: "10px",
