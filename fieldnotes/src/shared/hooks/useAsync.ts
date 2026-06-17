@@ -24,7 +24,7 @@ function asyncReducer<T>(
 
 export default function useAsync<T>(fn: () => Promise<T>, deps: unknown[]): AsyncState<T> {
   const [state, dispatch] = useReducer(
-    asyncReducer as (s: AsyncState<T>, a: AsyncAction<T>) => AsyncState<T>,
+    asyncReducer<T>,
     { data: null, loading: true, error: null }
   );
 
