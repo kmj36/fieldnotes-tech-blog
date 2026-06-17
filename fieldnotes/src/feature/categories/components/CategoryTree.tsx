@@ -24,23 +24,29 @@ function Node({ node, depth = 0, selectedId, onSelect }: Readonly<NodeProps>) {
 
     return (
         <div>
-            <div
+            <button
                 className="fn-catitem"
-                role="button"
                 onClick={handleSelect}
-                onKeyDown={e => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleSelect();
-                    }
-                }}
-                style={{ display: "flex", alignItems: "center", gap: "4px", padding: `5px ${8 + depth * 14}px`, cursor: "pointer", borderRadius: "5px", background: active ? C.accentBg : "transparent", color: active ? C.accent : C.ink, fontSize: ".875rem", fontFamily: FB, userSelect: "none" }}>
+                style={{
+                    width: "100%",
+                    textAlign: "left",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: `5px ${8 + depth * 14}px`,
+                    cursor: "pointer",
+                    borderRadius: "5px",
+                    border: "none",
+                    background: active ? C.accentBg : "transparent",
+                    color: active ? C.accent : C.ink, fontSize: ".875rem",
+                    fontFamily: FB, userSelect: "none"
+                }}>
                 {node.children.length > 0
                     ? <span style={{ fontSize: ".65rem", color: C.muted, display: "inline-block", transition: "transform .15s", transform: open ? "rotate(90deg)" : "" }}>▶</span>
                     : <span style={{ fontSize: ".65rem", color: C.faint }}>·</span>}
                 {node.name}
                 {node.children.length > 0 && <span style={{ fontSize: ".65rem", color: C.muted, marginLeft: "auto" }}>{node.children.length}</span>}
-            </div>
+            </button>
             {open && node.children.map(c => <Node key={c.id} node={c} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} />)}
         </div>
     );
@@ -57,20 +63,15 @@ export default function CategoryTree({ cats, selectedId, onSelect }: Readonly<Ca
 
     return (
         <div>
-            <div
+            <button
                 className="fn-catitem"
-                role="button"
-                tabIndex={0}
                 onClick={() => onSelect(null)}
-                onKeyDown ={e => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onSelect(null);
-                    }
-                }}
                 style={{
+                    width: "100%",
+                    textAlign: "left",
                     padding: "5px 8px",
                     cursor: "pointer",
+                    border: "none",
                     borderRadius: "5px",
                     fontFamily: FB,
                     fontSize: ".875rem",
@@ -79,7 +80,7 @@ export default function CategoryTree({ cats, selectedId, onSelect }: Readonly<Ca
                 }}
             >
                 전체 보기
-            </div>
+            </button>
             {roots.map(n => <Node key={n.id} node={n} selectedId={selectedId} onSelect={onSelect} />)}
         </div>
     );
