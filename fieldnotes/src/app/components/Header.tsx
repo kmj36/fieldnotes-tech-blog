@@ -30,7 +30,7 @@ export default function Header({ nav, setNav, auth, onLogout }: Readonly<HeaderP
 
         {/* Nav */}
         <nav style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          {([{ key: "home" as PageKey, label: "Blog" }] as Array<{ key: PageKey; label: string }>).map(({ key, label }) => (
+          {[{ key: "home" as PageKey, label: "Blog" }].map(({ key, label }) => (
             <button
               key={key}
               className="fn-navlink"
