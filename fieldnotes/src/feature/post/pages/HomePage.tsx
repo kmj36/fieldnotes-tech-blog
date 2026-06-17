@@ -12,6 +12,17 @@ import type { CategoryPublic } from "@/feature/categories/types";
 /* ═══════════════════════════════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════════════════════════════ */
+
+function getPageTitle(catId: number | null, tagSlug: string | null, cats: CategoryPublic[]): string {
+    if (catId) {
+        return cats.find(c => c.id === catId)?.name ?? "카테고리";
+    }
+    if (tagSlug) {
+        return `#${tagSlug}`;
+    }
+    return "모든 글";
+}
+
 export default function HomePage({ setNav }: Readonly<{ setNav: (n: NavState) => void }>) {
     const [page, setPage] = useState<number>(1);
     const [catId, setCatId] = useState<number | null>(null);
@@ -34,16 +45,6 @@ export default function HomePage({ setNav }: Readonly<{ setNav: (n: NavState) =>
     const meta = postsRes?.result?.meta?.pagination;
     const cats = catRes?.result?.data ?? [];
     const tags = tagRes?.result?.data ?? [];
-
-    function getPageTitle(catId: number | null, tagSlug: string | null, cats: CategoryPublic[]): string {
-        if (catId) {
-            return cats.find(c => c.id === catId)?.name ?? "카테고리";
-        }
-        if (tagSlug) {
-            return `#${tagSlug}`;
-        }
-        return "모든 글";
-    }
 
     return (
         <div style={{ maxWidth: "1500px", margin: "0 auto", padding: "2rem 1.5rem", display: "flex", gap: "2rem", alignItems: "stretch", minHeight: "calc(100vh - 58px - 57px)" }}>
@@ -109,7 +110,7 @@ export default function HomePage({ setNav }: Readonly<{ setNav: (n: NavState) =>
                 </div>
 
                 {postsErr && (
-                    <Alert type="error" msg={`API 오류: ${postsErr} — 상단의 서버 URL 설정을 확인해주세요.`} />
+                    <Alert type="error" msg={`API 오류: ${postsErr}`} />
                 )}
 
                 {postsLoading ? <Spinner /> : (

@@ -4,6 +4,11 @@ import type { SelectOption } from "@/shared/components";
 import { api } from "@/shared/api";
 import { Btn, Modal, Alert, Sel, Input } from "@/shared/components";
 
+function getButtonLabel(loading: boolean, isEdit: boolean): string {
+  if (loading) return "저장 중...";
+  return isEdit ? "수정" : "계정 생성";
+}
+
 export default function CatForm({ item, cats, onClose, onSave }: Readonly<CatFormProps>) {
   const isEdit = !!item;
   const [name, setName] = useState<string>(item?.name ?? "");
@@ -30,11 +35,6 @@ export default function CatForm({ item, cats, onClose, onSave }: Readonly<CatFor
       onSave();
     } catch (e) { setErr((e as Error).message); }
     finally { setLoading(false); }
-  }
-
-  function getButtonLabel(loading: boolean, isEdit: boolean): string {
-    if (loading) return "저장 중...";
-    return isEdit ? "수정" : "계정 생성";
   }
 
   return (
