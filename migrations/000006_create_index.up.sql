@@ -20,3 +20,6 @@ CREATE INDEX idx_posts_category_published ON posts (category_id, published_at DE
 
 -- 태그ID 역참조
 CREATE INDEX idx_post_tags_tag_id ON post_tags (tag_id);
+
+-- 게시물 검색 인덱스
+CREATE INDEX idx_posts_title_lower ON posts (LOWER(title));
