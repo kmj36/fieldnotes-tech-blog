@@ -3,6 +3,11 @@ import { api } from "@/shared/api";
 import { useState } from "react";
 import { Modal, Alert, Input, Sel, Btn } from "@/shared/components";
 
+function getButtonLabel(loading: boolean, isEdit: boolean): string {
+  if (loading) return "저장 중…";
+  return isEdit ? "수정" : "계정 생성";
+}
+
 export default function AccountForm({ item, onClose, onSave }: Readonly<AccountFormProps>) {
   const isEdit = !!item;
   const [f, setF] = useState<AccountFormState>({
@@ -32,11 +37,6 @@ export default function AccountForm({ item, onClose, onSave }: Readonly<AccountF
       onSave();
     } catch (e) { setErr((e as Error).message); }
     finally { setLoading(false); }
-  }
-
-  function getButtonLabel(loading: boolean, isEdit: boolean): string {
-    if (loading) return "저장 중…";
-    return isEdit ? "수정" : "계정 생성";
   }
 
   return (

@@ -11,6 +11,11 @@ import { MarkdownPreview } from "@/shared/components/MarkdownCodeBlock";
 
 /* ─── Post Form (create / edit modal) ──────────────────────── */
 
+function getButtonLabel(loading: boolean, isEdit: boolean): string {
+    if (loading) return "저장 중...";
+    return isEdit ? "수정" : "계정 생성";
+}
+
 export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly<PostFormProps>) {
     const isEdit = !!post;
     const [f, setF] = useState<PostFormState>({
@@ -39,6 +44,9 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
         ...p,
         tagSlugs: p.tagSlugs.includes(slug) ? p.tagSlugs.filter((s: string) => s !== slug) : [...p.tagSlugs, slug],
     }));
+    const mdEditorComponents = {
+        preview: (source:string) => <MarkdownPreview source={source} />
+    }
 
     async function save(): Promise<void> {
         if (!f.title || !f.slug || !f.content) return setErr("슬러그, 제목, 내용은 필수입니다.");
@@ -54,11 +62,6 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
             onSave();
         } catch (e) { setErr((e as Error).message); }
         finally { setLoading(false); }
-    }
-
-    function getButtonLabel(loading: boolean, isEdit: boolean): string {
-        if (loading) return "저장 중...";
-        return isEdit ? "수정" : "계정 생성";
     }
 
     return (
@@ -77,9 +80,7 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
                             onChange={(v) => up("content")(v ?? "")}
                             height={400}
                             preview="live"
-                            components={{
-                                preview: (source) => <MarkdownPreview source={source} />,
-                            }}
+                            components={mdEditorComponents}
                         />
                     </div>
                 </Field>

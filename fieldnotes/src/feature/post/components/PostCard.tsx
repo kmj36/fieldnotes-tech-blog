@@ -17,19 +17,13 @@ export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
         .trim();
 
     return (
-        <article
+        <button
             className="fn-card"
-            role="button"
             aria-label={`게시물 보기: ${post.title}`}
-            tabIndex={0}
             onClick={() => onClick(post.slug)}
-            onKeyDown={e => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onClick(post.slug);
-                }
-            }}
             style={{
+                width: "100%",
+                textAlign: "left",
                 background: "#fff", borderRadius: "8px", border: `1px solid ${C.border}`,
                 cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden",
                 boxShadow: "0 1px 4px rgba(0,0,0,.06)", animation: "fadeIn .4s ease both",
@@ -63,6 +57,6 @@ export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
                     ✒ {post.nickname}
                 </div>
             </div>
-        </article>
+        </button>
     );
 }

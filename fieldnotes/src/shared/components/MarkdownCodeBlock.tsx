@@ -35,7 +35,7 @@ export const markdownComponents = {
     },
 };
 
-export function MarkdownPreview({ source }: { source: string }) {
+export function MarkdownPreview({ source }: Readonly<{ source: string }>) {
     return (
         <ReactMarkdown components={markdownComponents}>
             {source}
