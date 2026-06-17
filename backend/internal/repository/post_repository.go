@@ -323,7 +323,7 @@ func (repo *PostRepository) applyLikeFilters(query *gorm.DB, req *dto.ListPostsR
 
 	if req.Title != nil && req.MatchType != nil {
 		pattern := repo.buildLikeQuery(*req.MatchType, *req.Title)
-		query = query.Where("posts.title LIKE ?", pattern)
+		query = query.Where("LOWER(posts.title) LIKE LOWER(?)", pattern)
 	}
 
 	return query

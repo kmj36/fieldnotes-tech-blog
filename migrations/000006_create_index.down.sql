@@ -18,3 +18,6 @@ DROP INDEX idx_posts_category_published;
 
 -- 태그ID 역참조
 DROP INDEX idx_post_tags_tag_id;
+
+-- 게시물 검색 인덱스
+DROP INDEX idx_posts_title_lower;
