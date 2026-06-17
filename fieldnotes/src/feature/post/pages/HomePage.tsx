@@ -36,7 +36,7 @@ export default function HomePage({ setNav }: Readonly<{ setNav: (n: NavState) =>
     const handleSearch = () => { setTitleQ(titleInput); setPage(1); };
     const handleClearSearch = () => { setTitleQ(""); setTitleInput(""); setPage(1); };
 
-    const params: PostQueryParams = { page, pageLimit: 9, categoryId: catId ?? undefined, tagSlugs: tagSlug ?? undefined, title: titleQ || undefined };
+    const params: PostQueryParams = { page, pageLimit: 9, categoryId: catId ?? undefined, tagSlugs: tagSlug ?? undefined, title: titleQ, matchType: "contains" };
     const { data: postsRes, loading: postsLoading, error: postsErr } = useAsync(() => api.getPosts(params), [page, catId, tagSlug, titleQ]);
     const { data: catRes } = useAsync(() => api.getCategories({ limit: 200, sortBy: "id", sortDir: "asc" }), []);
     const { data: tagRes } = useAsync(() => api.getTags({ limit: 100, sortBy: "id", sortDir: "asc" }), []);
