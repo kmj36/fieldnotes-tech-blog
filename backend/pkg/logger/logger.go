@@ -1,8 +1,6 @@
 package logger
 
 import (
-	"time"
-
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -22,9 +20,9 @@ func ZapLoggerNew(runMode string) (*zap.Logger, error) {
 }
 
 func ZapLoggerHandler(logger *zap.Logger, timeFormat string, isUTC bool) gin.HandlerFunc {
-    return ginzap.Ginzap(logger, time.RFC3339, true)
+	return ginzap.Ginzap(logger, timeFormat, isUTC)
 }
 
 func ZapRecoveryHandler(logger *zap.Logger, stackTrace bool) gin.HandlerFunc {
-    return ginzap.RecoveryWithZap(logger, stackTrace)
+	return ginzap.RecoveryWithZap(logger, stackTrace)
 }
