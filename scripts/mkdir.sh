@@ -1,0 +1,1 @@
+sudo mkdir -p /mnt/storage/fieldnotes/{dev,staging,prod}/{static,postgres}
