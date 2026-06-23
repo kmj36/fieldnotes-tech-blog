@@ -8,17 +8,20 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewPostgresDB(Cfg config.DBConfig) (*gorm.DB, error) {
-
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",
-		Cfg.Host,
-		Cfg.User,
-		Cfg.Password,
-		Cfg.DBName,
-		Cfg.Port,
-		Cfg.SSLMode,
-		Cfg.TimeZone,
+func buildDSN(cfg config.DBConfig) string {
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s timezone=%s",
+		cfg.Host,
+		cfg.User,
+		cfg.Password,
+		cfg.DBName,
+		cfg.Port,
+		cfg.SSLMode,
+		cfg.TimeZone,
 	)
+}
+
+func NewPostgresDB(cfg config.DBConfig) (*gorm.DB, error) {
+	dsn := buildDSN(cfg)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
