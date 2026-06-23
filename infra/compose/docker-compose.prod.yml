@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  fieldnotes_nginx:
+    container_name: fieldnotes_nginx
+    build:
+      args:
+        VITE_APP_NAME: ${VITE_APP_NAME}
+        VITE_MODE: ${VITE_MODE}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    networks:
+      BR-DMZ-Network:
+        ipv4_address: 172.22.2.7
+    env_file:
+      - ../env/.env.prod
+
+  fieldnotes_backend:
+    container_name: fieldnotes_backend
+    networks:
+      BR-LAN-Network:
+        ipv4_address: 172.22.1.15
+    volumes:
+      - backend_staticfile:/app/static:ro
+    env_file:
+      - ../env/.env.prod
+
+  fieldnotes_postgres:
+    container_name: fieldnotes_postgres
+    networks:
+      BR-LAN-Network:
+        ipv4_address: 172.22.1.16
+    env_file:
+      - ../env/.env.prod
+    environment:
+      TZ: ${DB_TIMEZONE}
+      PGTZ: ${DB_TIMEZONE}
+      PGSSLMODE: ${DB_SSLMODE}
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  fieldnotes_migrate:
+    container_name: fieldnotes_migrate
+    networks:
+      BR-LAN-Network:
+    env_file:
+      - ../env/.env.prod
+
+volumes:
+  backend_staticfile:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/storage/fieldnotes/static
+
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/storage/fieldnotes/postgres
+
+networks:
+  BR-LAN-Network:
+    external: true
+  BR-DMZ-Network:
+    external: true
