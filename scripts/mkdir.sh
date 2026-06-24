@@ -1,1 +1,5 @@
-sudo mkdir -p /mnt/storage/fieldnotes/{dev,staging,prod}/{static,postgres}
+for env in dev staging prod; do
+  for dir in static postgres; do
+    sudo mkdir -p /mnt/storage/fieldnotes/$env/$dir
+  done
+done

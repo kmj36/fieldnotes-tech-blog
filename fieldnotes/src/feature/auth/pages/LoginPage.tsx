@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import type { LoginPageProps } from "../types";
 import { api, setToken } from "@/shared/api";
 import { C, FH, FM } from "@/shared/constants";
@@ -13,6 +13,12 @@ export default function LoginPage({ setNav, onLogin }: Readonly<LoginPageProps>)
   const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !loading) {
+      doLogin();
+    }
+  }
 
   async function doLogin(): Promise<void> {
     if (!accountId || !password) return setError("아이디와 비밀번호를 입력해주세요.");
@@ -42,8 +48,8 @@ export default function LoginPage({ setNav, onLogin }: Readonly<LoginPageProps>)
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {error && <Alert msg={error} onClose={() => setError(null)} />}
-          <Input label="계정 ID" value={accountId} onChange={setAccountId} placeholder="accountId" />
-          <Input label="비밀번호" type="password" value={password} onChange={setPassword} placeholder="••••••••" />
+          <Input label="계정 ID" value={accountId} onChange={setAccountId} onKeyDown={handleKeyDown} placeholder="accountId" />
+          <Input label="비밀번호" type="password" value={password} onChange={setPassword} onKeyDown={handleKeyDown} placeholder="••••••••" />
           <Btn full disabled={loading} onClick={doLogin}>{loading ? "로그인 중…" : "로그인"}</Btn>
           <Btn full variant="ghost" onClick={() => setNav({ page: "home" })}>← 블로그로 돌아가기</Btn>
         </div>

@@ -6,7 +6,7 @@ import { Btn, Modal, Alert, Sel, Input } from "@/shared/components";
 
 function getButtonLabel(loading: boolean, isEdit: boolean): string {
   if (loading) return "저장 중...";
-  return isEdit ? "수정" : "계정 생성";
+  return isEdit ? "수정" : "카테고리 생성";
 }
 
 export default function CatForm({ item, cats, onClose, onSave }: Readonly<CatFormProps>) {

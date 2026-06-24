@@ -10,6 +10,7 @@ RUN go build -o bin/fieldnotes_v1_0_0 ./cmd/api/main.go
 FROM alpine:latest
 
 WORKDIR /app
+RUN apk add --no-cache tzdata
 RUN mkdir -p static
 
 COPY --from=builder /app/bin/fieldnotes_v1_0_0 /usr/local/bin/fieldnotes_v1_0_0
