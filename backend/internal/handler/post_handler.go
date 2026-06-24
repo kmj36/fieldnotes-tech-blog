@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,12 @@ func (h *PostHandler) Create(ctx *gin.Context) {
 		return
 	}
 
+	var slugRegex = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
+	if !slugRegex.MatchString(req.Slug) {
+		h.respondBindError(ctx, fmt.Errorf("Slug are allowed only in lowercase English letters, numbers, and hyphens."))
+	}
+
 	// 게시물 추가 처리
 	post, err := h.service.Create(ctx, &req)
 	if err != nil {
@@ -33,13 +40,13 @@ func (h *PostHandler) Create(ctx *gin.Context) {
 	}
 
 	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[*dto.CreatePostResponse]{
-		Status: dto.ErrCreated.Status,
-		Code: dto.ErrCreated.Code,
-		Message: dto.ErrCreated.Message,
-		Detail: fmt.Sprintf("Successfully added columns to '%s' post.", post.Slug),
+		Status:    dto.ErrCreated.Status,
+		Code:      dto.ErrCreated.Code,
+		Message:   dto.ErrCreated.Message,
+		Detail:    fmt.Sprintf("Successfully added columns to '%s' post.", post.Slug),
 		Timestamp: time.Now().UTC(),
-		Path: ctx.Request.URL.Path,
-		Result: post,
+		Path:      ctx.Request.URL.Path,
+		Result:    post,
 	})
 }
 
@@ -69,13 +76,13 @@ func (h *PostHandler) List(ctx *gin.Context) {
 	}
 
 	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.ListPostsResponse]{
-		Status: dto.ErrOK.Status,
-		Code: dto.ErrOK.Code,
-		Message: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully retrieved %d posts.", len(list.Datas)),
+		Status:    dto.ErrOK.Status,
+		Code:      dto.ErrOK.Code,
+		Message:   dto.ErrOK.Message,
+		Detail:    fmt.Sprintf("Successfully retrieved %d posts.", len(list.Datas)),
 		Timestamp: time.Now().UTC(),
-		Path: ctx.Request.URL.Path,
-		Result: list,
+		Path:      ctx.Request.URL.Path,
+		Result:    list,
 	})
 }
 
@@ -97,13 +104,13 @@ func (h *PostHandler) Read(ctx *gin.Context) {
 	}
 
 	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.ReadPostResponse]{
-		Status: dto.ErrOK.Status,
-		Code: dto.ErrOK.Code,
-		Message: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully retrieved id:%d '%s' post.", post.ID, post.Slug),
+		Status:    dto.ErrOK.Status,
+		Code:      dto.ErrOK.Code,
+		Message:   dto.ErrOK.Message,
+		Detail:    fmt.Sprintf("Successfully retrieved id:%d '%s' post.", post.ID, post.Slug),
 		Timestamp: time.Now().UTC(),
-		Path: ctx.Request.URL.Path,
-		Result: post,
+		Path:      ctx.Request.URL.Path,
+		Result:    post,
 	})
 }
 
@@ -133,13 +140,13 @@ func (h *PostHandler) Update(ctx *gin.Context) {
 	}
 
 	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.UpdatePostResponse]{
-		Status: dto.ErrOK.Status,
-		Code: dto.ErrOK.Code,
-		Message: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully changed id:%d '%s' post fields.", res.Data.ID, res.Data.Slug),
+		Status:    dto.ErrOK.Status,
+		Code:      dto.ErrOK.Code,
+		Message:   dto.ErrOK.Message,
+		Detail:    fmt.Sprintf("Successfully changed id:%d '%s' post fields.", res.Data.ID, res.Data.Slug),
 		Timestamp: time.Now().UTC(),
-		Path: ctx.Request.URL.Path,
-		Result: res,
+		Path:      ctx.Request.URL.Path,
+		Result:    res,
 	})
 }
 
@@ -162,11 +169,11 @@ func (h *PostHandler) Delete(ctx *gin.Context) {
 
 	// HTTP 응답 JSON 반환
 	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[any]{
-		Status: dto.ErrOK.Status,
-		Code: dto.ErrOK.Code,
-		Message: dto.ErrOK.Message,
-		Detail: fmt.Sprintf("Successfully deleted id:'%d' post.", res.ID),
+		Status:    dto.ErrOK.Status,
+		Code:      dto.ErrOK.Code,
+		Message:   dto.ErrOK.Message,
+		Detail:    fmt.Sprintf("Successfully deleted id:'%d' post.", res.ID),
 		Timestamp: time.Now().UTC(),
-		Path: ctx.Request.URL.Path,
+		Path:      ctx.Request.URL.Path,
 	})
 }
