@@ -31,12 +31,14 @@ func (h *PostHandler) Create(ctx *gin.Context) {
 
 	if !slugRegex.MatchString(req.Slug) {
 		h.respondBindError(ctx, fmt.Errorf("Slug are allowed only in lowercase English letters, numbers, and hyphens."))
+		return
 	}
 
 	// 게시물 추가 처리
 	post, err := h.service.Create(ctx, &req)
 	if err != nil {
 		h.respondProcessError(ctx, err)
+		return
 	}
 
 	ctx.JSON(dto.ErrCreated.Status, dto.ResponseWrapper[*dto.CreatePostResponse]{
