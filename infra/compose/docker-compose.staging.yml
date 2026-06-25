@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  fieldnotes_nginx:
+    container_name: fieldnotes_nginx_staging
+    build:
+      args:
+        VITE_APP_NAME: ${VITE_APP_NAME}
+        VITE_MODE: ${VITE_MODE}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    volumes:
+      - ../docker/nginx/conf.d/staging:/etc/nginx/conf.d:ro
+    networks:
+      BR-DMZ-Network:
+        ipv4_address: 172.22.2.8      # prod와 다른 IP
+    env_file:
+      - ../env/.env.staging
+
+  fieldnotes_backend:
+    container_name: fieldnotes_backend_staging
+    networks:
+      BR-LAN-Network:
+        ipv4_address: 172.22.1.17     # prod와 다른 IP
+    volumes:
+      - backend_staticfile_staging:/app/static:ro
+    env_file:
+      - ../env/.env.staging
+
+  fieldnotes_postgres:
+    container_name: fieldnotes_postgres_staging
+    networks:
+      BR-LAN-Network:
+        ipv4_address: 172.22.1.18     # prod와 다른 IP
+    env_file:
+      - ../env/.env.staging
+    environment:
+      TZ: ${DB_TIMEZONE}
+      PGTZ: ${DB_TIMEZONE}
+      PGSSLMODE: ${DB_SSLMODE}
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data_staging:/var/lib/postgresql/data
+
+  fieldnotes_migrate:
+    container_name: fieldnotes_migrate_staging
+    networks:
+      BR-LAN-Network:
+    env_file:
+      - ../env/.env.staging
+
+  fieldnotes_swaggerui:
+    image: docker.swagger.io/swaggerapi/swagger-ui
+    container_name: fieldnotes_swaggerui_staging
+    restart: unless-stopped
+    networks:
+      BR-LAN-Network:
+        ipv4_address: 172.22.1.19
+    environment:
+      SWAGGER_JSON: /app/openapi.yaml
+    volumes:
+      - ../../backend/api/openapi.yaml:/app/openapi.yaml:ro
+
+volumes:
+  backend_staticfile_staging:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/storage/fieldnotes/staging/static
+
+  postgres_data_staging:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/storage/fieldnotes/staging/postgres
+
+networks:
+  BR-LAN-Network:
+    external: true
+  BR-DMZ-Network:
+    external: true

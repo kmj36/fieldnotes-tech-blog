@@ -14,13 +14,12 @@ CREATE TABLE posts (
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  deleted_at TIMESTAMPTZ,
 
   CONSTRAINT fk_posts_account
-    FOREIGN KEY (account_id) REFERENCES accounts(account_id),
+    FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE,
 
   CONSTRAINT fk_posts_category
-    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
 
   CONSTRAINT uq_posts_account_slug
     UNIQUE (account_id, slug)

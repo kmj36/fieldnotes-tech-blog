@@ -10,6 +10,7 @@
 *.out
 /bin/
 /dist/
+static/
 
 # Test binary, built with `go test -c`
 *.test
@@ -30,7 +31,8 @@ go.work
 go.work.sum
 
 # env file
-.env
+.env*
+!.env.example
 
 # Editor/IDE
 .idea/
@@ -39,3 +41,7 @@ go.work.sum
 
 # OS
 .DS_Store
+
+# Pem
+*.key
+*.pem

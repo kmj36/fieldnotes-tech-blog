@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  fieldnotes_nginx:
+    container_name: fieldnotes_nginx_dev
+    build:
+      args:
+        VITE_APP_NAME: ${VITE_APP_NAME}
+        VITE_MODE: ${VITE_MODE}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    ports:
+      - "443:443"
+      - "80:80"
+    networks:
+      - dev_network
+    env_file:
+      - ../env/.env.dev
+
+  fieldnotes_backend:
+    container_name: fieldnotes_backend_dev
+    ports:
+      - "8080:8080"     # 로컬에서 직접 API 호출 가능
+    networks:
+      - dev_network
+    volumes:
+      - backend_staticfile_dev:/app/static:ro
+    env_file:
+      - ../env/.env.dev
+
+  fieldnotes_postgres:
+    container_name: fieldnotes_postgres_dev
+    ports:
+      - "5432:5432"     # DB 툴로 직접 접근 가능
+    networks:
+      - dev_network
+    env_file:
+      - ../env/.env.dev
+    environment:
+      TZ: ${DB_TIMEZONE}
+      PGTZ: ${DB_TIMEZONE}
+      PGSSLMODE: ${DB_SSLMODE}
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+
+  fieldnotes_migrate:
+    container_name: fieldnotes_migrate_dev
+    networks:
+      - dev_network
+    env_file:
+      - ../env/.env.dev
+
+  fieldnotes_swaggerui:
+    image: docker.swagger.io/swaggerapi/swagger-ui
+    container_name: fieldnotes_swaggerui_dev
+    restart: unless-stopped
+    ports:
+      - "18080:8080"
+    networks:
+      - dev_network
+    environment:
+      SWAGGER_JSON: /app/openapi.yaml
+    volumes:
+      - ../../backend/api/openapi.yaml:/app/openapi.yaml:ro
+
+volumes:
+  backend_staticfile_dev:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/storage/fieldnotes/dev/static
+
+  postgres_data_dev:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/storage/fieldnotes/dev/postgres
+
+networks:
+  dev_network:
+    driver: bridge
