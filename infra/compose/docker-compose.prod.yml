@@ -56,14 +56,14 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /mnt/storage/fieldnotes/static
+      device: /mnt/storage/fieldnotes/prod/static
 
   postgres_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /mnt/storage/fieldnotes/postgres
+      device: /mnt/storage/fieldnotes/prod/postgres
 
 networks:
   BR-LAN-Network:
