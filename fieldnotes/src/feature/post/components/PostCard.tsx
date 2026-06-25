@@ -11,9 +11,19 @@ export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
         ? new Date(post.publishedAt).toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric" })
         : "미발행";
     const excerpt = (post.excerpt || "")
-        .replaceAll(/#+\s*/g, "")
         .replaceAll(/```[\s\S]*?```/g, "")
         .replaceAll(/`[^`]+`/g, "")
+        .replaceAll(/!\[([^\]]*)\]\([^)]+\)/g, "")
+        .replaceAll(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replaceAll(/<!--[\s\S]*?-->/g, "")          // ← HTML 주석 제거
+        .replaceAll(/<[^>]+>/g, "")                   // ← HTML 태그 제거
+        .replaceAll(/#+\s*/g, "")
+        .replaceAll(/\*\*([^*]+)\*\*/g, "$1")
+        .replaceAll(/\*([^*]+)\*/g, "$1")
+        .replaceAll(/^[-*]\s+/gm, "")
+        .replaceAll(/^>\s+/gm, "")
+        .replaceAll(/---/g, "")
+        .replaceAll(/\n+/g, " ")
         .trim();
 
     return (
@@ -24,13 +34,34 @@ export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
             style={{
                 width: "100%",
                 textAlign: "left",
-                background: "#fff", borderRadius: "8px", border: `1px solid ${C.border}`,
-                cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden",
-                boxShadow: "0 1px 4px rgba(0,0,0,.06)", animation: "fadeIn .4s ease both",
+                padding: 0,
+                margin: 0,
+                background: "#fff",
+                borderRadius: "8px",
+                border: `1px solid ${C.border}`,
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                boxShadow: "0 1px 4px rgba(0,0,0,.06)",
+                animation: "fadeIn .4s ease both",
         }}>
             {post.thumbnail && (
-                <div style={{ height: "172px", background: C.faint, overflow: "hidden" }}>
-                    <img src={post.thumbnail} alt={post.title} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                <div style={{
+                    height: "172px",
+                    background: C.faint,
+                    overflow: "hidden",
+                    flexShrink: 0,
+                }}>
+                    <img
+                        src={post.thumbnail}
+                        alt={post.title}
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                        }}
                         onError={e => { ((e.target as HTMLImageElement).parentNode as HTMLElement).style.display = "none"; }} />
                 </div>
             )}

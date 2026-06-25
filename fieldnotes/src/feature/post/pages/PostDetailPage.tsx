@@ -4,7 +4,10 @@ import { api } from "@/shared/api";
 import { Spinner, Alert, Btn, Badge, Chip } from "@/shared/components";
 import { C, FM, FH } from "@/shared/constants";
 import ReactMarkdown from "react-markdown";
-import { markdownComponents } from "@/shared/components/MarkdownCodeBlock";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
+import { markdownComponents, sanitizeSchema } from "@/shared/components/MarkdownCodeBlock";
+
 /* ═══════════════════════════════════════════════════════════════
    POST DETAIL PAGE
 ═══════════════════════════════════════════════════════════════ */
@@ -30,6 +33,7 @@ export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDeta
 
     return (
         <article style={{ maxWidth: "800px", margin: "0 auto", padding: "2.5rem 1.5rem", animation: "fadeIn .4s ease" }}>
+            {/* 뒤로가기 */}
             <div style={{ marginBottom: "1.5rem" }}>
                 <button
                     onClick={() => setNav({ page: "home" })}
@@ -53,6 +57,7 @@ export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDeta
                 </div>
             )}
 
+            {/* 제목 */}
             <h1 style={{ margin: "0 0 1rem", fontFamily: FH, fontSize: "2.3rem", fontWeight: "700", color: C.ink, lineHeight: 1.2 }}>
                 {post.title}
             </h1>
@@ -76,7 +81,9 @@ export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDeta
             )}
 
             <ReactMarkdown
-             components={markdownComponents}>
+                components={markdownComponents}
+                rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+            >
                 {post.content ?? ("")}
             </ReactMarkdown>
 

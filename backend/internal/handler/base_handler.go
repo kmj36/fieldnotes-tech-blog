@@ -72,8 +72,7 @@ func (h *BaseHandler) respondProcessError(ctx *gin.Context, err error) {
 	var pgErr *pgconn.PgError
 
 	switch {
-	case errors.Is(err, dto.CErrUpdateEmptyParam),
-		errors.Is(err, dto.CErrChildNodeExists):
+	case errors.Is(err, dto.CErrUpdateEmptyParam):
 		ctx.JSON(dto.ErrBadRequestType.Status, dto.ResponseWrapper[any]{
 			Status: dto.ErrBadRequestType.Status,
 			Code: dto.ErrBadRequestType.Code,
@@ -82,13 +81,22 @@ func (h *BaseHandler) respondProcessError(ctx *gin.Context, err error) {
 			Timestamp: time.Now().UTC(),
 			Path: ctx.Request.URL.Path,
 		})
+	case errors.Is(err, dto.CErrChildNodeExists):
+		ctx.JSON(dto.ErrChildNodeExists.Status, dto.ResponseWrapper[any]{
+			Status: dto.ErrChildNodeExists.Status,
+			Code: dto.ErrChildNodeExists.Code,
+			Detail: err.Error(),
+			Message: dto.ErrChildNodeExists.Message,
+			Timestamp: time.Now().UTC(),
+			Path: ctx.Request.URL.Path,
+		})
 	case errors.Is(err, dto.CErrAlreadyExists),
 		errors.As(err, &pgErr) && pgErr.Code == "23505":
-		ctx.JSON(http.StatusConflict, dto.ResponseWrapper[any]{
-			Status: http.StatusConflict,
-			Code: dto.ErrConflict.Code,
+		ctx.JSON(dto.ErrAlreadyExist.Status, dto.ResponseWrapper[any]{
+			Status: dto.ErrAlreadyExist.Status,
+			Code: dto.ErrAlreadyExist.Code,
 			Detail: err.Error(),
-			Message: dto.ErrConflict.Message,
+			Message: dto.ErrAlreadyExist.Message,
 			Timestamp: time.Now().UTC(),
 			Path: ctx.Request.URL.Path,
 		})

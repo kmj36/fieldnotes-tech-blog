@@ -3,11 +3,38 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import type { ReactNode } from "react";
 import { C } from "../constants";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 
 interface CodeProps {
     className?: string;
     children?: ReactNode;
 }
+
+export const sanitizeSchema = {
+    ...defaultSchema,
+    allowComments: false,
+    allowDoctypes: false,
+    attributes: {
+        ...defaultSchema.attributes,
+        div: [...(defaultSchema.attributes?.div ?? []), "style"],
+        p: [...(defaultSchema.attributes?.p ?? []), "style"],
+        span: [...(defaultSchema.attributes?.span ?? []), "style"],
+        // 이벤트 핸들러 명시적 차단
+        "*": (defaultSchema.attributes?.["*"] ?? []).filter(
+            (attr) => !String(attr).startsWith("on")
+        ),
+    },
+    protocols: {
+        href: ["http", "https", "mailto"],  // javascript: 차단
+        src: ["http", "https"],             // javascript: 차단
+        action: [],
+    },
+    strip: ["script", "style", "iframe", "object", "embed", "form"],
+    tagNames: (defaultSchema.tagNames ?? []).filter(
+        (tag) => !["script", "iframe", "object", "embed", "form"].includes(tag)
+    ),
+};
 
 export const markdownComponents = {
     hr() {
@@ -37,7 +64,10 @@ export const markdownComponents = {
 
 export function MarkdownPreview({ source }: Readonly<{ source: string }>) {
     return (
-        <ReactMarkdown components={markdownComponents}>
+        <ReactMarkdown
+            components={markdownComponents}
+            rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+        >
             {source}
         </ReactMarkdown>
     )

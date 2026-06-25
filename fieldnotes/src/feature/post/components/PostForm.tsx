@@ -6,19 +6,52 @@ import type { SelectOption } from "@/shared/components";
 import { Modal, Alert, Input, Sel, Field, Btn, Chip } from '@/shared/components';
 import { C, FB } from "@/shared/constants";
 import { useState } from "react";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor, { commands } from "@uiw/react-md-editor";
 import { MarkdownPreview } from "@/shared/components/MarkdownCodeBlock";
 
 /* ─── Post Form (create / edit modal) ──────────────────────── */
 
 function getButtonLabel(loading: boolean, isEdit: boolean): string {
     if (loading) return "저장 중...";
-    return isEdit ? "수정" : "계정 생성";
+    return isEdit ? "수정" : "게시물 생성";
 }
 
 const mdEditorComponents = {
     preview: (source:string) => <MarkdownPreview source={source} />
 }
+
+const alignLeft = {
+    name: "align-left",
+    keyCommand: "align-left",
+    buttonProps: { "aria-label": "왼쪽 정렬" },
+    icon: <span style={{ fontSize: "12px" }}>⬅</span>,
+    execute: (state: { selectedText: string }, api: { replaceSelection: (text: string) => void }) => {
+        const text = state.selectedText || "텍스트";
+        api.replaceSelection(`<div style="text-align:left">\n\n${text}\n\n</div>`);
+    },
+};
+
+const alignCenter = {
+    name: "align-center",
+    keyCommand: "align-center",
+    buttonProps: { "aria-label": "가운데 정렬" },
+    icon: <span style={{ fontSize: "12px" }}>☰</span>,
+    execute: (state: { selectedText: string }, api: { replaceSelection: (text: string) => void }) => {
+        const text = state.selectedText || "텍스트";
+        api.replaceSelection(`<div style="text-align:center">\n\n${text}\n\n</div>`);
+    },
+};
+
+const alignRight = {
+    name: "align-right",
+    keyCommand: "align-right",
+    buttonProps: { "aria-label": "오른쪽 정렬" },
+    icon: <span style={{ fontSize: "12px" }}>➡</span>,
+    execute: (state: { selectedText: string }, api: { replaceSelection: (text: string) => void }) => {
+        const text = state.selectedText || "텍스트";
+        api.replaceSelection(`<div style="text-align:right">\n\n${text}\n\n</div>`);
+    },
+};
 
 export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly<PostFormProps>) {
     const isEdit = !!post;
@@ -81,6 +114,22 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
                             onChange={(v) => up("content")(v ?? "")}
                             height={400}
                             preview="live"
+                            commands={[
+                                commands.bold,
+                                commands.italic,
+                                commands.strikethrough,
+                                commands.hr,
+                                commands.title,
+                                commands.divider,
+                                commands.link,
+                                commands.quote,
+                                commands.code,
+                                commands.codeBlock,
+                                commands.divider,
+                                alignLeft,
+                                alignCenter,
+                                alignRight,
+                            ]}
                             components={mdEditorComponents}
                         />
                     </div>

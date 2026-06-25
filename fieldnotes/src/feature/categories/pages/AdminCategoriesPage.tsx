@@ -16,7 +16,7 @@ export default function AdminCategories() {
   const [delId, setDelId] = useState<number | null>(null);
   const [delErr, setDelErr] = useState<string | null>(null);
 
-  const { data, loading } = useAsync(() => api.getCategories({ limit: 200, sortBy: "id", sortDir: "asc" }), [rev]);
+  const { data, loading } = useAsync(() => api.getCategories({ limit: 200, sortBy: "path", sortDir: "asc" }), [rev]);
   const cats = data?.result?.data ?? [];
 
   async function doDelete(id: number): Promise<void> {

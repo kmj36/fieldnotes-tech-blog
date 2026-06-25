@@ -2,12 +2,8 @@ import type { CategoryTreeProps, CategoryNode } from "../types";
 import { useState } from "react";
 import { C, FB } from "@/shared/constants";
 
-/* ═══════════════════════════════════════════════════════════════
-   CATEGORY TREE
-═══════════════════════════════════════════════════════════════ */
-
 interface NodeProps {
-    node:      CategoryNode;
+    node:       CategoryNode;
     depth?:     number;
     selectedId: number | null;
     onSelect:   (id: number | null) => void;
@@ -17,37 +13,67 @@ function Node({ node, depth = 0, selectedId, onSelect }: Readonly<NodeProps>) {
     const [open, setOpen] = useState<boolean>(depth < 1);
     const active = selectedId === node.id;
 
-    const handleSelect = () => {
-        onSelect(node.id);
-        if (node.children.length) setOpen(v => !v);
-    }
-
     return (
         <div>
-            <button
+            <div
                 className="fn-catitem"
-                onClick={handleSelect}
                 style={{
-                    width: "100%",
-                    textAlign: "left",
                     display: "flex",
                     alignItems: "center",
-                    gap: "4px",
                     padding: `5px ${8 + depth * 14}px`,
-                    cursor: "pointer",
                     borderRadius: "5px",
-                    border: "none",
                     background: active ? C.accentBg : "transparent",
-                    color: active ? C.accent : C.ink, fontSize: ".875rem",
-                    fontFamily: FB, userSelect: "none"
+                    color: active ? C.accent : C.ink,
+                    cursor: "pointer",
                 }}>
-                {node.children.length > 0
-                    ? <span style={{ fontSize: ".65rem", color: C.muted, display: "inline-block", transition: "transform .15s", transform: open ? "rotate(90deg)" : "" }}>▶</span>
-                    : <span style={{ fontSize: ".65rem", color: C.faint }}>·</span>}
-                {node.name}
-                {node.children.length > 0 && <span style={{ fontSize: ".65rem", color: C.muted, marginLeft: "auto" }}>{node.children.length}</span>}
-            </button>
-            {open && node.children.map(c => <Node key={c.id} node={c} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} />)}
+
+                {node.children.length > 0 ? (
+                    <button
+                        onClick={() => setOpen(v => !v)}
+                        style={{
+                            background: "none",
+                            border: "none",
+                            padding: "0 4px 0 0",
+                            cursor: "pointer",
+                            fontSize: ".65rem",
+                            color: "inherit",
+                            display: "inline-block",
+                            transition: "transform .15s",
+                            transform: open ? "rotate(90deg)" : "",
+                            flexShrink: 0,
+                        }}>
+                        ▶
+                    </button>
+                ) : (
+                    <span style={{ fontSize: ".65rem", color: C.faint, padding: "0 4px 0 0" }}>·</span>
+                )}
+
+                <button
+                    onClick={() => onSelect(node.id)}
+                    style={{
+                        flex: 1,
+                        textAlign: "left",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: ".875rem",
+                        fontFamily: FB,
+                        color: "inherit",
+                        userSelect: "none",
+                        padding: 0,
+                    }}>
+                    {node.name}
+                </button>
+
+                {node.children.length > 0 && (
+                    <span style={{ fontSize: ".65rem", color: C.muted, marginLeft: "4px" }}>
+                        {node.children.length}
+                    </span>
+                )}
+            </div>
+            {open && node.children.map(c => (
+                <Node key={c.id} node={c} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} />
+            ))}
         </div>
     );
 }
@@ -76,9 +102,8 @@ export default function CategoryTree({ cats, selectedId, onSelect }: Readonly<Ca
                     fontFamily: FB,
                     fontSize: ".875rem",
                     background: selectedId === null ? C.accentBg : "transparent",
-                    color: selectedId === null ? C.accent : C.ink
-                }}
-            >
+                    color: selectedId === null ? C.accent : C.ink,
+                }}>
                 전체 보기
             </button>
             {roots.map(n => <Node key={n.id} node={n} selectedId={selectedId} onSelect={onSelect} />)}
