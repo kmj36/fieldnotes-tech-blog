@@ -11,7 +11,7 @@ type CreateCategoryRequest struct {
 
 type ReadCategoriesRequest struct {
 	Limit			int16		`form:"limit" binding:"min=0"` // 요청 개수
-	SortBy			string		`form:"sortBy" binding:"oneof=id parent_id name slug"`
+	SortBy			string		`form:"sortBy" binding:"oneof=id parent_id name slug path"`
 	SortDir			string		`form:"sortDir" binding:"oneof=asc desc"`
 	ID				*int16		`form:"id" binding:"omitempty,min=0"`
 	ParentID		*int16		`form:"parentId" binding:"omitempty,min=0"`

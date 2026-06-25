@@ -119,7 +119,7 @@ func (app *App) setupRoutes() {
 		api.GET("/post/:postSlug", app.postHandler.Read)
 		api.GET("/category", app.categoryHandler.List)
 		api.GET("/tag", app.tagHandler.List)
-		api.POST("/auth/login", app.accountHandler.Login)
+		api.POST("/auth/login", middleware.LoginRateLimitMiddleware(), app.accountHandler.Login)
 	}
 
 	// 인증 라우트
