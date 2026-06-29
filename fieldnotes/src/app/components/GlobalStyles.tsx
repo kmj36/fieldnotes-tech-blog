@@ -16,6 +16,27 @@ export default function GlobalStyles() {
       .fn-catitem:hover { color: ${C.accent} !important; background: ${C.accentBg} !important; }
       .fn-row:hover { background: ${C.accentBg} !important; }
       button { font-family: inherit; font-size: inherit; color: inherit; }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0;
+        margin-bottom: 16px;
+        font-size: 14px;
+      }
+
+      table th {
+        font-weight: 600;
+        background-color: #f6f8fa;
+      }
+
+      table th, table td {
+        padding: 6px 13px;
+        border: 1px solid #d0d7de;
+      }
+
+      table tr:nth-child(2n) {
+        background-color: #f6f8fa;
+      }
     `}</style>
   );
 }

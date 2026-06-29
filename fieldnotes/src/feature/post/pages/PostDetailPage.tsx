@@ -3,10 +3,7 @@ import useAsync from "@/shared/hooks/useAsync";
 import { api } from "@/shared/api";
 import { Spinner, Alert, Btn, Badge, Chip } from "@/shared/components";
 import { C, FM, FH } from "@/shared/constants";
-import ReactMarkdown from "react-markdown";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize from "rehype-sanitize";
-import { markdownComponents, sanitizeSchema } from "@/shared/components/MarkdownCodeBlock";
+import { MarkdownViewer } from "@/shared/components/MarkdownCodeBlock";
 
 /* ═══════════════════════════════════════════════════════════════
    POST DETAIL PAGE
@@ -80,12 +77,7 @@ export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDeta
                     onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
             )}
 
-            <ReactMarkdown
-                components={markdownComponents}
-                rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
-            >
-                {post.content ?? ("")}
-            </ReactMarkdown>
+            <MarkdownViewer source={post.content ?? ("")}/>
 
             {post.tags?.length > 0 && (
                 <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: `1px solid ${C.border}`, display: "flex", gap: "8px", flexWrap: "wrap" }}>
