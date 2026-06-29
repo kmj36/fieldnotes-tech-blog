@@ -28,6 +28,17 @@ export default function App() {
   const [auth, setAuth] = useState<AuthState>({ token: null, user: null, accountId: "" });
 
   useEffect(() => {
+    const saved = localStorage.getItem("authState");
+    if (saved) {
+      try {
+        const authState = JSON.parse(saved) as AuthState;
+        setAuth(authState);
+        setToken(authState.token ?? "");   // api 모듈의 토큰도 복원
+      } catch {
+        localStorage.removeItem("authState");
+      }
+    }
+
     if (globalThis.location.hash === "#login") {
       setNav({ page: "login" });
       globalThis.history.replaceState(null, "", globalThis.location.pathname);
@@ -36,12 +47,19 @@ export default function App() {
 
   const handleLogin = (data: { token: string; user: AccountDetail | undefined; accountId: string }): void => {
     setToken(data.token);
-    setAuth({ token: data.token, user: data.user ?? null, accountId: data.accountId });
+    const authState: AuthState = {
+      token: data.token,
+      user: data.user ?? null,
+      accountId: data.accountId,
+    };
+    setAuth(authState);
+    localStorage.setItem("authState", JSON.stringify(authState));
   };
 
   const handleLogout = (): void => {
     setToken(null);
     setAuth({ token: null, user: null, accountId: "" });
+    localStorage.removeItem("authState");
     setNav({ page: "home" });
   };
 

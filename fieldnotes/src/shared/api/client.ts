@@ -21,6 +21,12 @@ async function req<T = unknown>(
     headers: { ...headers, ...(rest.headers as Record<string, string>) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+
+  if (res.status === 401) {
+    setToken(null);
+    localStorage.removeItem("authState");
+  }
+
   const data = await res.json().catch(() => ({})) as ApiResponse<T> & { message?: string; detail?: string };
   if (!res.ok) throw new Error(data.message ?? data.detail ?? `HTTP ${res.status}`);
   return data;
