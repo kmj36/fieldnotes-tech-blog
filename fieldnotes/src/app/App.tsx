@@ -26,7 +26,6 @@ const AdminPostEditPage = lazy(() => import("@/feature/post/pages/AdminPostEditP
 export default function App() {
   const navigate = useNavigate();
   const [auth, setAuth] = useState<AuthState>({ token: null, user: null, accountId: "" });
-  const [authLoaded, setAuthLoaded] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("authState");
@@ -39,17 +38,12 @@ export default function App() {
         localStorage.removeItem("authState");
       }
     }
-    setAuthLoaded(true);
 
     if (globalThis.location.hash === "#login") {
       navigate("/login");
       globalThis.history.replaceState(null, "", globalThis.location.pathname);
     }
   }, []);
-
-  if (!authLoaded) {
-    return <Spinner />;
-  }
 
   const handleLogin = (data: { token: string; user: AccountDetail | undefined; accountId: string }): void => {
     setToken(data.token);
@@ -80,7 +74,7 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute auth={auth}>
+            <ProtectedRoute>
               <AdminLayout />
             </ProtectedRoute>
           }
