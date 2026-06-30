@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { SortDir, NavState } from "@/shared/api/types";
+import type { SortDir } from "@/shared/api/types";
 
 export type AccountRole = "USER" | "ADMIN";
 export type AccountStatus = "ACTIVE" | "SUSPENDED";
@@ -38,11 +38,10 @@ export interface AccountFormState {
 
 export interface AccountFormProps { item?: AccountPublic; onClose: () => void; onSave: () => void; }
 
-export interface AdminLayoutProps { nav: NavState; setNav: (n: NavState) => void; children: ReactNode; }
+export interface AdminLayoutProps { children: ReactNode; }
 
-export interface AdminDashboardProps { auth: AuthState; setNav: (n: NavState) => void; }
+export interface AdminDashboardProps { auth: AuthState; }
 
 export interface LoginPageProps {
-  setNav: (n: NavState) => void;
   onLogin: (data: { token: string; user: AccountDetail | undefined; accountId: string }) => void;
 }

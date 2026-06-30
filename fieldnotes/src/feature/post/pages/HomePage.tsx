@@ -1,6 +1,5 @@
 import { useState } from "react";
 import useAsync from "@/shared/hooks/useAsync";
-import type { NavState } from "@/shared/api";
 import { api } from "@/shared/api";
 import type { PostQueryParams } from "../types";
 import { C, FB, FM, FH } from "@/shared/constants";
@@ -8,6 +7,7 @@ import { Chip, Alert, Spinner, Pager } from "@/shared/components";
 import PostCard from "../components/PostCard";
 import CategoryTree from "@/feature/categories/components/CategoryTree";
 import type { CategoryPublic } from "@/feature/categories/types";
+import { useNavigate } from "react-router-dom";
 
 /* ═══════════════════════════════════════════════════════════════
    HOME PAGE
@@ -23,7 +23,9 @@ function getPageTitle(catId: number | null, tagSlug: string | null, cats: Catego
     return "모든 글";
 }
 
-export default function HomePage({ setNav }: Readonly<{ setNav: (n: NavState) => void }>) {
+export default function HomePage() {
+    const navigate = useNavigate();
+
     const [page, setPage] = useState<number>(1);
     const [catId, setCatId] = useState<number | null>(null);
     const [tagSlug, setTagSlug] = useState<string | null>(null);
@@ -118,7 +120,7 @@ export default function HomePage({ setNav }: Readonly<{ setNav: (n: NavState) =>
                         {posts.length === 0
                             ? <div style={{ textAlign: "center", padding: "5rem 1rem", color: C.muted, fontFamily: FB, fontSize: "1.05rem" }}>게시글이 없습니다.</div>
                             : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(270px, 1fr))", gap: "1.1rem" }}>
-                                {posts.map(p => <PostCard key={p.id} post={p} onClick={slug => setNav({ page: "post", slug })} />)}
+                                {posts.map(p => <PostCard key={p.id} post={p} onClick={slug => navigate(`/post/${slug}`)} />)}
                             </div>
                         }
                         <Pager meta={meta} onChange={setPage} />

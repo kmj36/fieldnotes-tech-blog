@@ -4,7 +4,5 @@ export { req, buildQS, setBase, setToken }   from "./client";
 export type {
   ApiResponse,
   LoginResult,
-  NavState,
-  QSParams,
-  PageKey
+  QSParams
 } from "./types";

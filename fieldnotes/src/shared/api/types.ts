@@ -17,21 +17,13 @@ interface ApiResponse<T = unknown> {
 interface LoginResult { AccountID: string; token: string; }
 
 // ── Router / Auth ──────────────────────────────────────────────
-type PageKey =
-  | "home" | "post" | "login"
-  | "admin" | "admin-posts" | "admin-post-edit"
-  | "admin-categories" | "admin-tags" | "admin-accounts";
-
-interface NavState { page: PageKey; slug?: string; postSlug?: string; }
 
 type QSParams = Record<string, string | number | boolean | undefined | null>;
 
 export type {
   ApiResponse,
   LoginResult,
-  NavState,
   QSParams,
-  PageKey,
   Pagination,
   SortDir
 };

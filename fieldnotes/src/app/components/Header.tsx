@@ -1,16 +1,19 @@
 import type { HeaderProps } from "../types";
 import { C, FM, FH } from "@/shared/constants";
-import type { PageKey } from "@/shared/api";
 import { Btn } from "@/shared/components";
 import { NotebookPen } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
-export default function Header({ nav, setNav, auth, onLogout }: Readonly<HeaderProps>) {
+export default function Header({ auth, onLogout }: Readonly<HeaderProps>) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
     <header style={{ background: "#fff", borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 100 }}>
       <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "0 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "58px" }}>
         {/* Logo */}
         <button
-          onClick={() => setNav({ page: "home" })}
+          onClick={() => navigate("/")}
           aria-label="홈으로 이동"
           style={{
             cursor: "pointer",
@@ -19,7 +22,7 @@ export default function Header({ nav, setNav, auth, onLogout }: Readonly<HeaderP
             gap: "10px",
             background: "none",
             border: "none",
-            padding: 0 
+            padding: 0
            }}
         >
           <div style={{ width: "34px", height: "34px", background: C.accent, borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -30,23 +33,22 @@ export default function Header({ nav, setNav, auth, onLogout }: Readonly<HeaderP
 
         {/* Nav */}
         <nav style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          {[{ key: "home" as PageKey, label: "Blog" }].map(({ key, label }) => (
+          {[{ path: "/", label: "Blog" }].map(({ path, label }) => (
             <button
-              key={key}
+              key={path}
               className="fn-navlink"
-              onClick={() => setNav({ page: key })}
+              onClick={() => navigate(path)}
               style={{
                 cursor: "pointer",
                 fontFamily: FM,
                 fontSize: ".82rem",
                 fontWeight: "600",
-                color: nav.page === key ? C.accent : C.muted,
+                color: location.pathname === path ? C.accent : C.muted,
                 background: "none",
                 border: "none",
                 padding: 0
               }}
             >
-
               {label}
             </button>
           ))}
@@ -55,13 +57,13 @@ export default function Header({ nav, setNav, auth, onLogout }: Readonly<HeaderP
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <button
                 className="fn-navlink"
-                onClick={() => setNav({ page: "admin" })}
+                onClick={() => navigate("/admin")}
                 style={{
                   cursor: "pointer",
                   fontFamily: FM,
                   fontSize: ".82rem",
                   fontWeight: "600",
-                  color: nav.page.startsWith("admin") ? C.accent : C.muted,
+                  color: location.pathname.startsWith("/admin") ? C.accent : C.muted,
                   background: "none",
                   border: "none",
                   padding: 0
@@ -78,7 +80,7 @@ export default function Header({ nav, setNav, auth, onLogout }: Readonly<HeaderP
               <Btn size="sm" variant="ghost" onClick={onLogout} style={{ padding: "4px 10px" }}>로그아웃</Btn>
             </div>
           ) : import.meta.env.VITE_MODE !== "production" && (
-            <Btn size="sm" variant="outline" onClick={() => setNav({ page: "login" })}>Admin 로그인</Btn>
+            <Btn size="sm" variant="outline" onClick={() => navigate("/login")}>Admin 로그인</Btn>
           )}
         </nav>
       </div>
