@@ -6,7 +6,6 @@ import type { ApiResponse, QSParams } from "./types";
 let _BASE: string = import.meta.env.VITE_API_BASE_URL ?? "";
 let _TOKEN: string = "";
 
-const setBase = (u: string): void => { _BASE = u.replace(/\/$/, ""); };
 const setToken = (t: string | null): void => { _TOKEN = t ?? ""; };
 
 async function req<T = unknown>(
@@ -40,4 +39,4 @@ const buildQS = (p: QSParams = {}): string => {
   return q.toString();
 };
 
-export { req, buildQS, setBase, setToken };
+export { req, buildQS, setToken };

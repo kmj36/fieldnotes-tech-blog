@@ -1,10 +1,9 @@
-import type { ReactNode } from "react";
 import type { SortDir } from "@/shared/api/types";
 
 export type AccountRole = "USER" | "ADMIN";
 export type AccountStatus = "ACTIVE" | "SUSPENDED";
 
-export interface AccountPublic {
+interface AccountPublic {
   id: number; accountId: string; nickname: string;
   avatarUrl: string | null; role: AccountRole; status: AccountStatus;
 }
@@ -37,10 +36,6 @@ export interface AccountFormState {
 }
 
 export interface AccountFormProps { item?: AccountPublic; onClose: () => void; onSave: () => void; }
-
-export interface AdminLayoutProps { children: ReactNode; }
-
-export interface AdminDashboardProps { auth: AuthState; }
 
 export interface LoginPageProps {
   onLogin: (data: { token: string; user: AccountDetail | undefined; accountId: string }) => void;
