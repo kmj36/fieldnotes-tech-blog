@@ -7,7 +7,8 @@ import { Modal, Alert, Input, Sel, Field, Btn, Chip } from '@/shared/components'
 import { C, FB } from "@/shared/constants";
 import { useState } from "react";
 import MDEditor, { commands } from "@uiw/react-md-editor";
-import { MarkdownPreview } from "@/shared/components/MarkdownCodeBlock";
+import type { ICommand } from "@uiw/react-md-editor";
+import { MarkdownViewer } from "@/shared/components/MarkdownCodeBlock";
 
 /* ─── Post Form (create / edit modal) ──────────────────────── */
 
@@ -17,10 +18,21 @@ function getButtonLabel(loading: boolean, isEdit: boolean): string {
 }
 
 const mdEditorComponents = {
-    preview: (source:string) => <MarkdownPreview source={source} />
+    preview: (source:string) => <MarkdownViewer source={source} />
 }
 
-const alignLeft = {
+const mathCmd : ICommand = {
+  name: "math",
+  keyCommand: "math",
+  buttonProps: { "aria-label": "수식", title: "수식 (LaTeX)" },
+  icon: <span style={{ fontStyle: "italic", fontWeight: 700, fontFamily: "serif" }}>fx</span>,
+  execute: (state, api) => {
+    const sel = state.selectedText || "E = mc^2";
+    api.replaceSelection(`\n$$\n${sel}\n$$\n`);
+  },
+};
+
+const alignLeftcmd = {
     name: "align-left",
     keyCommand: "align-left",
     buttonProps: { "aria-label": "왼쪽 정렬" },
@@ -31,7 +43,7 @@ const alignLeft = {
     },
 };
 
-const alignCenter = {
+const alignCentercmd = {
     name: "align-center",
     keyCommand: "align-center",
     buttonProps: { "aria-label": "가운데 정렬" },
@@ -42,7 +54,7 @@ const alignCenter = {
     },
 };
 
-const alignRight = {
+const alignRightcmd = {
     name: "align-right",
     keyCommand: "align-right",
     buttonProps: { "aria-label": "오른쪽 정렬" },
@@ -119,16 +131,15 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
                                 commands.italic,
                                 commands.strikethrough,
                                 commands.hr,
-                                commands.title,
                                 commands.divider,
-                                commands.link,
                                 commands.quote,
                                 commands.code,
                                 commands.codeBlock,
+                                commands.checkedListCommand,
+                                commands.table,
+                                mathCmd,
                                 commands.divider,
-                                alignLeft,
-                                alignCenter,
-                                alignRight,
+                                alignLeftcmd, alignCentercmd, alignRightcmd,
                             ]}
                             components={mdEditorComponents}
                         />

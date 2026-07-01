@@ -1,30 +1,32 @@
 import type { PostCardProps } from "../types";
 import { C, FM, FH } from "@/shared/constants";
 import { Badge, Chip } from "@/shared/components";
+import removeMd from "remove-markdown";
 
 /* ═══════════════════════════════════════════════════════════════
    POST CARD
 ═══════════════════════════════════════════════════════════════ */
 
+export function toExcerpt(content: string, len = 150): string {
+  const cleaned = content
+  .replace(/```[\s\S]*?```/g, "")
+  .replace(/<[^>]+>/g, "")
+  .replace(/^\|.*\|$/gm, m => m.replace(/\|/g, " "))  // 표 행의 파이프 → 공백
+  .replace(/^[\s|:-]+$/gm, "")                         // 표 구분선(---) 행 제거
+  .replace(/~~([^~]+)~~/g, "$1")                       // 취소선
+  .replace(/^\s*[-*]\s*\[[ x]\]\s*/gim, "");           // 체크박스
+
+  return removeMd(cleaned)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, len);
+}
+
 export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
     const date = post.publishedAt
         ? new Date(post.publishedAt).toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric" })
         : "미발행";
-    const excerpt = (post.excerpt || "")
-        .replaceAll(/```[\s\S]*?```/g, "")
-        .replaceAll(/`[^`]+`/g, "")
-        .replaceAll(/!\[([^\]]*)\]\([^)]+\)/g, "")
-        .replaceAll(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-        .replaceAll(/<!--[\s\S]*?-->/g, "")          // ← HTML 주석 제거
-        .replaceAll(/<[^>]+>/g, "")                   // ← HTML 태그 제거
-        .replaceAll(/#+\s*/g, "")
-        .replaceAll(/\*\*([^*]+)\*\*/g, "$1")
-        .replaceAll(/\*([^*]+)\*/g, "$1")
-        .replaceAll(/^[-*]\s+/gm, "")
-        .replaceAll(/^>\s+/gm, "")
-        .replaceAll(/---/g, "")
-        .replaceAll(/\n+/g, " ")
-        .trim();
+    const excerpt = toExcerpt(post.excerpt, 150);
 
     return (
         <button
