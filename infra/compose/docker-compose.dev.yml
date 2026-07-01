@@ -8,8 +8,9 @@ services:
         VITE_APP_NAME: ${VITE_APP_NAME}
         VITE_MODE: ${VITE_MODE}
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    volumes:
+      - ../docker/nginx/conf.d/dev:/etc/nginx/conf.d:ro
     ports:
-      - "443:443"
       - "80:80"
     networks:
       - dev_network
@@ -23,7 +24,7 @@ services:
     networks:
       - dev_network
     volumes:
-      - backend_staticfile_dev:/app/static:ro
+      - ../../backend/static:/app/static:ro
     env_file:
       - ../env/.env.dev
 
@@ -66,19 +67,7 @@ services:
       - ../../backend/api/openapi.yaml:/app/openapi.yaml:ro
 
 volumes:
-  backend_staticfile_dev:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/storage/fieldnotes/dev/static
-
   postgres_data_dev:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/storage/fieldnotes/dev/postgres
 
 networks:
   dev_network:
