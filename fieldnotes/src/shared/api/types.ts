@@ -16,6 +16,10 @@ interface ApiResponse<T = unknown> {
 
 interface LoginResult { AccountID: string; token: string; }
 
+interface ImageUploadBody { image: File | Blob; }
+
+interface ImageUploadResult { url: string; filename: string; }
+
 // ── Router / Auth ──────────────────────────────────────────────
 
 type QSParams = Record<string, string | number | boolean | undefined | null>;
@@ -23,6 +27,8 @@ type QSParams = Record<string, string | number | boolean | undefined | null>;
 export type {
   ApiResponse,
   LoginResult,
+  ImageUploadBody,
+  ImageUploadResult,
   QSParams,
   Pagination,
   SortDir

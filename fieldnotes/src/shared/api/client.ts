@@ -1,7 +1,7 @@
 import type { ApiResponse, QSParams } from "./types";
 
 /* ═══════════════════════════════════════════════════════════════
-   API CLIENT  (fully typed to OpenAPI spec)
+    API CLIENT  (fully typed to OpenAPI spec)
 ═══════════════════════════════════════════════════════════════ */
 let _BASE: string = import.meta.env.VITE_API_BASE_URL ?? "";
 let _TOKEN: string = "";
@@ -12,13 +12,22 @@ async function req<T = unknown>(
   path: string,
   opts: Omit<RequestInit, "body"> & { body?: unknown } = {}
 ): Promise<ApiResponse<T>> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const isFormData = opts.body instanceof FormData;
+
+
+  const headers: Record<string, string> = {};
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+  
   if (_TOKEN) headers["Authorization"] = `Bearer ${_TOKEN}`;
+  
   const { body, ...rest } = opts;
+
   const res = await fetch(`${_BASE}${path}`, {
     ...rest,
     headers: { ...headers, ...(rest.headers as Record<string, string>) },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : (isFormData ? (body as FormData) : JSON.stringify(body)),
   });
 
   if (res.status === 401) {

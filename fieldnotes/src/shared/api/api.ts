@@ -1,5 +1,7 @@
 import { req, buildQS } from "./client";
 import type {
+  ImageUploadBody,
+  ImageUploadResult,
   LoginResult,
   QSParams
 } from "./types";
@@ -31,6 +33,16 @@ export const api = {
   deleteTag: (id: number) => req(`/api/v1/tag/${id}`, { method: "DELETE" }),
   /* Auth */
   login: (b: { accountId: string; password: string }) => req<LoginResult>("/api/v1/auth/login", { method: "POST", body: b }),
+  imageUpload: (b: ImageUploadBody) => {
+    const formData = new FormData();
+
+    formData.append("image", b.image);
+
+    return req<ImageUploadResult>("/api/v1/upload", {
+      method: "POST",
+      body: formData,
+    });
+  },
   register: (b: AccountRegisterBody) => req<AccountDetail>("/api/v1/auth/register", { method: "POST", body: b }),
   getAccount: (aid: string) => req<AccountDetail>(`/api/v1/auth/${aid}`),
   listAccounts: (p?: AccountQueryParams) => req<AccountListResult>(`/api/v1/auth/list?${buildQS(p as QSParams)}`),

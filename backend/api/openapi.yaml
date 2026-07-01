@@ -519,6 +519,17 @@ components:
           type: string
           enum: [ACTIVE, SUSPENDED]
           example: "ACTIVE"
+          
+    ImageResponse:
+      type: object
+      required: [url, filename]
+      properties:
+        url:
+          type: string
+          example: "/api/v1/static/a1b2c3d4e5f6.png"
+        filename:
+          type: string
+          example: "a1b2c3d4e5f6.png"
 
 paths:
 
@@ -1916,6 +1927,57 @@ paths:
                 format: binary
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/upload:
+    post:
+      tags: [Admin]
+      summary: 이미지 업로드
+      operationId: uploadImage
+      description: |
+        이미지 파일을 업로드하고 접근 가능한 URL을 반환합니다.
+        허용 형식: jpg, jpeg, png, gif, webp / 최대 8MB.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: 업로드할 이미지 파일
+      responses:
+        '201':
+          description: 이미지 업로드 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/ImageResponse'
+              example:
+                status: 201
+                code: "E201_001"
+                detail: "Successfully created image /api/v1/static/a1b2c3d4e5f6.png."
+                message: "리소스가 성공적으로 생성되었습니다."
+                timestamp: "2026-07-01T04:36:50.135738518Z"
+                path: "/api/v1/upload"
+                result:
+                  url: "/api/v1/static/a1b2c3d4e5f6.png"
+                  filename: "a1b2c3d4e5f6.png"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
 

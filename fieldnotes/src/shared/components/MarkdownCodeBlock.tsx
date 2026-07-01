@@ -24,6 +24,7 @@ export const sanitizeSchema = {
         div: [...(defaultSchema.attributes?.div ?? []), "style"],
         p: [...(defaultSchema.attributes?.p ?? []), "style"],
         span: [...(defaultSchema.attributes?.span ?? []), "style"],
+        img: [...(defaultSchema.attributes?.img ?? []), "style"],
         // 이벤트 핸들러 명시적 차단
         "*": (defaultSchema.attributes?.["*"] ?? []).filter(
             (attr) => !String(attr).startsWith("on")
@@ -43,6 +44,17 @@ export const sanitizeSchema = {
 export const markdownComponents = {
     hr() {
         return <hr style={{ border: "none", borderTop: `2px solid ${C.border}`, margin: "2rem 0" }} />;
+    },
+    img({ ...props }) {
+        return (
+            <img {...props} style={{
+                maxWidth: "100%",
+                height: "auto",
+                margin: "2rem auto",
+                borderRadius: "8px",
+                ...props.style
+            }} />
+        );
     },
     code({ className, children, ...props }: CodeProps) {
         const isBlock = /language-/.test(className || "");

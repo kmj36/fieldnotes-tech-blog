@@ -25,6 +25,7 @@ type App struct {
 	cfg *config.Config
 
 	healthHandler   *handler.HealthCheckHandler
+	ioHandler       *handler.IOHandler
 	accountHandler  *handler.AccountHandler
 	categoryHandler *handler.CategoryHandler
 	tagHandler      *handler.TagHandler
@@ -48,6 +49,8 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 	tagService := service.NewTagService(tagRepo, jwtManager)
 	postRepo := repository.NewPostRepository(db)
 
+	ioService := service.NewIOService()
+
 	postService := service.NewPostService(postRepo, tagRepo, categoryRepo, accountRepo, jwtManager)
 
 	return &App{
@@ -56,6 +59,7 @@ func New(db *gorm.DB, cfg *config.Config, log *zap.Logger) *App {
 		cfg:    cfg,
 
 		healthHandler:   handler.NewHealthCheckHandler(),
+		ioHandler:       handler.NewIOHandler(ioService),
 		accountHandler:  handler.NewAccountHandler(accountService),
 		categoryHandler: handler.NewCategoryHandler(categoryService),
 		tagHandler:      handler.NewTagHandler(tagService),
@@ -103,8 +107,9 @@ func (app *App) setupMiddleware() {
 func (app *App) setupRoutes() {
 
 	const apiV1Prefix = "/api/v1"
+	app.router.MaxMultipartMemory = 8 << 20
 
-	// 정적파일 라우트
+	// 파일 라우트
 	static := app.router.Group(apiV1Prefix)
 	{
 		static.Use(middleware.StaticCacheMiddleware())
@@ -126,6 +131,7 @@ func (app *App) setupRoutes() {
 	auth := app.router.Group(apiV1Prefix)
 	{
 		auth.Use(middleware.JWTAuthMiddleware(app.jwtManager))
+		auth.POST("/upload", app.ioHandler.Upload)
 		auth.POST("/auth/register", app.accountHandler.Create)
 		auth.GET("/auth/list", app.accountHandler.List)
 		auth.GET("/auth/:accountId", app.accountHandler.Read)
