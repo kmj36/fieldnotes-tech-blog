@@ -1,10 +1,12 @@
 import useAsync from "@/shared/hooks/useAsync";
 import { api } from "@/shared/api";
-import type { NavState } from "@/shared/api";
 import { Spinner, Badge } from "@/shared/components";
 import { C, FB, FM } from "@/shared/constants";
+import { useNavigate } from "react-router-dom";
 
-export default function RecentTable({ setNav }: Readonly<{ setNav: (n: NavState) => void }>) {
+export default function RecentTable() {
+  const navigate = useNavigate();
+
   const { data, loading } = useAsync(() => api.getPostsAdmin({ pageLimit: 8, sortBy: "created_at", sortDir: "desc" }), []);
   if (loading) return <Spinner />;
   const posts = data?.result?.data ?? [];
@@ -19,7 +21,7 @@ export default function RecentTable({ setNav }: Readonly<{ setNav: (n: NavState)
       </thead>
       <tbody>
         {posts.map(p => (
-          <tr key={p.id} className="fn-row" onClick={() => setNav({ page: "admin-post-edit", postSlug: p.slug })} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", transition: "background .15s" }}>
+          <tr key={p.id} className="fn-row" onClick={() => navigate(`/admin/posts/${p.slug}/edit`)} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", transition: "background .15s" }}>
             <td style={{ padding: "9px 10px", fontFamily: FB, fontSize: ".9rem", color: C.ink }}>{p.title}</td>
             <td style={{ padding: "9px 10px", fontFamily: FM, fontSize: ".78rem", color: C.muted }}>{p.nickname}</td>
             <td style={{ padding: "9px 10px", fontFamily: FM, fontSize: ".78rem", color: C.teal }}>{p.category?.name ?? "—"}</td>

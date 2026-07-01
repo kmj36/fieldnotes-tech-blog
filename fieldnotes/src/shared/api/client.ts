@@ -6,7 +6,6 @@ import type { ApiResponse, QSParams } from "./types";
 let _BASE: string = import.meta.env.VITE_API_BASE_URL ?? "";
 let _TOKEN: string = "";
 
-const setBase = (u: string): void => { _BASE = u.replace(/\/$/, ""); };
 const setToken = (t: string | null): void => { _TOKEN = t ?? ""; };
 
 async function req<T = unknown>(
@@ -21,6 +20,12 @@ async function req<T = unknown>(
     headers: { ...headers, ...(rest.headers as Record<string, string>) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+
+  if (res.status === 401) {
+    setToken(null);
+    localStorage.removeItem("authState");
+  }
+
   const data = await res.json().catch(() => ({})) as ApiResponse<T> & { message?: string; detail?: string };
   if (!res.ok) throw new Error(data.message ?? data.detail ?? `HTTP ${res.status}`);
   return data;
@@ -34,4 +39,4 @@ const buildQS = (p: QSParams = {}): string => {
   return q.toString();
 };
 
-export { req, buildQS, setBase, setToken };
+export { req, buildQS, setToken };

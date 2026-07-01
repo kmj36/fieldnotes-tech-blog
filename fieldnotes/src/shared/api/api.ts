@@ -7,6 +7,7 @@ import type { TagQueryParams, TagListResult, TagBody, TagDetail } from "@/featur
 import type { AccountDetail, AccountListResult, AccountQueryParams, AccountRegisterBody, AccountUpdateBody } from "@/feature/auth/types";
 import type { PostDetail, PostQueryParams, PostListResult, PostBody, PostPublic } from "@/feature/post/types";
 import type { CategoryQueryParams, CategoryListResult, CategoryBody, CategoryDetail } from "@/feature/categories/types";
+import type { AuthState } from "@/feature/auth/types";
 
 export const api = {
   /* Posts – Public */
@@ -36,3 +37,12 @@ export const api = {
   updateAccount: (aid: string, b: AccountUpdateBody) => req<AccountDetail>(`/api/v1/auth/update/${aid}`, { method: "PATCH", body: b }),
   deleteAccount: (aid: string) => req(`/api/v1/auth/delete/${aid}`, { method: "DELETE" }),
 };
+
+export function getStoredAuth(): AuthState {
+  try {
+    const saved = localStorage.getItem("authState");
+    return saved ? JSON.parse(saved) : { token: null, user: null, accountId: "" };
+  } catch {
+    return { token: null, user: null, accountId: "" };
+  }
+}

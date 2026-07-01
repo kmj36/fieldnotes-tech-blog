@@ -1,15 +1,17 @@
-import type { NavState } from "@/shared/api";
 import { api } from "@/shared/api";
 import { useState } from "react";
 import useAsync from "@/shared/hooks/useAsync";
 import { Btn, Modal, Alert, Spinner, Badge, Pager } from "@/shared/components";
 import { C, FB, FH, FM } from "@/shared/constants";
 import PostForm from "../components/PostForm";
+import { useNavigate } from "react-router-dom";
 
 /* ═══════════════════════════════════════════════════════════════
    ADMIN POSTS
 ═══════════════════════════════════════════════════════════════ */
-export default function AdminPosts({ setNav }: Readonly<{ setNav: (n: NavState) => void }>) {
+export default function AdminPosts() {
+    const navigate = useNavigate();
+    
     const [page, setPage] = useState<number>(1);
     const [rev, setRev] = useState<number>(0);
     const [showCreate, setShowCreate] = useState<boolean>(false);
@@ -60,7 +62,7 @@ export default function AdminPosts({ setNav }: Readonly<{ setNav: (n: NavState) 
                                         <td style={{ padding: "10px 12px", fontFamily: FM, fontSize: ".75rem", color: C.muted, whiteSpace: "nowrap" }}>{p.publishedAt ? new Date(p.publishedAt).toLocaleDateString("ko-KR") : "—"}</td>
                                         <td style={{ padding: "10px 12px" }}>
                                             <div style={{ display: "flex", gap: "5px" }}>
-                                                <Btn size="sm" variant="outline" onClick={() => setNav({ page: "admin-post-edit", postSlug: p.slug })}>수정</Btn>
+                                                <Btn size="sm" variant="outline" onClick={() => navigate(`/admin/posts/${p.slug}/edit`)}>수정</Btn>
                                                 <Btn size="sm" variant="danger" onClick={() => { setDelId(p.id); setDelErr(null); }}>삭제</Btn>
                                             </div>
                                         </td>

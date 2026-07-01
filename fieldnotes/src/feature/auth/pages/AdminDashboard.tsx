@@ -1,14 +1,16 @@
-import type { AdminDashboardProps } from "../types";
 import useAsync from "@/shared/hooks/useAsync";
 import { api } from "@/shared/api";
 import { C, FH, FM } from "@/shared/constants";
 import { Btn } from "@/shared/components";
 import RecentTable from "../components/RecentTable";
+import { useNavigate } from "react-router-dom";
 
 /* ═══════════════════════════════════════════════════════════════
    ADMIN DASHBOARD
 ═══════════════════════════════════════════════════════════════ */
-export default function AdminDashboard({ setNav }: Readonly<AdminDashboardProps>) {
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+
   const { data: postsRes } = useAsync(() => api.getPostsAdmin({ pageLimit: 1 }), []);
   const { data: catRes } = useAsync(() => api.getCategories({ limit: 200 }), []);
   const { data: tagRes } = useAsync(() => api.getTags({ limit: 200 }), []);
@@ -34,9 +36,9 @@ export default function AdminDashboard({ setNav }: Readonly<AdminDashboardProps>
       <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: "8px", padding: "1.5rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
           <h3 style={{ margin: 0, fontFamily: FH, fontSize: "1.1rem", color: C.ink }}>최근 게시물</h3>
-          <Btn size="sm" variant="outline" onClick={() => setNav({ page: "admin-posts" })}>전체 보기</Btn>
+          <Btn size="sm" variant="outline" onClick={() => navigate("/admin/posts")}>전체 보기</Btn>
         </div>
-        <RecentTable setNav={setNav} />
+        <RecentTable />
       </div>
     </div>
   );
