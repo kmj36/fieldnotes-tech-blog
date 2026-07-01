@@ -2,7 +2,12 @@ import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import { C, FH } from "../constants/theme";
 
-interface ModalProps { title: string; children: ReactNode; onClose: () => void; width?: string; }
+interface ModalProps {
+    title: string;
+    children: ReactNode;
+    onClose: () => void; 
+    width?: string;
+}
 
 export default function Modal({ title, children, onClose, width = "520px" }: Readonly<ModalProps>) {
     const dialogRef = useRef<HTMLDialogElement>(null);
@@ -10,18 +15,7 @@ export default function Modal({ title, children, onClose, width = "520px" }: Rea
     useEffect(() => {
         const dialog = dialogRef.current;
         dialog?.showModal();
-
-        const handleBackdropClick = (e: MouseEvent) => {
-            if (e.target === dialog) {
-                onClose();
-            }
-        };
-        dialog?.addEventListener("click", handleBackdropClick);
-
-        return () => {
-            dialog?.removeEventListener("click", handleBackdropClick);
-        };
-    }, [onClose]);
+    }, []);
 
     return (
         <dialog
