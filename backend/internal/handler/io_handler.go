@@ -42,3 +42,21 @@ func (h *IOHandler) Upload(ctx *gin.Context) {
 		Result:    res,
 	})
 }
+
+func (h *IOHandler) ListImages(ctx *gin.Context) {
+	res, err := h.service.ListImages()
+	if err != nil {
+		h.respondProcessError(ctx, err)
+		return
+	}
+
+	ctx.JSON(dto.ErrOK.Status, dto.ResponseWrapper[*dto.ListImagesResponse]{
+		Status:    dto.ErrOK.Status,
+		Code:      dto.ErrOK.Code,
+		Message:   dto.ErrOK.Message,
+		Detail:    fmt.Sprintf("Successfully retrieved %d images.", len(res.ImageList)),
+		Timestamp: time.Now().UTC(),
+		Path:      ctx.Request.URL.Path,
+		Result:    res,
+	})
+}

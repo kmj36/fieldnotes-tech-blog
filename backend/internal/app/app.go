@@ -132,6 +132,7 @@ func (app *App) setupRoutes() {
 	{
 		auth.Use(middleware.JWTAuthMiddleware(app.jwtManager))
 		auth.POST("/upload", app.ioHandler.Upload)
+		auth.GET("/images", app.ioHandler.ListImages)
 		auth.POST("/auth/register", app.accountHandler.Create)
 		auth.GET("/auth/list", app.accountHandler.List)
 		auth.GET("/auth/:accountId", app.accountHandler.Read)

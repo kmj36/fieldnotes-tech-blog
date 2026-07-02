@@ -2,6 +2,7 @@ import { req, buildQS } from "./client";
 import type {
   ImageUploadBody,
   ImageUploadResult,
+  ListImagesResponse,
   LoginResult,
   QSParams
 } from "./types";
@@ -43,6 +44,7 @@ export const api = {
       body: formData,
     });
   },
+  listImages: () => req<ListImagesResponse>("/api/v1/images", { method: "GET" }),
   register: (b: AccountRegisterBody) => req<AccountDetail>("/api/v1/auth/register", { method: "POST", body: b }),
   getAccount: (aid: string) => req<AccountDetail>(`/api/v1/auth/${aid}`),
   listAccounts: (p?: AccountQueryParams) => req<AccountListResult>(`/api/v1/auth/list?${buildQS(p as QSParams)}`),

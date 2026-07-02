@@ -530,6 +530,31 @@ components:
         filename:
           type: string
           example: "a1b2c3d4e5f6.png"
+    
+    ImageListItem:
+      type: object
+      properties:
+        url:
+          type: string
+          example: /api/v1/static/a1b2c3d4e5f6.jpg
+        filename:
+          type: string
+          example: a1b2c3d4e5f6.jpg
+        size:
+          type: integer
+          format: int64
+          example: 204800
+        uploadedAt:
+          type: string
+          format: date-time
+
+    ListImagesResponse:
+      type: object
+      properties:
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageListItem'
 
 paths:
 
@@ -1976,6 +2001,32 @@ paths:
                   filename: "a1b2c3d4e5f6.png"
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+          
+  /api/v1/images:
+    get:
+      tags:
+        - Admin
+      operationId: listImages
+      summary: 업로드된 이미지 목록 조회
+      description: static/ 디렉터리에 저장된 이미지 파일 목록을 최신순으로 반환합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseWrapper'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/ListImagesResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
