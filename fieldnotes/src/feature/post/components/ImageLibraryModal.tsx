@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/shared/api";
-import { Modal, Alert } from "@/shared/components";
+import { Modal } from "@/shared/components";
 import type { ImageListItem } from "@/shared/api/types"; // 실제 위치에 맞게 조정
 
 interface Props {
@@ -21,6 +21,9 @@ export function ImageLibraryModal({ onSelect, onClose }: Readonly<Props>) {
   }, []);
 
   function renderBody() {
+    if (err) {
+      return <div style={{ padding: "24px", textAlign: "center", color: "#c00" }}>{err}</div>;
+    }
     if (loading) {
       return <div style={{ padding: "24px", textAlign: "center", color: "#999" }}>불러오는 중...</div>;
     }

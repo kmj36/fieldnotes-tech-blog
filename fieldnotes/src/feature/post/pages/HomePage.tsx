@@ -25,7 +25,7 @@ function getPageTitle(catId: number | null, tagSlug: string | null, cats: Catego
 
 function useIsMobile(breakpoint = 768) {
     const [mobile, setMobile] = useState(
-        typeof window !== "undefined" && globalThis.innerWidth < breakpoint
+        globalThis.innerWidth < breakpoint
     );
     useEffect(() => {
         const onResize = () => setMobile(globalThis.innerWidth < breakpoint);

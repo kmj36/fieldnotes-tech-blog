@@ -1,5 +1,5 @@
 # Node.js 빌드
-FROM node:lts-alpine3.23 AS builder
+FROM node:26.4.0-alpine3.24 AS builder
 
 WORKDIR /app
 
@@ -14,5 +14,11 @@ COPY fieldnotes/ .
 RUN npm run build
 
 # Nginx 실행
-FROM nginx:alpine
+FROM nginx:1.30.3-alpine3.23 AS runtime
+
+RUN addgroup -S nonroot \
+&& adduser -S nonroot -G nonroot
+
 COPY --from=builder /app/dist /usr/share/nginx/html
+
+USER nonroot
