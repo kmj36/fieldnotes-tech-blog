@@ -62,7 +62,7 @@ const saveSnippetCmd: ICommand = {
             alert("스니펫으로 저장할 텍스트를 선택해주세요.");
             return;
         }
-        const name = window.prompt("저장할 텍스트 스니펫 이름: ", "");
+        const name = globalThis.prompt("저장할 텍스트 스니펫 이름: ", "");
         if (!name) return;
         snippetStore.add(name, state.selectedText);
         notifySnippetSaved?.();
@@ -121,7 +121,7 @@ const imageCmd: ICommand = {
         input.type = "file";
         input.accept = "image/*";
         input.onchange = async () => {
-            if (input.files && input.files[0] && globalUploadHandler) {
+            if (input.files?.[0] && globalUploadHandler) {
                 // 컴포넌트 내부에 바인딩된 업로드 처리기 실행
                 await globalUploadHandler(input.files[0], (text) => {
                     apiRef.replaceSelection(text);

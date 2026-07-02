@@ -7,10 +7,9 @@ import type {
   QSParams
 } from "./types";
 import type { TagQueryParams, TagListResult, TagBody, TagDetail } from "@/feature/tags/types";
-import type { AccountDetail, AccountListResult, AccountQueryParams, AccountRegisterBody, AccountUpdateBody } from "@/feature/auth/types";
+import type { AccountDetail, AccountListResult, AccountQueryParams, AccountRegisterBody, AccountUpdateBody, AuthState } from "@/feature/auth/types";
 import type { PostDetail, PostQueryParams, PostListResult, PostBody, PostPublic } from "@/feature/post/types";
 import type { CategoryQueryParams, CategoryListResult, CategoryBody, CategoryDetail } from "@/feature/categories/types";
-import type { AuthState } from "@/feature/auth/types";
 
 export const api = {
   /* Posts – Public */

@@ -25,12 +25,12 @@ function getPageTitle(catId: number | null, tagSlug: string | null, cats: Catego
 
 function useIsMobile(breakpoint = 768) {
     const [mobile, setMobile] = useState(
-        typeof window !== "undefined" && window.innerWidth < breakpoint
+        typeof window !== "undefined" && globalThis.innerWidth < breakpoint
     );
     useEffect(() => {
-        const onResize = () => setMobile(window.innerWidth < breakpoint);
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
+        const onResize = () => setMobile(globalThis.innerWidth < breakpoint);
+        globalThis.addEventListener("resize", onResize);
+        return () => globalThis.removeEventListener("resize", onResize);
     }, [breakpoint]);
     return mobile;
 }
@@ -57,7 +57,7 @@ interface SidebarProps {
 function Sidebar({
     isMobile, cats, tags, catId, tagSlug, titleInput, titleQ,
     setTitleInput, onCatSelect, onTagSelect, onSearch, onClearSearch
-}: SidebarProps) {
+}: Readonly<SidebarProps>) {
     return (
         /* 💡 데스크톱(!isMobile)일 때만 오른쪽에 1.5rem 패딩을 주어 border와 간격을 벌립니다 */
         <div style={{ 

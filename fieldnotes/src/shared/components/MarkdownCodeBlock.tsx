@@ -47,7 +47,7 @@ export const markdownComponents = {
     },
     img({ ...props }) {
         return (
-            <img {...props} style={{
+            <img {...props} alt={props.alt ?? ""} style={{
                 maxWidth: "100%",
                 height: "auto",
                 margin: "2rem auto",

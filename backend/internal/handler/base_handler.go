@@ -72,7 +72,9 @@ func (h *BaseHandler) respondProcessError(ctx *gin.Context, err error) {
 	var pgErr *pgconn.PgError
 
 	switch {
-	case errors.Is(err, dto.CErrUpdateEmptyParam):
+	case errors.Is(err, dto.CErrUpdateEmptyParam),
+		errors.Is(err, dto.CErrInvalidExt),
+		errors.Is(err, dto.CErrInvalidMIME):
 		ctx.JSON(dto.ErrBadRequestType.Status, dto.ResponseWrapper[any]{
 			Status:    dto.ErrBadRequestType.Status,
 			Code:      dto.ErrBadRequestType.Code,
@@ -124,16 +126,6 @@ func (h *BaseHandler) respondProcessError(ctx *gin.Context, err error) {
 			Code:      dto.ErrBadRequestRange.Code,
 			Detail:    err.Error(),
 			Message:   dto.ErrBadRequestRange.Message,
-			Timestamp: time.Now().UTC(),
-			Path:      ctx.Request.URL.Path,
-		})
-	case errors.Is(err, dto.CErrInvalidExt),
-		errors.Is(err, dto.CErrInvalidMIME):
-		ctx.JSON(dto.ErrBadRequestType.Status, dto.ResponseWrapper[any]{
-			Status:    dto.ErrBadRequestType.Status,
-			Code:      dto.ErrBadRequestType.Code,
-			Detail:    err.Error(),
-			Message:   dto.ErrBadRequestType.Message,
 			Timestamp: time.Now().UTC(),
 			Path:      ctx.Request.URL.Path,
 		})
