@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
-      # ── 테스트 커버리지 임시 비활성화 ──────────────────────────
+      # ── 테스트 커버리지 비활성화 ──────────────────────────
       # - name: Run Go tests with coverage
       #   working-directory: backend
       #   run: go test -coverprofile=coverage.out ./...
@@ -30,11 +30,11 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-      # ── 퀄리티 게이트 임시 비활성화 ──────────────────────────
-      # - uses: SonarSource/sonarqube-quality-gate-action@cf038b0e0cdecfa9e56c198bbb7d21d751d62c3b # v1.2.0
-      #   timeout-minutes: 5
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - uses: SonarSource/sonarqube-quality-gate-action@cf038b0e0cdecfa9e56c198bbb7d21d751d62c3b # v1.2.0
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   deploy-staging:
     name: Deploy to staging
