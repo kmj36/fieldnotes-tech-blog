@@ -1,6 +1,8 @@
 package service
 
 import (
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -91,7 +93,7 @@ func (s *PostService) Create(ctx *gin.Context, req *dto.CreatePostRequest) (*dto
 
 			Slug:      post.Slug,
 			Title:     post.Title,
-			Excerpt:   buildExcerpt(post.Content),
+			Excerpt:   buildExcerpt(post.Content, 150),
 			Thumbnail: post.Thumbnail,
 
 			IsPrivate: post.IsPrivate,
@@ -161,11 +163,58 @@ func resolvePublishState(reqIsPrivate *bool) (bool, *time.Time) {
 	return false, &now
 }
 
+var (
+	reCodeBlock   = regexp.MustCompile(`(?s)` + "```" + `.*?` + "```")
+	reHTMLTag     = regexp.MustCompile(`<[^>]+>`)
+	reImage       = regexp.MustCompile(`!\[[^\]]*\]\([^)]*\)`)
+	reLatexBlock  = regexp.MustCompile(`(?s)\$\$.*?\$\$`)
+	reLatexInline = regexp.MustCompile(`\$[^$\n]+\$`)
+	reTableRow    = regexp.MustCompile(`(?m)^\|.*\|$`)
+	reTableSep    = regexp.MustCompile(`(?m)^[\s|:-]+$`)
+	reStrike      = regexp.MustCompile(`~~([^~]+)~~`)
+	reCheckbox    = regexp.MustCompile(`(?mi)^\s*[-*]\s*\[[ x]\]\s*`)
+	reLink        = regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`) // [text](url) → text
+	reHeading     = regexp.MustCompile(`(?m)^#{1,6}\s+`)
+	reBold1       = regexp.MustCompile(`\*\*([^*]+)\*\*`)
+	reBold2       = regexp.MustCompile(`__([^_]+)__`)
+	reItalic1     = regexp.MustCompile(`\*([^*]+)\*`)
+	reItalic2     = regexp.MustCompile(`_([^_]+)_`)
+	reBlockquote  = regexp.MustCompile(`(?m)^>\s?`)
+	reHr          = regexp.MustCompile(`(?m)^(-{3,}|\*{3,}|_{3,})\s*$`)
+	reListMarker  = regexp.MustCompile(`(?m)^\s*([-*+]|\d+\.)\s+`)
+	reWhitespace  = regexp.MustCompile(`\s+`)
+)
+
 // 게시물 유니코드 150자 절삭
-func buildExcerpt(content string) string {
-	runes := []rune(content)
-	if len(runes) > 150 {
-		return string(runes[:150])
+func buildExcerpt(content string, length int) string {
+	s := content
+
+	s = reCodeBlock.ReplaceAllString(s, "")
+	s = reHTMLTag.ReplaceAllString(s, "")
+	s = reImage.ReplaceAllString(s, "")
+	s = reLatexBlock.ReplaceAllString(s, "")
+	s = reLatexInline.ReplaceAllString(s, "")
+	s = reTableRow.ReplaceAllStringFunc(s, func(m string) string {
+		return strings.ReplaceAll(m, "|", " ")
+	})
+	s = reTableSep.ReplaceAllString(s, "")
+	s = reStrike.ReplaceAllString(s, "$1")
+	s = reCheckbox.ReplaceAllString(s, "")
+	s = reLink.ReplaceAllString(s, "$1")
+	s = reHeading.ReplaceAllString(s, "")
+	s = reBold1.ReplaceAllString(s, "$1")
+	s = reBold2.ReplaceAllString(s, "$1")
+	s = reItalic1.ReplaceAllString(s, "$1")
+	s = reItalic2.ReplaceAllString(s, "$1")
+	s = reBlockquote.ReplaceAllString(s, "")
+	s = reHr.ReplaceAllString(s, "")
+	s = reListMarker.ReplaceAllString(s, "")
+	s = reWhitespace.ReplaceAllString(s, " ")
+	s = strings.TrimSpace(s)
+
+	runes := []rune(s)
+	if len(runes) > length {
+		return string(runes[:length])
 	}
 	return string(runes)
 }
@@ -270,7 +319,7 @@ func buildPostPublic(
 
 		Slug:      post.Slug,
 		Title:     post.Title,
-		Excerpt:   buildExcerpt(post.Content),
+		Excerpt:   buildExcerpt(post.Content, 150),
 		Thumbnail: post.Thumbnail,
 
 		IsPrivate: post.IsPrivate,
@@ -507,7 +556,7 @@ func (s *PostService) Update(ctx *gin.Context, req *dto.UpdatePostRequest) (*dto
 
 				Slug:      data.Slug,
 				Title:     data.Title,
-				Excerpt:   buildExcerpt(data.Content),
+				Excerpt:   buildExcerpt(data.Content, 150),
 				Thumbnail: data.Thumbnail,
 
 				IsPrivate: data.IsPrivate,
