@@ -1,32 +1,14 @@
 import type { PostCardProps } from "../types";
 import { C, FM, FH } from "@/shared/constants";
 import { Badge, Chip } from "@/shared/components";
-import removeMd from "remove-markdown";
 
 /* ═══════════════════════════════════════════════════════════════
    POST CARD
 ═══════════════════════════════════════════════════════════════ */
-
-export function toExcerpt(content: string, len = 150): string {
-  const cleaned = content
-  .replace(/```[\s\S]*?```/g, "")
-  .replace(/<[^>]+>/g, "")
-  .replace(/^\|.*\|$/gm, m => m.replace(/\|/g, " "))  // 표 행의 파이프 → 공백
-  .replace(/^[\s|:-]+$/gm, "")                         // 표 구분선(---) 행 제거
-  .replace(/~~([^~]+)~~/g, "$1")                       // 취소선
-  .replace(/^\s*[-*]\s*\[[ x]\]\s*/gim, "");           // 체크박스
-
-  return removeMd(cleaned)
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, len);
-}
-
 export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
     const date = post.publishedAt
         ? new Date(post.publishedAt).toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric" })
         : "미발행";
-    const excerpt = toExcerpt(post.excerpt, 150);
 
     return (
         <button
@@ -76,9 +58,9 @@ export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
                 <h2 style={{ margin: 0, fontFamily: FH, fontSize: "1.1rem", fontWeight: "700", color: C.ink, lineHeight: 1.3 }}>
                     {post.title}
                 </h2>
-                {excerpt && (
+                {post.excerpt && (
                     <p style={{ margin: 0, fontSize: ".855rem", color: C.muted, lineHeight: 1.65, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                        {excerpt}
+                        {post.excerpt}
                     </p>
                 )}
                 {post.tags?.length > 0 && (
