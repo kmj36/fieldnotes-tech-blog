@@ -68,7 +68,14 @@ export default function App() {
         {/* 공개 */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-        <Route path="/post/:slug" element={<PostDetailPage />} />
+        <Route
+          path="/post/:slug"
+          element={
+            <Suspense fallback={<Spinner />}>
+              <PostDetailPage />
+            </Suspense>
+          }
+        />
 
         {/* 관리자 — ProtectedRoute로 감싸고, AdminLayout이 부모 */}
         <Route
