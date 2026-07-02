@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -79,6 +80,44 @@ func (s *IOService) ProcessImage(ctx *gin.Context, req *dto.CreateImageRequest) 
 	}
 
 	return res, nil
+}
+
+func (s *IOService) ListImages() (*dto.ListImagesResponse, error) {
+	entries, err := os.ReadDir(s.staticDir)
+	if err != nil {
+		return nil, err
+	}
+	images := make([]dto.ImageListItem, 0, len(entries))
+	for _, e := range entries {
+		// 디렉터리 제외
+		if e.IsDir() {
+			continue
+		}
+
+		// 비 이미지 확장자 제외
+		if !s.allowedExts[strings.ToLower(filepath.Ext(e.Name()))] {
+			continue
+		}
+
+		// 파일 정보 조회 실패
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+
+		images = append(images, dto.ImageListItem{
+			URL:        "/api/v1/static/" + e.Name(),
+			Filename:   e.Name(),
+			Size:       info.Size(),
+			UploadedAt: info.ModTime().UTC(),
+		})
+	}
+
+	sort.Slice(images, func(i, j int) bool {
+		return images[i].UploadedAt.After(images[j].UploadedAt) // 최신순
+	})
+
+	return &dto.ListImagesResponse{ImageList: images}, nil
 }
 
 func (s *IOService) calculateFileHash(fileHeader *multipart.FileHeader) (string, error) {

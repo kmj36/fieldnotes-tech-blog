@@ -10,6 +10,7 @@ import MDEditor, { commands } from "@uiw/react-md-editor";
 import type { ICommand, TextAreaTextApi, TextState } from "@uiw/react-md-editor";
 import { MarkdownViewer } from "@/shared/components/MarkdownCodeBlock";
 import { snippetStore } from "@/shared/lib/snippetStorage";
+import { ImageLibraryModal } from "./ImageLibraryModal";
 
 /* ─── Post Form (create / edit modal) ──────────────────────── */
 
@@ -25,6 +26,26 @@ const mdEditorComponents = {
 // 💡 외부 커맨드에서 내부 업로드 핸들러를 호출할 수 있도록 징검다리 전역 변수를 선언합니다.
 let globalUploadHandler: ((file: File, insertText: (text: string) => void) => Promise<void>) | null = null;
 let notifySnippetSaved: (() => void) | null = null;
+
+let globalOpenLibrary: ((target: "thumbnail" | "editor") => void) | null = null;
+let globalLibraryInsert: ((markdown: string) => void) | null = null;
+
+const libraryCmd: ICommand = {
+    name: "imageLibrary",
+    keyCommand: "imageLibrary",
+    buttonProps: { "aria-label": "이미지 라이브러리", title: "이미지 라이브러리에서 선택" },
+    icon: (
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="2" y="3" width="16" height="14" rx="1" />
+            <circle cx="7" cy="8" r="1.5" />
+            <path d="M2 14l5-4 4 3 3-2 4 4" />
+        </svg>
+    ),
+    execute: (_state, apiRef) => {
+        globalLibraryInsert = (markdown) => apiRef.replaceSelection(markdown);
+        globalOpenLibrary?.("editor");
+    },
+};
 
 const saveSnippetCmd: ICommand = {
     name: "saveSnippet",
@@ -171,6 +192,8 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
     const [err, setErr] = useState<string | null>(null);
     const [snippetVersion, setSnippetVersion] = useState(0);
     notifySnippetSaved = () => setSnippetVersion((v) => v + 1);
+    const [libraryTarget, setLibraryTarget] = useState<"thumbnail"| "editor" | null>(null);
+    globalOpenLibrary = (target) => setLibraryTarget(target);
 
     const catOpts: SelectOption[] = [
         { value: "", label: "카테고리 없음" },
@@ -237,6 +260,7 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
                     <Input label="슬러그 *" value={f.slug} onChange={up("slug")} placeholder="my-post-slug" />
                 </div>
                 <Input label="썸네일 URL" value={f.thumbnail} onChange={up("thumbnail")} placeholder="https://…" />
+                <Btn variant="outline" size="sm" full={true} onClick={() => setLibraryTarget("thumbnail")}>라이브러리에서 썸네일 이미지 선택</Btn>
                 
                 {/* 💡 업로드 진행 상황을 라벨 옆에 시각적으로 표시해 줍니다. */}
                 <Field label={`내용 * (Markdown 지원) ${uploading ? " ─ 이미지 업로드 중..." : ""}`}>
@@ -256,7 +280,10 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
                                 commands.quote,
                                 commands.code,
                                 commands.codeBlock,
+                                commands.divider,
                                 imageCmd,
+                                libraryCmd,
+                                commands.divider,
                                 commands.checkedListCommand,
                                 commands.table,
                                 mathCmd,
@@ -267,6 +294,7 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
                                 commands.divider, // -
                                 saveSnippetCmd,
                                 buildLoadSnippetCmd(),
+                                
                             ]}
                             components={mdEditorComponents}
                             // 💡 에디터 위로 드래그 앤 드롭 및 이미지 복사 붙여넣기(Ctrl+V) 시 작동하는 속성입니다.
@@ -337,6 +365,20 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
                     <Btn disabled={loading || uploading} onClick={save}>{getButtonLabel(loading, isEdit)}</Btn>
                 </div>
             </div>
+            {libraryTarget && (
+                <ImageLibraryModal
+                    onClose={() => setLibraryTarget(null)}
+                    onSelect={(url) => {
+                        if (libraryTarget === "thumbnail") {
+                            up("thumbnail")(url);
+                        } else {
+                            const filename = url.split("/").pop() ?? "image";
+                            globalLibraryInsert?.(`![${filename}](${url})`);
+                        }
+                        setLibraryTarget(null);
+                    }}
+                />
+            )}
         </Modal>
     );
 }
