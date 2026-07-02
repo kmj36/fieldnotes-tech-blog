@@ -7,11 +7,12 @@ COPY backend/ .
 RUN go build -o bin/fieldnotes_v1_0_0 ./cmd/api/main.go
 
 # backend 실행
-FROM alpine:latest
+FROM alpine:3.23.5
 
 WORKDIR /app
-RUN apk add --no-cache tzdata
-RUN mkdir -p static
+
+RUN apk add --no-cache tzdata \
+&& mkdir -p static
 
 COPY --from=builder /app/bin/fieldnotes_v1_0_0 /usr/local/bin/fieldnotes_v1_0_0
 CMD ["fieldnotes_v1_0_0"]

@@ -24,10 +24,19 @@ async function req<T = unknown>(
   
   const { body, ...rest } = opts;
 
+  let requestBody: BodyInit | undefined;
+  if (body === undefined) {
+    requestBody = undefined;
+  } else if (isFormData) {
+    requestBody = body as FormData;
+  } else {
+    requestBody = JSON.stringify(body);
+  }
+
   const res = await fetch(`${_BASE}${path}`, {
     ...rest,
     headers: { ...headers, ...(rest.headers as Record<string, string>) },
-    body: body === undefined ? undefined : (isFormData ? (body as FormData) : JSON.stringify(body)),
+    body: requestBody,
   });
 
   if (res.status === 401) {

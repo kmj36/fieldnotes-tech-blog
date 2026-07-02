@@ -7,7 +7,7 @@ interface Props {
   onInsert: (content: string) => void;
 }
 
-export function SnippetPicker({ onInsert }: Props) {
+export function SnippetPicker({ onInsert }: Readonly<Props>) {
   const [open, setOpen] = useState(false);
   const [snippets, setSnippets] = useState<Snippet[]>([]);
 
