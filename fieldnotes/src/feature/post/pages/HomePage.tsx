@@ -175,21 +175,23 @@ export default function HomePage() {
     };
 
     return (
-        <div style={{ maxWidth: "1500px", margin: "0 auto", padding: "2rem 1.5rem", display: "flex", gap: "2rem", alignItems: "flex-start", minHeight: "calc(100vh - 58px - 57px)", position: "relative" }}>
+        <div style={{ maxWidth: 1500,
+            margin: "0 auto",
+            padding: "2rem 1.5rem",
+            display: "flex",
+            gap: "2rem",
+            alignItems: "stretch",   // flex-start → stretch로 원복
+            minHeight: "calc(100vh - 115px)",
+        }}>
             {/* ── 데스크톱 사이드바 (항상 표시) ── */}
             {!isMobile && (
                 <aside style={{
-                    width: "300px",
+                    width: 300,
                     flexShrink: 0,
                     position: "sticky",
-                    /* 💡 상단 네비바 높이(74px)를 제외한 브라우저 화면 높이만큼만 최대 높이를 지정합니다. */
-                    top: "74px",
-                    maxHeight: "calc(100vh - 74px - 2rem)", 
-                    
-                    /* 💡 내용이 이 높이를 넘어가면 부드러운 스크롤바를 생기게 합니다. */
-                    overflowY: "auto",
-                    overflowX: "hidden",
-                    borderRight: `1px solid ${C.border}`,
+                    top: 74,
+                    borderRight: "1px solid rgb(231, 229, 228)",
+                    paddingRight: "1.5rem",
                 }}>
                     <Sidebar {...sidebarProps} />
                 </aside>
