@@ -3,6 +3,8 @@ version: '3.8'
 services:
   fieldnotes_nginx:
     container_name: fieldnotes_nginx
+    group_add:
+      - "990"
     build:
       args:
         VITE_APP_NAME: ${VITE_APP_NAME}
