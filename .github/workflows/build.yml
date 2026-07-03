@@ -40,7 +40,7 @@ jobs:
   deploy-staging:
     name: Deploy to staging
     needs: build
-    runs-on: [self-hosted, test-server]
+    runs-on: [self-hosted, main-server]
     if: startsWith(github.ref, 'refs/heads/release/')
 
     steps:
