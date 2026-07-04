@@ -7,7 +7,10 @@ import { Modal, Alert, Input, Sel, Field, Btn, Chip } from '@/shared/components'
 import { C, FB } from "@/shared/constants";
 import { useState } from "react";
 import MDEditor, { commands } from "@uiw/react-md-editor";
-import { MarkdownPreview } from "@/shared/components/MarkdownCodeBlock";
+import type { ICommand, TextAreaTextApi, TextState } from "@uiw/react-md-editor";
+import { MarkdownViewer } from "@/shared/components/MarkdownCodeBlock";
+import { snippetStore } from "@/shared/lib/snippetStorage";
+import { ImageLibraryModal } from "./ImageLibraryModal";
 
 /* ─── Post Form (create / edit modal) ──────────────────────── */
 
@@ -17,10 +20,130 @@ function getButtonLabel(loading: boolean, isEdit: boolean): string {
 }
 
 const mdEditorComponents = {
-    preview: (source:string) => <MarkdownPreview source={source} />
+    preview: (source: string) => <MarkdownViewer source={source} />
 }
 
-const alignLeft = {
+// 💡 외부 커맨드에서 내부 업로드 핸들러를 호출할 수 있도록 징검다리 전역 변수를 선언합니다.
+let globalUploadHandler: ((file: File, insertText: (text: string) => void) => Promise<void>) | null = null;
+let notifySnippetSaved: (() => void) | null = null;
+
+let globalOpenLibrary: ((target: "thumbnail" | "editor") => void) | null = null;
+let globalLibraryInsert: ((markdown: string) => void) | null = null;
+
+const libraryCmd: ICommand = {
+    name: "imageLibrary",
+    keyCommand: "imageLibrary",
+    buttonProps: { "aria-label": "이미지 라이브러리", title: "이미지 라이브러리에서 선택" },
+    icon: (
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="2" y="3" width="16" height="14" rx="1" />
+            <circle cx="7" cy="8" r="1.5" />
+            <path d="M2 14l5-4 4 3 3-2 4 4" />
+        </svg>
+    ),
+    execute: (_state, apiRef) => {
+        globalLibraryInsert = (markdown) => apiRef.replaceSelection(markdown);
+        globalOpenLibrary?.("editor");
+    },
+};
+
+const saveSnippetCmd: ICommand = {
+    name: "saveSnippet",
+    keyCommand: "saveSnippet",
+    buttonProps: { "aria-label": "선택 영역을 스니펫으로 저장", title: "스니펫으로 저장" },
+    icon: (
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M3 3h11l3 3v11H3z" />
+            <path d="M6 3v5h8V3" />
+        </svg>
+    ),
+    execute: (state: TextState, _api: TextAreaTextApi) => {
+        if (!state.selectedText) {
+            alert("스니펫으로 저장할 텍스트를 선택해주세요.");
+            return;
+        }
+        const name = globalThis.prompt("저장할 텍스트 스니펫 이름: ", "");
+        if (!name) return;
+        snippetStore.add(name, state.selectedText);
+        notifySnippetSaved?.();
+    }
+}
+
+function buildLoadSnippetCmd(): ICommand {
+    const snippets = snippetStore.list();
+    return commands.group(
+        snippets.length > 0
+            ? snippets.map((s) => ({
+                name: s.id,
+                keyCommand: s.id,
+                    buttonProps: {
+                        "aria-label": s.name,
+                        title: `${s.name} (우클릭: 삭제)`,
+                        onContextMenu: (e: React.MouseEvent<HTMLButtonElement>) => {
+                            e.preventDefault();
+                            if (confirm(`"${s.name}" 스니펫을 삭제하시겠습니까?`)) {
+                                snippetStore.remove(s.id);
+                                notifySnippetSaved?.();
+                            }
+                        },
+                    },
+                    icon: <span style={{ padding: "0 6px", fontSize: "12px", whiteSpace: "nowrap" }}>{s.name}</span>,
+                    execute: (_state: TextState, api: TextAreaTextApi) => {
+                        api.replaceSelection(s.content);
+                },
+            }))
+            : [
+                  {
+                      name: "empty",
+                      keyCommand: "empty",
+                      icon: <span style={{ padding: "0 6px", fontSize: "12px", color: "#999" }}>저장된 스니펫 없음</span>,
+                      execute: () => {},
+                  },
+              ],
+        {
+            name: "loadSnippet",
+            keyCommand: "loadSnippet",
+            groupName: "loadSnippet",
+            buttonProps: { "aria-label": "스니펫 불러오기", title: "스니펫 불러오기" },
+            icon: (
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M3 6h5l2 2h7v9H3z" />
+                </svg>
+            ),
+        }
+    );
+}
+
+const imageCmd: ICommand = {
+    ...commands.image,
+    execute: async (_, apiRef) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.onchange = async () => {
+            if (input.files?.[0] && globalUploadHandler) {
+                // 컴포넌트 내부에 바인딩된 업로드 처리기 실행
+                await globalUploadHandler(input.files[0], (text) => {
+                    apiRef.replaceSelection(text);
+                });
+            }
+        };
+        input.click();
+    }
+};
+
+const mathCmd: ICommand = {
+    name: "math",
+    keyCommand: "math",
+    buttonProps: { "aria-label": "수식", title: "수식 (LaTeX)" },
+    icon: <span style={{ fontStyle: "italic", fontWeight: 700, fontFamily: "serif" }}>fx</span>,
+    execute: (state, api) => {
+        const sel = state.selectedText || "E = mc^2";
+        api.replaceSelection(`\n$$\n${sel}\n$$\n`);
+    },
+};
+
+const alignLeftcmd = {
     name: "align-left",
     keyCommand: "align-left",
     buttonProps: { "aria-label": "왼쪽 정렬" },
@@ -31,7 +154,7 @@ const alignLeft = {
     },
 };
 
-const alignCenter = {
+const alignCentercmd = {
     name: "align-center",
     keyCommand: "align-center",
     buttonProps: { "aria-label": "가운데 정렬" },
@@ -42,7 +165,7 @@ const alignCenter = {
     },
 };
 
-const alignRight = {
+const alignRightcmd = {
     name: "align-right",
     keyCommand: "align-right",
     buttonProps: { "aria-label": "오른쪽 정렬" },
@@ -65,7 +188,12 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
         isPrivate: post?.isPrivate ?? false,
     });
     const [loading, setLoading] = useState<boolean>(false);
+    const [uploading, setUploading] = useState<boolean>(false); // 💡 이미지 업로드 전용 로딩 추가
     const [err, setErr] = useState<string | null>(null);
+    const [snippetVersion, setSnippetVersion] = useState(0);
+    notifySnippetSaved = () => setSnippetVersion((v) => v + 1);
+    const [libraryTarget, setLibraryTarget] = useState<"thumbnail"| "editor" | null>(null);
+    globalOpenLibrary = (target) => setLibraryTarget(target);
 
     const catOpts: SelectOption[] = [
         { value: "", label: "카테고리 없음" },
@@ -81,6 +209,31 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
         ...p,
         tagSlugs: p.tagSlugs.includes(slug) ? p.tagSlugs.filter((s: string) => s !== slug) : [...p.tagSlugs, slug],
     }));
+
+    // 💡 컴포넌트 내부에 상태 제어가 가능한 실제 업로드 실행 로직을 작성합니다.
+    const executeImageUpload = async (file: File, insertText: (text: string) => void) => {
+        setUploading(true);
+        setErr(null);
+        try {
+            const res = await api.imageUpload({ image: file });
+            const imageUrl = res?.result?.url || (res as any)?.url;
+            const filename = res?.result?.filename || (res as any)?.filename || "image";
+            
+            if (imageUrl) {
+                insertText(`![${filename}](${imageUrl})`);
+            } else {
+                throw new Error("서버로부터 이미지 주소를 받지 못했습니다.");
+            }
+        } catch (e) {
+            console.error("Image upload error:", e);
+            setErr((e as Error).message || "이미지 업로드 중 오류가 발생했습니다.");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // 외부 선언된 imageCmd가 이 함수를 바라보도록 바인딩합니다.
+    globalUploadHandler = executeImageUpload;
 
     async function save(): Promise<void> {
         if (!f.title || !f.slug || !f.content) return setErr("슬러그, 제목, 내용은 필수입니다.");
@@ -107,30 +260,89 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
                     <Input label="슬러그 *" value={f.slug} onChange={up("slug")} placeholder="my-post-slug" />
                 </div>
                 <Input label="썸네일 URL" value={f.thumbnail} onChange={up("thumbnail")} placeholder="https://…" />
-                <Field label="내용 * (Markdown 지원)">
+                <Btn variant="outline" size="sm" full={true} onClick={() => setLibraryTarget("thumbnail")}>라이브러리에서 썸네일 이미지 선택</Btn>
+                
+                {/* 💡 업로드 진행 상황을 라벨 옆에 시각적으로 표시해 줍니다. */}
+                <Field label={`내용 * (Markdown 지원) ${uploading ? " ─ 이미지 업로드 중..." : ""}`}>
                     <div data-color-mode="light">
                         <MDEditor
                             value={f.content}
                             onChange={(v) => up("content")(v ?? "")}
                             height={400}
                             preview="live"
+                            key={snippetVersion}
                             commands={[
                                 commands.bold,
                                 commands.italic,
                                 commands.strikethrough,
                                 commands.hr,
-                                commands.title,
-                                commands.divider,
-                                commands.link,
+                                commands.divider, // -
                                 commands.quote,
                                 commands.code,
                                 commands.codeBlock,
                                 commands.divider,
-                                alignLeft,
-                                alignCenter,
-                                alignRight,
+                                imageCmd,
+                                libraryCmd,
+                                commands.divider,
+                                commands.checkedListCommand,
+                                commands.table,
+                                mathCmd,
+                                commands.divider, // -
+                                alignLeftcmd,
+                                alignCentercmd,
+                                alignRightcmd,
+                                commands.divider, // -
+                                saveSnippetCmd,
+                                buildLoadSnippetCmd(),
+                                
                             ]}
                             components={mdEditorComponents}
+                            // 💡 에디터 위로 드래그 앤 드롭 및 이미지 복사 붙여넣기(Ctrl+V) 시 작동하는 속성입니다.
+                            textareaProps={{
+                            onPaste: async (e) => {
+                                const items = e.clipboardData?.items;
+                                if (!items) return;
+                                for (const item of Array.from(items)) {
+                                    if (item.type.startsWith("image/")) {
+                                        e.preventDefault(); // 기본 붙여넣기 동작 방지
+                                        const file = item.getAsFile();
+                                        if (file && globalUploadHandler) {
+                                            // 현재 커서 위치를 찾기 위한 헬퍼
+                                            const target = e.target as HTMLTextAreaElement;
+                                            const start = target.selectionStart;
+                                            const end = target.selectionEnd;
+                                            
+                                            await globalUploadHandler(file, (markdownText) => {
+                                                setF((p) => ({
+                                                    ...p,
+                                                    content: p.content.substring(0, start) + markdownText + p.content.substring(end),
+                                                }))       
+                                            });
+                                        }
+                                    }
+                                }
+                            },
+                            onDrop: async (e) => {
+                                const files = e.dataTransfer?.files;
+                                if (!files) return;
+                                for (const file of Array.from(files)) {
+                                    if (file.type.startsWith("image/")) {
+                                        e.preventDefault(); // 기본 드롭 동작(파일 열기) 방지
+                                        if (globalUploadHandler) {
+                                            const target = e.target as HTMLTextAreaElement;
+                                            const start = target.selectionStart;
+                                            const end = target.selectionEnd;
+
+                                            await globalUploadHandler(file, (markdownText) => {
+                                                const currentContent = f.content;
+                                                const newContent = currentContent.substring(0, start) + markdownText + currentContent.substring(end);
+                                                up("content")(newContent);
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }}
                         />
                     </div>
                 </Field>
@@ -149,9 +361,24 @@ export default function PostForm({ post, cats, tags, onClose, onSave }: Readonly
                 </Field>
                 <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", paddingTop: "8px", borderTop: `1px solid ${C.border}` }}>
                     <Btn variant="ghost" onClick={onClose}>취소</Btn>
-                    <Btn disabled={loading} onClick={save}>{getButtonLabel(loading, isEdit)}</Btn>
+                    {/* 💡 이미지가 올라가는 도중에는 본문 저장을 막기 위해 uploading 조건도 추가했습니다. */}
+                    <Btn disabled={loading || uploading} onClick={save}>{getButtonLabel(loading, isEdit)}</Btn>
                 </div>
             </div>
+            {libraryTarget && (
+                <ImageLibraryModal
+                    onClose={() => setLibraryTarget(null)}
+                    onSelect={(url) => {
+                        if (libraryTarget === "thumbnail") {
+                            up("thumbnail")(url);
+                        } else {
+                            const filename = url.split("/").pop() ?? "image";
+                            globalLibraryInsert?.(`![${filename}](${url})`);
+                        }
+                        setLibraryTarget(null);
+                    }}
+                />
+            )}
         </Modal>
     );
 }

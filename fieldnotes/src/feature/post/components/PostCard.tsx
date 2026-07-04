@@ -5,26 +5,10 @@ import { Badge, Chip } from "@/shared/components";
 /* ═══════════════════════════════════════════════════════════════
    POST CARD
 ═══════════════════════════════════════════════════════════════ */
-
 export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
     const date = post.publishedAt
         ? new Date(post.publishedAt).toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric" })
         : "미발행";
-    const excerpt = (post.excerpt || "")
-        .replaceAll(/```[\s\S]*?```/g, "")
-        .replaceAll(/`[^`]+`/g, "")
-        .replaceAll(/!\[([^\]]*)\]\([^)]+\)/g, "")
-        .replaceAll(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-        .replaceAll(/<!--[\s\S]*?-->/g, "")          // ← HTML 주석 제거
-        .replaceAll(/<[^>]+>/g, "")                   // ← HTML 태그 제거
-        .replaceAll(/#+\s*/g, "")
-        .replaceAll(/\*\*([^*]+)\*\*/g, "$1")
-        .replaceAll(/\*([^*]+)\*/g, "$1")
-        .replaceAll(/^[-*]\s+/gm, "")
-        .replaceAll(/^>\s+/gm, "")
-        .replaceAll(/---/g, "")
-        .replaceAll(/\n+/g, " ")
-        .trim();
 
     return (
         <button
@@ -74,9 +58,9 @@ export default function PostCard({ post, onClick }: Readonly<PostCardProps>) {
                 <h2 style={{ margin: 0, fontFamily: FH, fontSize: "1.1rem", fontWeight: "700", color: C.ink, lineHeight: 1.3 }}>
                     {post.title}
                 </h2>
-                {excerpt && (
+                {post.excerpt && (
                     <p style={{ margin: 0, fontSize: ".855rem", color: C.muted, lineHeight: 1.65, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                        {excerpt}
+                        {post.excerpt}
                     </p>
                 )}
                 {post.tags?.length > 0 && (

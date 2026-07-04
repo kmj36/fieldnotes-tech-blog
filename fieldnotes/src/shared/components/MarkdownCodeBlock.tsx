@@ -1,10 +1,14 @@
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import type { ReactNode } from "react";
-import { C } from "../constants";
+import { C, FM } from "../constants";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
 interface CodeProps {
     className?: string;
@@ -20,6 +24,7 @@ export const sanitizeSchema = {
         div: [...(defaultSchema.attributes?.div ?? []), "style"],
         p: [...(defaultSchema.attributes?.p ?? []), "style"],
         span: [...(defaultSchema.attributes?.span ?? []), "style"],
+        img: [...(defaultSchema.attributes?.img ?? []), "style"],
         // 이벤트 핸들러 명시적 차단
         "*": (defaultSchema.attributes?.["*"] ?? []).filter(
             (attr) => !String(attr).startsWith("on")
@@ -40,11 +45,40 @@ export const markdownComponents = {
     hr() {
         return <hr style={{ border: "none", borderTop: `2px solid ${C.border}`, margin: "2rem 0" }} />;
     },
+    img({ ...props }) {
+        return (
+            <img {...props} alt={props.alt ?? ""} style={{
+                maxWidth: "100%",
+                height: "auto",
+                margin: "2rem auto",
+                borderRadius: "8px",
+                ...props.style
+            }} />
+        );
+    },
     code({ className, children, ...props }: CodeProps) {
+        const isBlock = /language-/.test(className || "");
+
         const match = /language-(\w+)/.exec(className ?? "");
         const codeString = Array.isArray(children)
         ? children.join("")
         : String(children ?? "");
+
+         if (!isBlock) {
+            // 인라인 코드
+            return (
+            <code style={{
+                background: "rgba(135,131,120,0.15)",
+                color: C.accent,
+                padding: "0.15em 0.4em",
+                borderRadius: "4px",
+                fontSize: "0.875em",
+                fontFamily: FM,
+            }} {...props}>
+                {children}
+            </code>
+            );
+        }
 
         return match ? (
         <SyntaxHighlighter
@@ -62,11 +96,12 @@ export const markdownComponents = {
     },
 };
 
-export function MarkdownPreview({ source }: Readonly<{ source: string }>) {
+export function MarkdownViewer({ source }: Readonly<{ source: string }>) {
     return (
         <ReactMarkdown
             components={markdownComponents}
-            rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex]}
         >
             {source}
         </ReactMarkdown>

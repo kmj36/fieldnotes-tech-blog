@@ -1,17 +1,19 @@
-import type { PostDetailPageProps } from "../types";
 import useAsync from "@/shared/hooks/useAsync";
 import { api } from "@/shared/api";
 import { Spinner, Alert, Btn, Badge, Chip } from "@/shared/components";
 import { C, FM, FH } from "@/shared/constants";
-import ReactMarkdown from "react-markdown";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize from "rehype-sanitize";
-import { markdownComponents, sanitizeSchema } from "@/shared/components/MarkdownCodeBlock";
+import { MarkdownViewer } from "@/shared/components/MarkdownCodeBlock";
+import { useNavigate, useParams } from "react-router-dom";
+import { getStoredAuth } from "@/shared/api/api";
 
 /* ═══════════════════════════════════════════════════════════════
    POST DETAIL PAGE
 ═══════════════════════════════════════════════════════════════ */
-export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDetailPageProps>) {
+export default function PostDetailPage() {
+    const navigate = useNavigate();
+    const { slug = "" } = useParams();
+    const auth = getStoredAuth();
+
     const { data, loading, error } = useAsync(
         () => auth.token ? api.getPostAdmin(slug) : api.getPost(slug),
         [slug, auth.token]
@@ -22,7 +24,7 @@ export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDeta
     if (error) return (
         <div style={{ maxWidth: "800px", margin: "2rem auto", padding: "0 1.5rem" }}>
             <Alert msg={`오류: ${error}`} /><br />
-            <Btn variant="ghost" onClick={() => setNav({ page: "home" })}>← 목록으로</Btn>
+            <Btn variant="ghost" onClick={() => navigate("/")}>← 목록으로</Btn>
         </div>
     );
     if (!post) return null;
@@ -36,7 +38,7 @@ export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDeta
             {/* 뒤로가기 */}
             <div style={{ marginBottom: "1.5rem" }}>
                 <button
-                    onClick={() => setNav({ page: "home" })}
+                    onClick={() => navigate("/")}
                     style={{
                         fontFamily: FM,
                         fontSize: ".78rem",
@@ -69,7 +71,7 @@ export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDeta
                 {post.isPrivate && <Badge color={C.muted}>Private</Badge>}
                 {Boolean(auth.token) && post.id !== undefined && (
                     <Btn size="sm" variant="outline" style={{ marginLeft: "auto" }}
-                        onClick={() => setNav({ page: "admin-post-edit", postSlug: slug })}>
+                        onClick={() => navigate(`/admin/posts/${slug}/edit`)}>
                         ✏ 수정
                     </Btn>
                 )}
@@ -80,12 +82,7 @@ export default function PostDetailPage({ slug, setNav, auth }: Readonly<PostDeta
                     onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
             )}
 
-            <ReactMarkdown
-                components={markdownComponents}
-                rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
-            >
-                {post.content ?? ("")}
-            </ReactMarkdown>
+            <MarkdownViewer source={post.content ?? ("")}/>
 
             {post.tags?.length > 0 && (
                 <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: `1px solid ${C.border}`, display: "flex", gap: "8px", flexWrap: "wrap" }}>

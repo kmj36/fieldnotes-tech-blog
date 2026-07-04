@@ -16,22 +16,26 @@ interface ApiResponse<T = unknown> {
 
 interface LoginResult { AccountID: string; token: string; }
 
-// ── Router / Auth ──────────────────────────────────────────────
-type PageKey =
-  | "home" | "post" | "login"
-  | "admin" | "admin-posts" | "admin-post-edit"
-  | "admin-categories" | "admin-tags" | "admin-accounts";
+interface ImageUploadBody { image: File | Blob; }
 
-interface NavState { page: PageKey; slug?: string; postSlug?: string; }
+interface ImageUploadResult { url: string; filename: string; }
+
+interface ImageListItem { url: string, filename: string, size: number, uploadedAt: string }
+
+interface ListImagesResponse { images: ImageListItem[] }
+
+// ── Router / Auth ──────────────────────────────────────────────
 
 type QSParams = Record<string, string | number | boolean | undefined | null>;
 
 export type {
   ApiResponse,
   LoginResult,
-  NavState,
+  ImageUploadBody,
+  ImageUploadResult,
+  ImageListItem,
+  ListImagesResponse,
   QSParams,
-  PageKey,
   Pagination,
   SortDir
 };

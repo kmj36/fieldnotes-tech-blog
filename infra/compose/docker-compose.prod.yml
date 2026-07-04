@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   fieldnotes_nginx:
-    container_name: fieldnotes_nginx
+    container_name: fieldnotes_nginx_production
+    group_add:
+      - "990"
     build:
       args:
         VITE_APP_NAME: ${VITE_APP_NAME}
@@ -17,17 +19,17 @@ services:
       - ../env/.env.prod
 
   fieldnotes_backend:
-    container_name: fieldnotes_backend
+    container_name: fieldnotes_backend_production
     networks:
       BR-LAN-Network:
         ipv4_address: 172.22.1.15
     volumes:
-      - backend_staticfile:/app/static:ro
+      - backend_staticfile:/app/static
     env_file:
       - ../env/.env.prod
 
   fieldnotes_postgres:
-    container_name: fieldnotes_postgres
+    container_name: fieldnotes_postgres_production
     networks:
       BR-LAN-Network:
         ipv4_address: 172.22.1.16
@@ -44,7 +46,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   fieldnotes_migrate:
-    container_name: fieldnotes_migrate
+    container_name: fieldnotes_migrate_production
     networks:
       BR-LAN-Network:
     env_file:

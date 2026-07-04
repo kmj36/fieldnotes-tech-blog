@@ -6,11 +6,11 @@ import { C, FM } from "@/shared/constants";
 import LoginPage from "@/feature/auth/pages/LoginPage";
 import type { AuthState, AccountDetail } from "@/feature/auth/types";
 import HomePage from "@/feature/post/pages/HomePage";
-import type { NavState } from "@/shared/api";
-import { ADMIN_PAGES } from "./constants/adminPages";
 import { Spinner } from "@/shared/components";
 import { AdminTags } from "@/feature/tags";
 import { AdminCategories } from "@/feature/categories";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import ProtectedRoute from "@/feature/auth/components/ProtectedRoute";
 
 const PostDetailPage = lazy(() => import("@/feature/post/pages/PostDetailPage"));
 const AdminLayout = lazy(() => import("@/feature/auth/components/AdminLayout"));
@@ -24,57 +24,85 @@ const AdminPostEditPage = lazy(() => import("@/feature/post/pages/AdminPostEditP
 ═══════════════════════════════════════════════════════════════ */
 
 export default function App() {
-  const [nav, setNav] = useState<NavState>({ page: "home" });
+  const navigate = useNavigate();
   const [auth, setAuth] = useState<AuthState>({ token: null, user: null, accountId: "" });
 
   useEffect(() => {
+    const saved = localStorage.getItem("authState");
+    if (saved) {
+      try {
+        const authState = JSON.parse(saved) as AuthState;
+        setAuth(authState);
+        setToken(authState.token ?? "");   // api 모듈의 토큰도 복원
+      } catch {
+        localStorage.removeItem("authState");
+      }
+    }
+
     if (globalThis.location.hash === "#login") {
-      setNav({ page: "login" });
+      navigate("/login");
       globalThis.history.replaceState(null, "", globalThis.location.pathname);
     }
   }, []);
 
   const handleLogin = (data: { token: string; user: AccountDetail | undefined; accountId: string }): void => {
     setToken(data.token);
-    setAuth({ token: data.token, user: data.user ?? null, accountId: data.accountId });
+    const authState: AuthState = {
+      token: data.token,
+      user: data.user ?? null,
+      accountId: data.accountId,
+    };
+    setAuth(authState);
+    localStorage.setItem("authState", JSON.stringify(authState));
   };
 
   const handleLogout = (): void => {
     setToken(null);
     setAuth({ token: null, user: null, accountId: "" });
-    setNav({ page: "home" });
+    localStorage.removeItem("authState");
+    navigate("/");
   };
 
   function renderPage(): JSX.Element {
-    if (ADMIN_PAGES.includes(nav.page) && !auth.token) {
-      return <LoginPage setNav={setNav} onLogin={handleLogin} />;
-    }
-    switch (nav.page) {
-      case "post":
-        return <PostDetailPage slug={nav.slug ?? ""} setNav={setNav} auth={auth} />;
-      case "login":
-        return <LoginPage setNav={setNav} onLogin={handleLogin} />;
-      case "admin":
-        return <AdminLayout nav={nav} setNav={setNav}><AdminDashboard auth={auth} setNav={setNav} /></AdminLayout>;
-      case "admin-posts":
-        return <AdminLayout nav={nav} setNav={setNav}><AdminPosts setNav={setNav} /></AdminLayout>;
-      case "admin-post-edit":
-        return <AdminLayout nav={nav} setNav={setNav}><AdminPostEditPage postSlug={nav.postSlug ?? ""} setNav={setNav} /></AdminLayout>;
-      case "admin-categories":
-        return <AdminLayout nav={nav} setNav={setNav}><AdminCategories /></AdminLayout>;
-      case "admin-tags":
-        return <AdminLayout nav={nav} setNav={setNav}><AdminTags /></AdminLayout>;
-      case "admin-accounts":
-        return <AdminLayout nav={nav} setNav={setNav}><AdminAccounts /></AdminLayout>;
-      default:
-        return <HomePage setNav={setNav} />;
-    }
+    return <Routes>
+        {/* 공개 */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+        <Route
+          path="/post/:slug"
+          element={
+            <Suspense fallback={<Spinner />}>
+              <PostDetailPage />
+            </Suspense>
+          }
+        />
+
+        {/* 관리자 — ProtectedRoute로 감싸고, AdminLayout이 부모 */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="posts" element={<AdminPosts />} />
+          <Route path="posts/:postSlug/edit" element={<AdminPostEditPage />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="tags" element={<AdminTags />} />
+          <Route path="accounts" element={<AdminAccounts />} />
+        </Route>
+
+        {/* 없는 경로 → 홈으로 (또는 404 페이지) */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   }
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg }}>
       <GlobalStyles />
-      <Header nav={nav} setNav={setNav} auth={auth} onLogout={handleLogout} />
+      <Header auth={auth} onLogout={handleLogout} />
       <main style={{ minHeight: "calc(100vh - 58px - 57px)" }}>
         <Suspense fallback={<Spinner />}>
           {renderPage()}

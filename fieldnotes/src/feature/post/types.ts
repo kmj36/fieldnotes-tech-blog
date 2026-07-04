@@ -1,7 +1,5 @@
 import type { TagPublic } from "../tags/types";
-import type { NavState } from "@/shared/api";
 import type { Pagination, SortDir } from "@/shared/api/types";
-import type { AuthState } from "../auth/types";
 import type { CategoryPublic } from "../categories/types";
 
 interface PostFormState {
@@ -15,10 +13,6 @@ interface PostFormProps {
 }
 
 interface PostCardProps { post: PostPublic; onClick: (slug: string) => void; }
-
-interface PostDetailPageProps { slug: string; setNav: (n: NavState) => void; auth: AuthState; }
-
-interface AdminPostEditPageProps { postSlug: string; setNav: (n: NavState) => void; }
 
 interface PostPublic {
   id: number; nickname: string; accountId?: string; slug: string;
@@ -47,11 +41,9 @@ export type {
     PostBody,
     PostCardProps,
     PostDetail,
-    PostDetailPageProps,
     PostFormProps,
     PostFormState,
     PostListResult,
     PostPublic,
-    PostQueryParams,
-    AdminPostEditPageProps
+    PostQueryParams
 };
