@@ -74,7 +74,7 @@ func (repo *CategoryRepository) FindByIDsPathPrefix(ctx *gin.Context, path strin
 
 	result := query.
 		Model(&model.Category{}).
-		Where(categoryWherePathLike, path+"%").
+		Where("path = ? OR "+categoryWherePathLike, path, path+"/%").
 		Pluck("id", &ids)
 	return ids, result.Error
 }
